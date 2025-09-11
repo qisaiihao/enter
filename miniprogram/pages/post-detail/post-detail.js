@@ -201,9 +201,17 @@ Page({
   onSubmitComment: function() {
     if (this.data.isSubmitDisabled) return;
 
+    // [调试日志 3] 在提交前，最后检查一下当前的回复状态
+    console.log('--- onSubmitComment function triggered ---');
+    console.log('提交前的回复状态:', {
+      replyToComment: this.data.replyToComment,
+      replyToAuthor: this.data.replyToAuthor
+    });
+
     const content = this.data.newComment;
     const postId = this.data.post._id;
-    const replyTo = this.data.replyToComment;
+    const parentId = this.data.replyToComment; 
+    const replyToAuthor = this.data.replyToAuthor;
 
     wx.showLoading({ title: '提交中...' });
     wx.cloud.callFunction({
@@ -211,8 +219,10 @@ Page({
       data: { 
         postId: postId,
         content: content,
-        replyTo: replyTo
+        parentId: parentId,
+        replyToAuthorName: replyToAuthor
       },
+      // ... success 和 fail 回调保持不变 ...
       success: res => {
         wx.hideLoading();
         if (res.result && res.result.success) {
@@ -223,9 +233,9 @@ Page({
             replyToComment: null,
             replyToAuthor: ''
           });
-          this.getComments(postId);
+          this.getComments(postId); 
         } else {
-          wx.showToast({ title: res.result.message || '评论失败', icon: 'none' });
+          wx.showToast({ title: (res.result && res.result.message) || '评论失败', icon: 'none' });
         }
       },
       fail: err => {
@@ -237,12 +247,31 @@ Page({
   },
 
   showReplyInput: function(e) {
+    // [调试日志 1] 检查函数是否被触发，以及接收到的数据
+    console.log('--- showReplyInput function triggered ---');
+    console.log('收到的 data- attributes:', e.currentTarget.dataset);
+
     const commentId = e.currentTarget.dataset.commentId;
     const authorName = e.currentTarget.dataset.authorName;
+    
     this.setData({
       replyToComment: commentId,
       replyToAuthor: authorName
     });
+
+    // [调试日志 2] 检查 state 是否被成功设置
+    console.log('设置后的回复状态:', {
+      replyToComment: this.data.replyToComment,
+      replyToAuthor: this.data.replyToAuthor
+    });
+  },
+
+  cancelReply: function() {
+    this.setData({
+      replyToComment: null,
+      replyToAuthor: ''
+    });
+    console.log('回复状态已被取消');
   },
 
   cancelReply: function() {
@@ -253,44 +282,66 @@ Page({
   },
 
   toggleLikeComment: function(e) {
-    const commentId = e.currentTarget.dataset.commentId;
-    const liked = e.currentTarget.dataset.liked;
+    // [这是正确的 toggleLikeComment 函数]
+    const { commentId, liked } = e.currentTarget.dataset;
+    const postId = this.data.post._id; // [修正 1] 从页面数据中获取 postId
+    const newLikeState = !liked;      // [修正 2] 计算出用户希望的新状态 (true代表点赞, false代表取消)
 
+    // 调用云函数，并传递所有必需的参数
     wx.cloud.callFunction({
       name: 'likeComment',
-      data: { commentId: commentId },
+      data: {
+        commentId: commentId,
+        postId: postId,       // <-- [修复] 必须传入 postId
+        isLiked: newLikeState // <-- [修复] 必须传入你希望的新状态
+      },
       success: res => {
-        if (res.result.success) {
-          this.updateCommentLikeStatus(commentId, !liked, res.result.likes);
+        if (res.result && res.result.success) {
+          // [修正 3] 云函数成功后，只用新状态来更新本地UI，不再依赖云函数返回点赞数
+          this.updateCommentLikeStatus(commentId, newLikeState);
         } else {
+          // 如果云函数执行失败，提示用户
           wx.showToast({ title: '操作失败', icon: 'none' });
         }
       },
       fail: err => {
+        // 如果网络不通或函数名错误，提示用户
         console.error('Failed to like comment', err);
         wx.showToast({ title: '网络错误', icon: 'none' });
       }
     });
   },
 
-  updateCommentLikeStatus: function(commentId, liked, likes) {
+  updateCommentLikeStatus: function(commentId, newLikeState) {
+    // [这是重写后的 updateCommentLikeStatus 函数]
     let comments = this.data.comments;
+    let found = false;
+
+    // 循环遍历所有评论和回复，找到被点击的那一条
     for (let i = 0; i < comments.length; i++) {
       if (comments[i]._id === commentId) {
-        comments[i].liked = liked;
-        comments[i].likes = likes;
-        break;
+        // 匹配到父评论
+        comments[i].liked = newLikeState;
+        // 在本地直接计算点赞数的变化 (+1 或 -1)
+        comments[i].likes = (comments[i].likes || 0) + (newLikeState ? 1 : -1);
+        found = true;
+        break; // 找到了就跳出循环
       }
-      if (comments[i].replies) {
+      if (comments[i].replies && !found) {
+        // 检查子评论 (回复)
         for (let j = 0; j < comments[i].replies.length; j++) {
           if (comments[i].replies[j]._id === commentId) {
-            comments[i].replies[j].liked = liked;
-            comments[i].replies[j].likes = likes;
-            break;
+            comments[i].replies[j].liked = newLikeState;
+            comments[i].replies[j].likes = (comments[i].replies[j].likes || 0) + (newLikeState ? 1 : -1);
+            found = true;
+            break; // 找到了就跳出内层循环
           }
         }
       }
+      if (found) break; // 找到了就跳出外层循环
     }
+
+    // 更新页面数据，让界面立刻刷新
     this.setData({ comments: comments });
   },
 

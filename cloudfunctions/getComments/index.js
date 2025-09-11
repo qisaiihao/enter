@@ -1,4 +1,4 @@
-// 云函数入口文件
+// 云函数 getComments 的入口文件
 const cloud = require('wx-server-sdk');
 
 cloud.init({
@@ -6,44 +6,46 @@ cloud.init({
 });
 
 const db = cloud.database();
+const _ = db.command; // 获取数据库查询指令
 
 // 云函数入口函数
 exports.main = async (event, context) => {
-  const { postId, skip = 0, limit = 20 } = event;
+  const { postId } = event;
 
   if (!postId) {
     return { success: false, message: 'Post ID is required.' };
   }
 
   try {
-    // 1. Get all comments for the post (both parent and child comments)
+    // 1. 获取帖子的所有评论
     const commentsRes = await db.collection('comments')
       .where({
         postId: postId
       })
-      .orderBy('createTime', 'asc') // Show oldest comments first
+      .orderBy('createTime', 'asc') // 按时间升序，旧评论在前
       .get();
     
     let allComments = commentsRes.data;
 
     if (allComments.length === 0) {
+      // 如果没有评论，直接返回空数组
       return {
         success: true,
         comments: []
       };
     }
 
-    // 2. Separate parent and child comments
+    // 2. 分离父评论和子评论
     const parentComments = allComments.filter(comment => !comment.parentId);
     const childComments = allComments.filter(comment => comment.parentId);
 
-    // 3. Get the openids of all commenters
+    // 3. 获取所有评论者的 openid
     const openids = allComments.map(comment => comment._openid);
-    const uniqueOpenids = [...new Set(openids)]; // Remove duplicates
+    const uniqueOpenids = [...new Set(openids)]; // 去重
 
-    // 4. Get the user info for all commenters
+    // 4. 一次性获取所有评论者的用户信息
     const usersRes = await db.collection('users').where({
-      _openid: db.command.in(uniqueOpenids)
+      _openid: _.in(uniqueOpenids)
     }).get();
     
     const usersMap = new Map();
@@ -54,13 +56,12 @@ exports.main = async (event, context) => {
       });
     });
 
-    // 5. Join the user info into the comments
+    // 5. 定义一个函数，用于将用户信息合并到评论中
     const processComments = (comments) => {
       return comments.map(comment => {
-        // Provide a default author object if the user is not found
         const author = usersMap.get(comment._openid) || { 
           nickName: '匿名用户', 
-          avatarUrl: '' // Use a default placeholder avatar if you have one
+          avatarUrl: '' // 如果找不到用户信息，提供默认值
         };
         return {
           ...comment,
@@ -73,7 +74,7 @@ exports.main = async (event, context) => {
     const processedParentComments = processComments(parentComments);
     const processedChildComments = processComments(childComments);
 
-    // 6. Organize child comments under their parents
+    // 6. 将子评论按 parentId 组织成 Map，方便查找
     const childCommentsMap = new Map();
     processedChildComments.forEach(child => {
       if (!childCommentsMap.has(child.parentId)) {
@@ -82,35 +83,42 @@ exports.main = async (event, context) => {
       childCommentsMap.get(child.parentId).push(child);
     });
 
-    // 7. Add child comments to their parent comments
+    // 7. 将子评论（回复）添加到对应的父评论的 replies 数组中
     const resultComments = processedParentComments.map(parent => ({
       ...parent,
       replies: childCommentsMap.get(parent._id) || []
     }));
 
-    // 8. Get the user's like status for all comments
+    // 8. 获取当前用户对这些评论的点赞状态
     const wxContext = cloud.getWXContext();
     const openId = wxContext.OPENID;
     const allCommentIds = allComments.map(c => c._id);
-    const likesRes = await db.collection('likes').where({
-      userId: openId,
-      commentId: db.command.in(allCommentIds)
+    
+    // [关键修改] 从 votes_log 集合中查询，并且 type 必须是 'comment'
+    const likesRes = await db.collection('votes_log').where({
+      _openid: openId,
+      commentId: _.in(allCommentIds),
+      type: 'comment' 
     }).get();
+    
+    // 创建一个 Set，存放用户点赞过的所有评论ID，方便快速查询
     const userLikedCommentIds = new Set(likesRes.data.map(like => like.commentId));
 
-    // 9. Add like status to all comments (parent and child)
+    // 9. 递归函数：将点赞状态和点赞数附加到每条评论上
     const addLikeStatus = (comments) => {
       comments.forEach(comment => {
         comment.liked = userLikedCommentIds.has(comment._id);
-        comment.likes = comment.likes || 0;
-        if (comment.replies) {
+        comment.likes = comment.likes || 0; // 如果没有 likes 字段，默认为 0
+        // 如果有子评论，也对子评论进行同样的操作
+        if (comment.replies && comment.replies.length > 0) {
           addLikeStatus(comment.replies);
         }
       });
     };
     addLikeStatus(resultComments);
 
-    // 10. Convert FileIDs to temp URLs for all comments
+    // 10. (可选，但建议保留) 转换头像的 FileID 为临时 HTTPS 链接
+    // (这段代码来自你的原始函数，逻辑是正确的)
     const getAllAvatars = (comments) => {
       let avatars = [];
       comments.forEach(comment => {
@@ -129,7 +137,7 @@ exports.main = async (event, context) => {
       const fileListResult = await cloud.getTempFileURL({ fileList: fileIDs });
       const urlMap = new Map();
       fileListResult.fileList.forEach(item => {
-        if (item.status === 0) {
+        if (item.status === 0) { // status 为 0 表示获取成功
           urlMap.set(item.fileID, item.tempFileURL);
         }
       });
@@ -147,18 +155,18 @@ exports.main = async (event, context) => {
       updateAvatars(resultComments);
     }
 
+    // 11. 返回最终处理好的评论数据
     return {
       success: true,
-      comments: resultComments,
-      userLikes: Array.from(userLikedCommentIds) // Send back the set of liked comment IDs
+      comments: resultComments
     };
 
   } catch (e) {
-    console.error(e);
+    console.error('getComments error', e);
     return {
       success: false,
       message: 'Failed to get comments.',
-      error: e
+      error: e.toString() // 返回更具体的错误信息
     };
   }
 };

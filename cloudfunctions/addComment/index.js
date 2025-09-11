@@ -1,4 +1,4 @@
-// 云函数入口文件
+// 云函数 addComment 的入口文件 (最终版)
 const cloud = require('wx-server-sdk');
 
 cloud.init({
@@ -6,13 +6,15 @@ cloud.init({
 });
 
 const db = cloud.database();
+const _ = db.command; // 引入数据库操作符
 
 // 云函数入口函数
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext();
   const openid = wxContext.OPENID;
 
-  const { postId, content, parentId } = event;
+  // [新增] 接收前端传来的 replyToAuthorName
+  const { postId, content, parentId, replyToAuthorName } = event;
 
   // Basic validation
   if (!openid) {
@@ -26,22 +28,34 @@ exports.main = async (event, context) => {
   }
 
   try {
-    // Prepare comment data
+    // 准备要存入数据库的数据
     const commentData = {
       _openid: openid,
       postId: postId,
       content: content,
+      likes: 0, // [建议] 初始化点赞数为0
       createTime: new Date()
     };
 
-    // If parentId is provided, this is a reply to another comment
+    // 如果 parentId 存在，说明这是一条回复
     if (parentId) {
       commentData.parentId = parentId;
+      // [新增] 如果是回复，就把被回复人的名字也存进去
+      if (replyToAuthorName) {
+        commentData.replyToAuthorName = replyToAuthorName;
+      }
     }
 
-    // Add the new comment to the database
+    // 将新评论/回复添加到数据库
     const result = await db.collection('comments').add({
       data: commentData
+    });
+
+    // [新增] 评论或回复成功后，帖子的评论数 +1
+    await db.collection('posts').doc(postId).update({
+      data: {
+        commentCount: _.inc(1)
+      }
     });
 
     return {
@@ -51,11 +65,11 @@ exports.main = async (event, context) => {
     };
 
   } catch (e) {
-    console.error(e);
+    console.error('addComment error', e);
     return {
       success: false,
       message: 'Failed to add comment.',
-      error: e
+      error: e.toString()
     };
   }
 };

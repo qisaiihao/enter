@@ -1,4 +1,4 @@
-// 云函数入口文件
+// 云函数 votePost 的入口文件
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
@@ -11,10 +11,11 @@ exports.main = async (event, context) => {
     const { postId } = event
     const { OPENID } = cloud.getWXContext()
 
-    // 1. 查找 votes_log 表，看该用户是否已为该文章点赞
+    // 1. 查找 votes_log 表，精确查找 type 为 'post' 的记录
     const log = await db.collection('votes_log').where({
       _openid: OPENID,
-      postId: postId
+      postId: postId,
+      type: 'post' // [修改点] 查询时精确匹配帖子类型
     }).get()
 
     let updatedPost;
@@ -33,6 +34,7 @@ exports.main = async (event, context) => {
         data: {
           _openid: OPENID,
           postId: postId,
+          type: 'post', // [修改点] 存入时明确指定类型为 post
           createTime: new Date()
         }
       })
@@ -43,16 +45,16 @@ exports.main = async (event, context) => {
       })
     }
 
-    // 4. ���论点赞还是取消，都重新获取文章的最新数据
+    // 4. 无论点赞还是取消，都重新获取文章的最新数据
     updatedPost = await db.collection('posts').doc(postId).get();
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       votes: updatedPost.data.votes // 返回最新的点赞数
     }
 
   } catch (e) {
-    console.error(e)
+    console.error('votePost error', e)
     return {
       success: false,
       error: e
