@@ -48,7 +48,7 @@
       <view class="my-posts-section">
         <view class="section-title">我发布的帖子</view>
         <block wx:if="{{myPosts.length > 0}}">
-          <view wx:for="{{myPosts}}" wx:key="_id" class="post-card">
+          <view wx:for="{{myPosts}}" wx:key="_id" class="post-card" bind:tap="navigateToPostDetail" data-id="{{item._id}}" hover-class="post-item-active">
             <!-- 作者信息 -->
             <view class="author-info">
               <image wx:if="{{item.authorAvatar}}" class="author-avatar" src="{{item.authorAvatar}}" mode="aspectFill" />
@@ -109,12 +109,10 @@
             <view class="post-actions" catch:tap="stopPropagation">
               <view class="action-left">
                 <view class="action-item">
-                  <image src="../../images/liked.png" class="action-icon"></image>
-                  <text class="action-text">{{item.votes || 0}}</text>
+                  <text class="action-text">👍 {{item.votes || 0}}</text>
                 </view>
                 <view class="action-item">
-                  <image src="../../images/icons/copy.png" class="action-icon"></image>
-                  <text class="action-text">{{item.commentCount || 0}}</text>
+                  <text class="action-text">💬 {{item.commentCount || 0}}</text>
                 </view>
               </view>
               <view class="action-right">

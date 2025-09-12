@@ -249,15 +249,25 @@ Page({
           wx.showToast({ title: '评论成功' });
           // 立即更新评论数量
           const newCommentCount = this.data.commentCount + 1;
-          console.log('更新评论数量:', this.data.commentCount, '->', newCommentCount);
-          this.setData({ 
+          this.setData({
             newComment: '',
             isSubmitDisabled: true,
             replyToComment: null,
             replyToAuthor: '',
             commentCount: newCommentCount
           });
-          this.getComments(postId); 
+
+          this.getComments(postId);
+
+          const pages = getCurrentPages();
+          if (pages.length > 1) {
+            const prePage = pages[pages.length - 2];
+            if (prePage.route === 'pages/index/index' && typeof prePage.updatePostCommentCount === 'function') {
+              prePage.updatePostCommentCount(postId, newCommentCount);
+            } else if (prePage.route === 'pages/profile/profile' && typeof prePage.updatePostCommentCount === 'function') {
+              prePage.updatePostCommentCount(postId, newCommentCount);
+            }
+          }
         } else {
           wx.showToast({ title: (res.result && res.result.message) || '评论失败', icon: 'none' });
         }
@@ -306,67 +316,75 @@ Page({
   },
 
   toggleLikeComment: function(e) {
-    // [这是正确的 toggleLikeComment 函数]
-    const { commentId, liked } = e.currentTarget.dataset;
-    const postId = this.data.post._id; // [修正 1] 从页面数据中获取 postId
-    const newLikeState = !liked;      // [修正 2] 计算出用户希望的新状态 (true代表点赞, false代表取消)
+    const { commentId } = e.currentTarget.dataset;
+    const postId = this.data.post._id;
 
-    // 调用云函数，并传递所有必需的参数
+    // [前端优化] 先在本地立即更新UI，提供更快的用户反馈
+    const comments = this.data.comments;
+    const { comment, isReply } = this.findComment(comments, commentId);
+    if (!comment) return;
+
+    const newLikeState = !comment.liked;
+    const oldLikes = comment.likes || 0;
+    comment.liked = newLikeState;
+    comment.likes = oldLikes + (newLikeState ? 1 : -1);
+
+    this.setData({ comments: comments });
+
+    // 调用云函数，不再需要传递 isLiked
     wx.cloud.callFunction({
       name: 'likeComment',
       data: {
         commentId: commentId,
-        postId: postId,       // <-- [修复] 必须传入 postId
-        isLiked: newLikeState // <-- [修复] 必须传入你希望的新状态
+        postId: postId
       },
       success: res => {
         if (res.result && res.result.success) {
-          // [修正 3] 云函数成功后，只用新状态来更新本地UI，不再依赖云函数返回点赞数
-          this.updateCommentLikeStatus(commentId, newLikeState);
+          // [核心] 使用后端返回的权威点赞数，更新UI
+          if (comment.likes !== res.result.likes) {
+            this.updateCommentLikeStatus(commentId, newLikeState, res.result.likes);
+          }
         } else {
-          // 如果云函数执行失败，提示用户
+          // 如果云函数执行失败，回滚前端的UI更改
+          this.updateCommentLikeStatus(commentId, !newLikeState, oldLikes);
           wx.showToast({ title: '操作失败', icon: 'none' });
         }
       },
       fail: err => {
-        // 如果网络不通或函数名错误，提示用户
+        // 如果网络不通或函数名错误，回滚前端的UI更改
+        this.updateCommentLikeStatus(commentId, !newLikeState, oldLikes);
         console.error('Failed to like comment', err);
         wx.showToast({ title: '网络错误', icon: 'none' });
       }
     });
   },
 
-  updateCommentLikeStatus: function(commentId, newLikeState) {
-    // [这是重写后的 updateCommentLikeStatus 函数]
+  updateCommentLikeStatus: function(commentId, newLikeState, finalLikes) {
     let comments = this.data.comments;
-    let found = false;
+    const { comment, isReply } = this.findComment(comments, commentId);
 
-    // 循环遍历所有评论和回复，找到被点击的那一条
+    if (comment) {
+      comment.liked = newLikeState;
+      comment.likes = finalLikes;
+      this.setData({ comments: comments });
+    }
+  },
+
+  // [新增] 辅助函数，用于在复杂的评论/回复结构中查找特定评论
+  findComment: function(comments, commentId) {
     for (let i = 0; i < comments.length; i++) {
       if (comments[i]._id === commentId) {
-        // 匹配到父评论
-        comments[i].liked = newLikeState;
-        // 在本地直接计算点赞数的变化 (+1 或 -1)
-        comments[i].likes = (comments[i].likes || 0) + (newLikeState ? 1 : -1);
-        found = true;
-        break; // 找到了就跳出循环
+        return { comment: comments[i], isReply: false };
       }
-      if (comments[i].replies && !found) {
-        // 检查子评论 (回复)
+      if (comments[i].replies) {
         for (let j = 0; j < comments[i].replies.length; j++) {
           if (comments[i].replies[j]._id === commentId) {
-            comments[i].replies[j].liked = newLikeState;
-            comments[i].replies[j].likes = (comments[i].replies[j].likes || 0) + (newLikeState ? 1 : -1);
-            found = true;
-            break; // 找到了就跳出内层循环
+            return { comment: comments[i].replies[j], isReply: true };
           }
         }
       }
-      if (found) break; // 找到了就跳出外层循环
     }
-
-    // 更新页面数据，让界面立刻刷新
-    this.setData({ comments: comments });
+    return { comment: null, isReply: false };
   },
 
   toggleShowAllReplies: function(e) {

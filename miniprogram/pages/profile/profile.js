@@ -25,37 +25,24 @@ Page({
   },
 
   onShow: function () {
-    // 只在发帖后自动刷新，其他情况不刷新
-    try {
-      const shouldRefresh = wx.getStorageSync('shouldRefreshProfile');
-      if (shouldRefresh) {
-        wx.setStorageSync('shouldRefreshProfile', false);
-        this.setData({
-          myPosts: [],
-          page: 0,
-          hasMore: true,
-          swiperHeights: {},
-          imageClampHeights: {},
-        }, () => {
-          this.loadMyPosts();
-        });
-        return;
-      }
-    } catch (e) {}
-    // 新增：首次进入自动刷新
-    if (!this.data._hasFirstShow) {
+    const shouldRefresh = wx.getStorageSync('shouldRefreshProfile');
+    if (shouldRefresh) {
+      wx.removeStorageSync('shouldRefreshProfile');
+      this.fetchUserProfile();
       this.setData({
         myPosts: [],
         page: 0,
         hasMore: true,
         swiperHeights: {},
         imageClampHeights: {},
-        _hasFirstShow: true
       }, () => {
         this.loadMyPosts();
       });
       return;
     }
+
+    this.fetchUserProfile();
+
     if (this.data.myPosts.length === 0) {
       this.loadMyPosts();
     }
@@ -114,7 +101,6 @@ Page({
   },
 
   fetchUserProfile: function() {
-    this.setData({ isLoading: true });
     wx.cloud.callFunction({
       name: 'getMyProfileData',
       success: res => {
@@ -150,9 +136,6 @@ Page({
           }
           this.setData({ userInfo: storedUserInfo });
         }
-      },
-      complete: () => {
-        this.setData({ isLoading: false });
       }
     });
   },
@@ -271,6 +254,15 @@ Page({
         }
       }
     });
+  },
+
+  updatePostCommentCount: function(postId, newCommentCount) {
+    const postIndex = this.data.myPosts.findIndex(p => p._id === postId);
+    if (postIndex > -1) {
+      this.setData({
+        [`myPosts[${postIndex}].commentCount`]: newCommentCount
+      });
+    }
   },
 
   // 图片预览

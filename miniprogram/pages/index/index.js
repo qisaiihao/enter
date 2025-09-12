@@ -19,26 +19,29 @@ Page({
   onLoad: function () {},
 
   onShow: function () {
-    // 只在发帖后自动刷新，其他情况不刷新
     try {
       const shouldRefresh = wx.getStorageSync('shouldRefreshIndex');
       if (shouldRefresh) {
         wx.setStorageSync('shouldRefreshIndex', false);
-        this.setData({
-          postList: [],
-          swiperHeights: {},
-          imageClampHeights: {},
-          page: 0,
-          hasMore: true,
-        }, () => {
-          this.getPostList();
-        });
-        return;
+        this.refreshData();
       }
     } catch (e) {}
+
     if (this.data.postList.length === 0) {
       this.getPostList();
     }
+  },
+
+  refreshData: function() {
+    this.setData({
+      postList: [],
+      swiperHeights: {},
+      imageClampHeights: {},
+      page: 0,
+      hasMore: true,
+    }, () => {
+      this.getPostList();
+    });
   },
 
   onPullDownRefresh: function () {
@@ -183,6 +186,16 @@ Page({
         this.setData({ [`votingInProgress.${postId}`]: false });
       }
     });
+  },
+
+  updatePostCommentCount: function(postId, newCommentCount) {
+    const postList = this.data.postList;
+    const postIndex = postList.findIndex(p => p._id === postId);
+    if (postIndex > -1) {
+      this.setData({
+        [`postList[${postIndex}].commentCount`]: newCommentCount
+      });
+    }
   },
 
   onImageError: function(e) { console.error('图片加载失败', e.detail); },

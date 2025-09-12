@@ -13,12 +13,31 @@ Page({
   },
 
   onLoad: function (options) {
-    const userInfo = app.globalData.userInfo || {};
-    this.setData({
-      avatarUrl: userInfo.avatarUrl || '',
-      nickName: userInfo.nickName || '',
-      birthday: userInfo.birthday || '',
-      bio: userInfo.bio || ''
+    this.fetchUserProfile();
+    const today = new Date();
+    const formattedDate = today.getFullYear() + '-' + (today.getMonth() + 1).toString().padStart(2, '0') + '-' + today.getDate().toString().padStart(2, '0');
+    this.setData({ endDate: formattedDate });
+  },
+
+  fetchUserProfile: function() {
+    wx.cloud.callFunction({
+      name: 'getMyProfileData',
+      success: res => {
+        if (res.result && res.result.success && res.result.userInfo) {
+          const user = res.result.userInfo;
+          this.setData({
+            avatarUrl: user.avatarUrl || '',
+            nickName: user.nickName || '',
+            birthday: user.birthday || '',
+            bio: user.bio || ''
+          });
+        } else {
+          wx.showToast({ title: '加载失败', icon: 'none' });
+        }
+      },
+      fail: err => {
+        wx.showToast({ title: '加载失败', icon: 'none' });
+      }
     });
   },
 
@@ -72,7 +91,7 @@ Page({
           // 获取上一个页面实例
           const prePage = pages[pages.length - 2];
           // 调用上一个页面的方法
-          prePage.fetchProfileData();
+          prePage.fetchUserProfile();
         }
 
         // 保存成功后，直接返回

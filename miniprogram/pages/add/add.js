@@ -26,97 +26,78 @@ Page({
       return;
     }
     
-    console.log('开始选择图片，剩余数量:', remainingCount);
     wx.chooseImage({
       count: remainingCount,
-      sizeType: ['original', 'compressed'],
+      // 关键修改1：强制使用原图，把压缩控制权完全交给自己的代码
+      sizeType: ['original'], 
       sourceType: ['album', 'camera'],
       success: (res) => {
-        console.log('选择图片成功:', res.tempFilePaths);
-        
-        const newImages = [];
-        let processedCount = 0;
-        
-        res.tempFilePaths.forEach((tempFilePath, index) => {
-          wx.getImageInfo({
-            src: tempFilePath,
-            success: (info) => {
-              console.log('获取图片信息成功:', info);
-              const sizeInBytes = info.size;
-              const sizeInKB = Math.round(sizeInBytes / 1024);
-              const needCompression = sizeInBytes > 300 * 1024;
-              
-              console.log('图片大小:', sizeInKB + 'KB, 需要压缩:', needCompression);
-              
-              const imageInfo = {
-                originalPath: tempFilePath,
-                imageSize: sizeInBytes,
-                needCompression: needCompression,
-                previewUrl: tempFilePath,
-                compressedPath: tempFilePath,
-                originalUrl: '',
-                compressedUrl: ''
-              };
-              
-              newImages.push(imageInfo);
-              
-              if (needCompression) {
-                that.compressImage(imageInfo, newImages.length - 1);
-              } else {
-                imageInfo.compressedPath = tempFilePath;
-                imageInfo.previewUrl = tempFilePath;
-              }
-              
-              processedCount++;
-              if (processedCount === res.tempFilePaths.length) {
-                that.updateImageList(newImages);
-              }
-            },
-            fail: (err) => {
-              console.log('获取图片信息失败:', err);
-              const imageInfo = {
-                originalPath: tempFilePath,
-                needCompression: true,
-                previewUrl: tempFilePath,
-                compressedPath: tempFilePath,
-                originalUrl: '',
-                compressedUrl: ''
-              };
-              
-              newImages.push(imageInfo);
-              that.compressImage(imageInfo, newImages.length - 1);
-              
-              processedCount++;
-              if (processedCount === res.tempFilePaths.length) {
-                that.updateImageList(newImages);
-              }
-            }
-          });
+        wx.showLoading({ title: '处理中...' });
+
+        // 关键修改2：不再使用 res.tempFilePaths，而是使用包含size的 res.tempFiles
+        console.log('wx.chooseImage 返回的详细文件信息:', res.tempFiles);
+
+        const imagePromises = res.tempFiles.map((file) => {
+          // 现在 file 是一个对象，例如 {path: '...', size: 12345}
+          const tempFilePath = file.path;
+          const sizeInBytes = file.size;
+
+          console.log(`获取到图片 ${tempFilePath} 的原始大小:`, (sizeInBytes / 1024).toFixed(2), 'KB');
+
+          const needCompression = sizeInBytes > 300 * 1024;
+          
+          const imageInfo = {
+            originalPath: tempFilePath,
+            imageSize: sizeInBytes,
+            needCompression: needCompression,
+            previewUrl: tempFilePath,
+            compressedPath: tempFilePath,
+            originalUrl: '',
+            compressedUrl: ''
+          };
+
+          if (needCompression) {
+            // 如果需要压缩，调用返回Promise的压缩函数
+            return that.compressImage(imageInfo);
+          } else {
+            // 如果不需要压缩，直接用 Promise.resolve 包装后返回
+            return Promise.resolve(imageInfo);
+          }
+        });
+
+        Promise.all(imagePromises).then(newImages => {
+          wx.hideLoading();
+          that.updateImageList(newImages);
+        }).catch(err => {
+          wx.hideLoading();
+          wx.showToast({ title: '图片处理失败', icon: 'none' });
+          console.error('图片处理失败:', err);
         });
       },
       fail: (err) => {
-        console.log('选择图片失败:', err);
+        console.log('选择图片取消或失败:', err);
       }
     });
-  },
+},
 
-  compressImage: function(imageInfo, index) {
-    const that = this;
-    console.log('开始压缩图片:', index);
-    
-    wx.compressImage({
-      src: imageInfo.originalPath,
-      quality: 80,
-      success: (compressRes) => {
-        console.log('压缩成功:', compressRes.tempFilePath);
-        imageInfo.compressedPath = compressRes.tempFilePath;
-        imageInfo.previewUrl = compressRes.tempFilePath;
-      },
-      fail: (err) => {
-        console.log('压缩失败:', err);
-        imageInfo.compressedPath = imageInfo.originalPath;
-        imageInfo.previewUrl = imageInfo.originalPath;
-      }
+  compressImage: function(imageInfo) {
+    return new Promise((resolve) => {
+      wx.compressImage({
+        src: imageInfo.originalPath,
+        quality: 80,
+        success: (compressRes) => {
+          imageInfo.compressedPath = compressRes.tempFilePath;
+          imageInfo.previewUrl = compressRes.tempFilePath;
+          resolve(imageInfo);
+        },
+        fail: (err) => {
+          // 压缩失败，使用原图作为备用
+          console.log('压缩失败，使用原图:', err);
+          imageInfo.compressedPath = imageInfo.originalPath;
+          imageInfo.previewUrl = imageInfo.originalPath;
+          resolve(imageInfo);
+        }
+      });
     });
   },
 
