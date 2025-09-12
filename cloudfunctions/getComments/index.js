@@ -156,9 +156,16 @@ exports.main = async (event, context) => {
     }
 
     // 11. 返回最终处理好的评论数据
+    console.log('getComments返回数据:', {
+      commentsCount: resultComments.length,
+      allCommentsLength: allComments.length,
+      commentCount: allComments.length
+    });
+    
     return {
       success: true,
-      comments: resultComments
+      comments: resultComments,
+      commentCount: allComments.length // 添加评论总数
     };
 
   } catch (e) {

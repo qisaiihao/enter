@@ -38,10 +38,18 @@ Page({
         if (res.result && res.result.post) {
           let post = res.result.post;
           post.formattedCreateTime = this.formatTime(post.createTime);
+          console.log('loadPostDetail完整返回数据:', res.result);
+          console.log('loadPostDetail获取到的commentCount:', res.result.commentCount, '类型:', typeof res.result.commentCount);
+          console.log('loadPostDetail获取到的post.commentCount:', post.commentCount, '类型:', typeof post.commentCount);
+          
+          const finalCommentCount = res.result.commentCount || post.commentCount || 0;
+          console.log('最终使用的commentCount:', finalCommentCount);
+          
           this.setData({
             post: post,
-            commentCount: res.result.commentCount || 0,
+            commentCount: finalCommentCount,
           });
+          console.log('loadPostDetail设置后的commentCount:', this.data.commentCount);
           this.getComments(post._id);
         } else {
           wx.showToast({ title: '帖子加载失败', icon: 'none' });
@@ -73,7 +81,19 @@ Page({
             }
             return comment;
           });
-          this.setData({ comments: comments });
+          console.log('getComments返回的commentCount:', res.result.commentCount);
+          console.log('comments数组长度:', comments.length);
+          console.log('当前页面的commentCount:', this.data.commentCount);
+          
+          // 只有在getComments返回的commentCount大于当前值时才更新
+          const newCommentCount = res.result.commentCount || comments.length;
+          const shouldUpdateCount = newCommentCount > this.data.commentCount;
+          
+          this.setData({ 
+            comments: comments,
+            commentCount: shouldUpdateCount ? newCommentCount : this.data.commentCount
+          });
+          console.log('更新后的commentCount:', this.data.commentCount);
         } else {
           wx.showToast({ title: '评论加载失败', icon: 'none' });
         }
@@ -227,11 +247,15 @@ Page({
         wx.hideLoading();
         if (res.result && res.result.success) {
           wx.showToast({ title: '评论成功' });
+          // 立即更新评论数量
+          const newCommentCount = this.data.commentCount + 1;
+          console.log('更新评论数量:', this.data.commentCount, '->', newCommentCount);
           this.setData({ 
             newComment: '',
             isSubmitDisabled: true,
             replyToComment: null,
-            replyToAuthor: ''
+            replyToAuthor: '',
+            commentCount: newCommentCount
           });
           this.getComments(postId); 
         } else {

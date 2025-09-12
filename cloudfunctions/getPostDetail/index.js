@@ -31,6 +31,13 @@ exports.main = async (event, context) => {
       };
     }
 
+    console.log('获取到的帖子数据:', {
+      _id: post._id,
+      title: post.title,
+      commentCount: post.commentCount,
+      votes: post.votes
+    });
+
     // 2. 根据帖子的 _openid 获取作者信息
     const userRes = await db.collection('users').where({
       _openid: post._openid
@@ -116,8 +123,38 @@ exports.main = async (event, context) => {
       }
     }
 
+    // 如果帖子没有commentCount字段，则实时计算评论数量
+    let commentCount = resultPost.commentCount;
+    console.log('从数据库获取的commentCount:', commentCount, '类型:', typeof commentCount);
+    
+    if (commentCount === undefined || commentCount === null || commentCount === 0) {
+      console.log('需要实时计算评论数量');
+      const commentsRes = await db.collection('comments').where({
+        postId: postId
+      }).count();
+      commentCount = commentsRes.total;
+      console.log('实时计算的评论数量:', commentCount);
+      
+      // 同时更新帖子数据库中的commentCount字段，避免下次再计算
+      try {
+        await db.collection('posts').doc(postId).update({
+          data: {
+            commentCount: commentCount
+          }
+        });
+        console.log('已更新数据库中的commentCount字段');
+      } catch (updateError) {
+        console.error('更新commentCount字段失败:', updateError);
+      }
+    } else {
+      console.log('使用数据库中的commentCount:', commentCount);
+    }
+    
+    console.log('最终返回的评论数量:', commentCount);
+    
     return {
       post: resultPost,
+      commentCount: commentCount, // 添加评论数量
       success: true
     };
 
