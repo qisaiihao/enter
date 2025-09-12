@@ -492,8 +492,15 @@
   border: none;
   border-radius: 35rpx;
   font-size: 28rpx;
-  line-height: 70rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background-color 0.2s ease;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .submit-button:active {
@@ -507,6 +514,20 @@
 
 .submit-button::after {
   border: none;
+}
+
+/* 强制按钮文字居中 - 针对微信小程序button组件 */
+.submit-button {
+  box-sizing: border-box;
+}
+
+.submit-button .wx-button-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  line-height: 1;
 }
 
 
