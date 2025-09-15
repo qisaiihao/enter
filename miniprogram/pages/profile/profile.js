@@ -404,5 +404,12 @@ Page({
     wx.navigateTo({
       url: '/pages/profile-edit/profile-edit',
     });
+  },
+
+  // 跳转到收藏夹页面
+  navigateToFavoriteFolders: function() {
+    wx.navigateTo({
+      url: '/pages/favorite-folders/favorite-folders',
+    });
   }
 });

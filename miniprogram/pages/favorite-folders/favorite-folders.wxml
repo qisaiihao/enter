@@ -1,0 +1,73 @@
+<!--pages/favorite-folders/favorite-folders.wxml-->
+<view class="container">
+  <!-- 加载状态 -->
+  <view wx:if="{{isLoading}}" class="loading-container">
+    <view class="loading-text">加载中...</view>
+  </view>
+
+  <!-- 收藏夹列表 -->
+  <view wx:elif="{{folders.length > 0}}" class="folders-container">
+    <view class="folder-item" 
+          wx:for="{{folders}}" 
+          wx:key="_id"
+          data-folder-id="{{item._id}}"
+          data-folder-name="{{item.name}}"
+          bindtap="enterFolder"
+          bindlongpress="onFolderLongPress">
+      <view class="folder-icon">📁</view>
+      <view class="folder-info">
+        <view class="folder-name">{{item.name}}</view>
+        <view class="folder-meta">
+          <text class="item-count">{{item.itemCount}} 个收藏</text>
+          <text class="create-time">{{item.createTime}}</text>
+        </view>
+      </view>
+      <view class="folder-arrow">></view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:else class="empty-container">
+    <view class="empty-icon">📁</view>
+    <view class="empty-text">还没有收藏夹</view>
+    <view class="empty-subtext">创建收藏夹来整理你的收藏吧</view>
+  </view>
+
+  <!-- 创建收藏夹按钮 -->
+  <view class="create-button" bindtap="showCreateFolder">
+    <view class="create-icon">+</view>
+    <text>创建收藏夹</text>
+  </view>
+
+  <!-- 创建收藏夹弹窗 -->
+  <view wx:if="{{showCreateModal}}" class="modal-overlay" bindtap="hideCreateModal">
+    <view class="modal-content" catchtap="">
+      <view class="modal-title">创建收藏夹</view>
+      <input class="modal-input" 
+             placeholder="请输入收藏夹名称" 
+             value="{{newFolderName}}"
+             bindinput="onFolderNameInput"
+             maxlength="20" />
+      <view class="modal-buttons">
+        <button class="modal-btn cancel-btn" bindtap="hideCreateModal">取消</button>
+        <button class="modal-btn confirm-btn" bindtap="createFolder">创建</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 编辑收藏夹弹窗 -->
+  <view wx:if="{{showEditModal}}" class="modal-overlay" bindtap="hideEditModal">
+    <view class="modal-content" catchtap="">
+      <view class="modal-title">重命名收藏夹</view>
+      <input class="modal-input" 
+             placeholder="请输入收藏夹名称" 
+             value="{{editFolderName}}"
+             bindinput="onEditFolderNameInput"
+             maxlength="20" />
+      <view class="modal-buttons">
+        <button class="modal-btn cancel-btn" bindtap="hideEditModal">取消</button>
+        <button class="modal-btn confirm-btn" bindtap="updateFolderName">保存</button>
+      </view>
+    </view>
+  </view>
+</view>

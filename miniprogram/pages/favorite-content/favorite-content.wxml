@@ -1,0 +1,92 @@
+<!--pages/favorite-content/favorite-content.wxml-->
+<view class="container">
+  <!-- 加载状态 -->
+  <view wx:if="{{isLoading && favorites.length === 0}}" class="loading-container">
+    <view class="loading-text">加载中...</view>
+  </view>
+
+  <!-- 收藏内容列表 -->
+  <view wx:elif="{{favorites.length > 0}}" class="favorites-container">
+    <view class="favorite-item" 
+          wx:for="{{favorites}}" 
+          wx:key="_id"
+          data-post-id="{{item.postId}}"
+          data-favorite-id="{{item._id}}"
+          data-post-title="{{item.postTitle}}"
+          bindtap="onFavoriteTap"
+          bindlongpress="onFavoriteLongPress">
+      
+      <!-- 作者信息 -->
+      <view class="author-info">
+        <image wx:if="{{item.postAuthorAvatar}}" 
+               class="author-avatar" 
+               src="{{item.postAuthorAvatar}}" 
+               mode="aspectFill" />
+        <view class="author-details">
+          <view class="author-name">{{item.postAuthorName}}</view>
+          <view class="post-time">{{item.formattedPostCreateTime}}</view>
+        </view>
+      </view>
+
+      <!-- 标题 -->
+      <view wx:if="{{item.postTitle}}" class="post-title">{{item.postTitle}}</view>
+
+      <!-- 内容 -->
+      <view wx:if="{{item.postContent}}" class="post-content">{{item.postContent}}</view>
+
+      <!-- 图片 -->
+      <view wx:if="{{item.postImageUrls && item.postImageUrls.length > 0}}" class="post-images">
+        <view wx:if="{{item.postImageUrls.length === 1}}" class="single-image">
+          <image class="post-image" 
+                 src="{{item.postImageUrls[0]}}" 
+                 mode="aspectFill"
+                 data-src="{{item.postImageUrls[0]}}"
+                 data-urls="{{item.postImageUrls}}"
+                 bindtap="onImagePreview"
+                 catchtap="onImagePreview" />
+        </view>
+        <view wx:else class="multi-images">
+          <image class="post-image" 
+                 wx:for="{{item.postImageUrls}}" 
+                 wx:for-item="imageUrl"
+                 wx:key="*this"
+                 src="{{imageUrl}}" 
+                 mode="aspectFill"
+                 data-src="{{imageUrl}}"
+                 data-urls="{{item.postImageUrls}}"
+                 bindtap="onImagePreview"
+                 catchtap="onImagePreview" />
+        </view>
+      </view>
+
+      <!-- 收藏时间 -->
+      <view class="favorite-time">
+        <text class="favorite-label">收藏于</text>
+        <text class="favorite-date">{{item.formattedCreateTime}}</text>
+      </view>
+
+      <!-- 诗歌标识 -->
+      <view wx:if="{{item.postIsPoem}}" class="poem-badge">
+        <text wx:if="{{item.postIsOriginal}}">原创诗歌</text>
+        <text wx:else>经典诗歌</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:else class="empty-container">
+    <view class="empty-icon">📖</view>
+    <view class="empty-text">收藏夹是空的</view>
+    <view class="empty-subtext">去发现一些好诗收藏起来吧</view>
+  </view>
+
+  <!-- 加载更多 -->
+  <view wx:if="{{favorites.length > 0 && isLoading}}" class="loading-more">
+    <view class="loading-text">加载中...</view>
+  </view>
+
+  <!-- 没有更多 -->
+  <view wx:if="{{favorites.length > 0 && !hasMore && !isLoading}}" class="no-more">
+    <text>没有更多了</text>
+  </view>
+</view>

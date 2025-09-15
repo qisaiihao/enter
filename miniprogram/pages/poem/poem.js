@@ -13,7 +13,9 @@ Page({
     page: 0,
     backgroundImage: '', // 背景图片
     isTransitioning: false, // 切换动画状态
-    preloadedImages: {} // 预加载的图片缓存
+    preloadedImages: {}, // 预加载的图片缓存
+    showFavoriteModal: false, // 显示收藏夹选择器
+    currentPostId: '' // 当前要收藏的帖子ID
   },
 
   onLoad: function () {
@@ -331,4 +333,26 @@ Page({
       }
     });
   },
+
+  // 显示收藏夹选择器
+  showFavoriteModal: function(e) {
+    const postId = e.currentTarget.dataset.postId;
+    this.setData({
+      showFavoriteModal: true,
+      currentPostId: postId
+    });
+  },
+
+  // 隐藏收藏夹选择器
+  hideFavoriteModal: function() {
+    this.setData({
+      showFavoriteModal: false,
+      currentPostId: ''
+    });
+  },
+
+  // 收藏成功回调
+  onFavoriteSuccess: function() {
+    this.hideFavoriteModal();
+  }
 });
