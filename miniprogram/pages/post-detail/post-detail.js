@@ -199,7 +199,6 @@ Page({
       }
     }
   },
-
   
 
   onImageError: function(e) {
