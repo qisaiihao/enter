@@ -41,7 +41,7 @@ page {
   flex-direction: column;
   padding: 40rpx 20rpx;
   box-sizing: border-box;
-  background: rgba(255,255,255,0.95); /* 提高透明度确保文字清晰 */
+  background: rgba(255,255,255,0.8); /* 增加透明度，让背景图更明显 */
   margin: 40rpx 20rpx;
   border-radius: 24rpx;
   box-shadow: 0 8rpx 32rpx rgba(0,0,0,0.1);
@@ -56,26 +56,7 @@ page {
   opacity: 0.9; /* 切换时稍微透明 */
 }
 
-/* 原创诗歌特殊样式 */
-.original-poem {
-  background: rgba(255,255,255,0.9);
-  border: 2rpx solid #07c160;
-}
 
-/* 原创标识 */
-.original-badge {
-  position: absolute;
-  top: 20rpx;
-  right: 20rpx;
-  background: #07c160;
-  color: white;
-  padding: 8rpx 16rpx;
-  border-radius: 20rpx;
-  font-size: 24rpx;
-  font-weight: bold;
-  box-shadow: 0 2rpx 8rpx rgba(7, 193, 96, 0.3);
-  z-index: 10; /* 确保在最上层 */
-}
 
 /* 作者信息 */
 .single-author-info {

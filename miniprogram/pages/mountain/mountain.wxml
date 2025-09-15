@@ -20,8 +20,6 @@
       <!-- 内容 -->
       <view class="single-post-content-text" wx:if="{{postList[currentPostIndex].content}}" style="white-space: pre-wrap;">{{postList[currentPostIndex].content}}</view>
       
-      <!-- 非原创标识 -->
-      <view wx:if="{{!postList[currentPostIndex].isOriginal}}" class="mountain-badge">山</view>
     </view>
     
     <view wx:if="{{postList.length === 0 && !isLoading}}" class="empty-state">

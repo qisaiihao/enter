@@ -40,7 +40,7 @@ page {
   flex-direction: column;
   padding: 40rpx 20rpx;
   box-sizing: border-box;
-  background: rgba(245,245,220,0.95); /* 山主题：米白色背景 */
+  background: rgba(245,245,220,0.7); /* 山主题：增加透明度，让背景图更明显 */
   margin: 40rpx 20rpx;
   border-radius: 24rpx;
   box-shadow: 0 8rpx 32rpx rgba(0,0,0,0.15);

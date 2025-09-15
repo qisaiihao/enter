@@ -16,29 +16,30 @@ exports.main = async (event, context) => {
 
   try {
     console.log('开始获取帖子列表，参数:', { skip, limit, isPoem, isOriginal });
-    
+
     let query = db.collection('posts').aggregate()
       .sort({ createTime: -1 })
       .skip(skip)
       .limit(limit);
-    
+
     // 构建筛选条件
     const matchConditions = {};
-    
+
     // 如果指定了isPoem参数，添加诗歌筛选条件
     if (isPoem !== undefined) {
       console.log('添加诗歌筛选条件，isPoem:', isPoem);
       matchConditions.isPoem = isPoem;
     }
-    
+
     // 如果指定了isOriginal参数，添加原创筛选条件
     if (isOriginal !== undefined) {
       console.log('添加原创筛选条件，isOriginal:', isOriginal);
       matchConditions.isOriginal = isOriginal;
     }
-    
+
     // 如果有筛选条件，应用match
     if (Object.keys(matchConditions).length > 0) {
+      console.log('应用筛选条件:', JSON.stringify(matchConditions));
       query = query.match(matchConditions);
     } else {
       console.log('未指定筛选参数，返回所有帖子');
@@ -101,7 +102,7 @@ exports.main = async (event, context) => {
 
     const posts = postsRes.list;
     console.log('查询到帖子数量:', posts.length);
-    
+
     // 添加调试信息，显示返回的帖子类型
     posts.forEach((post, index) => {
       console.log(`帖子${index + 1}:`, {
@@ -112,7 +113,10 @@ exports.main = async (event, context) => {
         poemBgImage: post.poemBgImage,
         imageUrls: post.imageUrls,
         imageUrl: post.imageUrl,
-        _id: post._id
+        _id: post._id,
+        // 检查这些字段是否存在
+        hasIsPoemField: post.hasOwnProperty('isPoem'),
+        hasIsOriginalField: post.hasOwnProperty('isOriginal')
       });
     });
 

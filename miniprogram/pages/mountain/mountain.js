@@ -49,6 +49,16 @@ Page({
         if (res.result && res.result.success) {
           const posts = res.result.posts || [];
           console.log('获取到山诗歌数量:', posts.length);
+
+          // 调试：检查返回的诗歌数据
+          posts.forEach((post, index) => {
+            console.log(`山诗歌${index + 1}:`, {
+              title: post.title,
+              isPoem: post.isPoem,
+              isOriginal: post.isOriginal,
+              content: post.content ? post.content.substring(0, 50) + '...' : '无内容'
+            });
+          });
           
           posts.forEach(post => {
             if (!post.imageUrls || post.imageUrls.length === 0) {
