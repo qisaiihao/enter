@@ -17,10 +17,7 @@ exports.main = async (event, context) => {
   try {
     console.log('开始获取帖子列表，参数:', { skip, limit, isPoem, isOriginal });
 
-    let query = db.collection('posts').aggregate()
-      .sort({ createTime: -1 })
-      .skip(skip)
-      .limit(limit);
+    let query = db.collection('posts').aggregate();
 
     // 构建筛选条件
     const matchConditions = {};
@@ -42,8 +39,13 @@ exports.main = async (event, context) => {
       console.log('应用筛选条件:', JSON.stringify(matchConditions));
       query = query.match(matchConditions);
     } else {
-      console.log('未指定筛选参数，返回所有帖子');
+      console.log('未指定筛选参数，不进行match筛选');
     }
+
+    // 在筛选后进行排序和分页
+    query = query.sort({ createTime: -1 })
+      .skip(skip)
+      .limit(limit);
     
     const postsRes = await query
       .lookup({
