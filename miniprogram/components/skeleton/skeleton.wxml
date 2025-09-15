@@ -1,48 +1,33 @@
 <!--components/skeleton/skeleton.wxml-->
 <view class="skeleton-wrapper">
-  <view class="skeleton-item">
-    <view class="skeleton-author">
+  <!-- 读诗页骨架屏 - 单个大卡片样式 -->
+  <view class="skeleton-poem-card">
+    <!-- 原创标识骨架 -->
+    <view class="skeleton-original-badge skeleton-animate"></view>
+
+    <!-- 作者信息骨架 -->
+    <view class="skeleton-author-info">
       <view class="skeleton-avatar skeleton-animate"></view>
       <view class="skeleton-name skeleton-animate"></view>
     </view>
+
+    <!-- 居中标题骨架 -->
     <view class="skeleton-title skeleton-animate"></view>
-    <view class="skeleton-content skeleton-animate"></view>
-    <view class="skeleton-content skeleton-animate" style="width: 60%;"></view>
+
+    <!-- 大内容区域骨架 -->
+    <view class="skeleton-content-large skeleton-animate"></view>
+    <view class="skeleton-content-large skeleton-animate"></view>
+    <view class="skeleton-content-large skeleton-animate" style="width: 70%;"></view>
   </view>
-  <view class="skeleton-item">
-    <view class="skeleton-author">
+
+  <!-- 额外的卡片用于显示加载效果 -->
+  <view class="skeleton-poem-card skeleton-secondary">
+    <view class="skeleton-author-info">
       <view class="skeleton-avatar skeleton-animate"></view>
       <view class="skeleton-name skeleton-animate"></view>
     </view>
     <view class="skeleton-title skeleton-animate"></view>
-    <view class="skeleton-content skeleton-animate"></view>
-    <view class="skeleton-content skeleton-animate" style="width: 60%;"></view>
-  </view>
-  <view class="skeleton-item">
-    <view class="skeleton-author">
-      <view class="skeleton-avatar skeleton-animate"></view>
-      <view class="skeleton-name skeleton-animate"></view>
-    </view>
-    <view class="skeleton-title skeleton-animate"></view>
-    <view class="skeleton-content skeleton-animate"></view>
-    <view class="skeleton-content skeleton-animate" style="width: 60%;"></view>
-  </view>
-  <view class="skeleton-item">
-    <view class="skeleton-author">
-      <view class="skeleton-avatar skeleton-animate"></view>
-      <view class="skeleton-name skeleton-animate"></view>
-    </view>
-    <view class="skeleton-title skeleton-animate"></view>
-    <view class="skeleton-content skeleton-animate"></view>
-    <view class="skeleton-content skeleton-animate" style="width: 60%;"></view>
-  </view>
-  <view class="skeleton-item">
-    <view class="skeleton-author">
-      <view class="skeleton-avatar skeleton-animate"></view>
-      <view class="skeleton-name skeleton-animate"></view>
-    </view>
-    <view class="skeleton-title skeleton-animate"></view>
-    <view class="skeleton-content skeleton-animate"></view>
-    <view class="skeleton-content skeleton-animate" style="width: 60%;"></view>
+    <view class="skeleton-content-large skeleton-animate"></view>
+    <view class="skeleton-content-large skeleton-animate" style="width: 80%;"></view>
   </view>
 </view>

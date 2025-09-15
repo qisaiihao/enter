@@ -1,6 +1,6 @@
 // index.js
 wx.cloud.init({
-  env: 'cloud1-5gj11tm5e1901eaa'
+  env: ''
 });
 const db = wx.cloud.database();
 const PAGE_SIZE = 5;
@@ -14,9 +14,13 @@ Page({
     isLoading: false,
     swiperHeights: {},
     imageClampHeights: {}, // 新增：单图瘦高图钳制高度
+    displayMode: 'square' // 首页只负责广场模式
   },
 
-  onLoad: function () {},
+  onLoad: function (options) {
+    // 首页只负责广场模式
+    this.setData({ displayMode: 'square' });
+  },
 
   onShow: function () {
     try {
@@ -200,4 +204,6 @@ Page({
 
   onImageError: function(e) { console.error('图片加载失败', e.detail); },
   onAvatarError: function(e) { console.error('头像加载失败', e.detail); },
+
+  // 模式切换现在通过底部tabBar实现，不再需要手动切换
 });

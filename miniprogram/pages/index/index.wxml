@@ -5,8 +5,8 @@
     <skeleton />
   </view>
 
-  <!-- 主内容始终渲染 -->
-  <view wx:else>
+  <!-- 广场模式 -->
+  <view class="square-mode-container">
     <view wx:if="{{postList.length === 0 && !isLoading}}" class="empty-state">
       <view class="empty-icon">📝</view>
       <view class="empty-text">还没有帖子哦～</view>
@@ -70,7 +70,7 @@
           </block>
         </view>
           
-        <view class="post-content" wx:if="{{item.content}}">{{item.content}}</view>
+        <view class="post-content" wx:if="{{item.content}}" style="white-space: pre-wrap;">{{item.content}}</view>
 
         <view class="vote-section">
           <view class="actions-left">
@@ -91,7 +91,7 @@
     </view>
   </view>
 
-  <!-- 添加一个悬浮的发布按钮 -->
+  <!-- 悬浮的发布按钮 -->
   <navigator url="/pages/add/add" class="add-button">
     <view>+</view>
   </navigator>

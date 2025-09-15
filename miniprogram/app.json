@@ -3,6 +3,7 @@
     "pages/login/login",
     "pages/my-likes/my-likes",
     "pages/index/index",
+    "pages/poem/poem",
     "pages/profile/profile",
     "pages/profile-edit/profile-edit",
     "pages/post-detail/post-detail",
@@ -12,7 +13,7 @@
     "backgroundColor": "#F6F6F6",
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#F6F6F6",
-    "navigationBarTitleText": "博客小程序",
+    "navigationBarTitleText": "回车键",
     "navigationBarTextStyle": "black"
   },
   "tabBar": {
@@ -26,6 +27,12 @@
         "text": "广场",
         "iconPath": "images/icons/home.png",
         "selectedIconPath": "images/icons/home-active.png"
+      },
+      {
+        "pagePath": "pages/poem/poem",
+        "text": "读诗",
+        "iconPath": "images/icons/examples.png",
+        "selectedIconPath": "images/icons/examples-active.png"
       },
       {
         "pagePath": "pages/profile/profile",

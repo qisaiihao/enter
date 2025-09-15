@@ -1,0 +1,39 @@
+<!-- poem.wxml -->
+<view class="container" style="background-image: {{backgroundImage ? 'url(' + backgroundImage + ')' : 'none'}}; background-size: cover; background-position: center;">
+  <!-- 骨架屏 -->
+  <view wx:if="{{isLoading && postList.length === 0}}" class="skeleton-container">
+    <skeleton />
+  </view>
+
+  <!-- 读诗模式 -->
+  <view wx:if="{{postList.length > 0}}" class="poem-mode-container" bindtouchstart="touchStart" bindtouchend="touchEnd">
+    <view class="single-post-content {{postList[currentPostIndex].isOriginal ? 'original-poem' : ''}}" catchtap="onSinglePostTap" data-postid="{{postList[currentPostIndex]._id}}">
+      <!-- 原创标识 -->
+      <view wx:if="{{postList[currentPostIndex].isOriginal}}" class="original-badge">原创</view>
+      
+      <!-- 作者信息 -->
+      <view class="single-author-info">
+        <image wx:if="{{postList[currentPostIndex].authorAvatar}}" class="single-author-avatar" src="{{postList[currentPostIndex].authorAvatar}}" mode="aspectFill" />
+        <text class="single-author-name">{{postList[currentPostIndex].authorName}}</text>
+      </view>
+      
+      <!-- 标题 -->
+      <view class="single-post-title" wx:if="{{postList[currentPostIndex].title}}">{{postList[currentPostIndex].title}}</view>
+      
+      <!-- 内容 -->
+      <view class="single-post-content-text" wx:if="{{postList[currentPostIndex].content}}" style="white-space: pre-wrap;">{{postList[currentPostIndex].content}}</view>
+    </view>
+    
+    <view wx:if="{{postList.length === 0 && !isLoading}}" class="empty-state">
+      <view class="empty-icon">📖</view>
+      <view class="empty-text">还没有诗词哦～</view>
+      <view class="empty-subtext">快去广场发现好诗吧！</view>
+    </view>
+  </view>
+
+
+  <!-- 调试按钮 (仅在开发环境显示) -->
+  <view wx:if="{{false}}" class="debug-button" bindtap="testImageUrls">
+    <view>🐛</view>
+  </view>
+</view>

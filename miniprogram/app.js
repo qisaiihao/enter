@@ -7,7 +7,7 @@ App({
     this.globalData = {
       userInfo: null,
       openid: null,
-      env: "", // An empty string means the default environment
+      env: "cloud1-5gb0pbyl400845f5", // An empty string means the default environment
     };
 
     // Initialize cloud capabilities
@@ -81,6 +81,6 @@ App({
   globalData: {
     userInfo: null,
     openid: null,
-    env: "", // an empty string means the default environment
+    env: "cloud1-5gb0pbyl400845f5", // an empty string means the default environment
   },
 });

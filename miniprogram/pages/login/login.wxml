@@ -1,6 +1,6 @@
 <!--pages/login/login.wxml-->
 <view class="container">
-  <view class="title">欢迎来到博客社区</view>
+  <view class="title">欢迎来到回车键</view>
   <view class="subtitle">为了更好的体验，请设置你的头像和昵称</view>
 
   <view class="avatar-wrapper">

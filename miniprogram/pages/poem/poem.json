@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "skeleton": "/components/skeleton/skeleton"
+  },
+  "navigationBarTitleText": "读诗"
+}

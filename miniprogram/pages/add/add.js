@@ -6,7 +6,10 @@ Page({
     title: '',
     content: '',
     imageList: [], // 图片列表，包含原图和压缩图信息
-    maxImageCount: 9 // 最大图片数量
+    maxImageCount: 9, // 最大图片数量
+    publishMode: 'normal', // 'normal' | 'poem' 普通模式 | 诗歌模式
+    isOriginal: false, // 是否原创
+    poemBgImage: '' // 诗歌背景图
   },
 
   onTitleInput: function(event) { 
@@ -15,6 +18,22 @@ Page({
   
   onContentInput: function(event) { 
     this.setData({ content: event.detail.value }); 
+  },
+
+  // 切换发布模式
+  switchMode: function() {
+    const newMode = this.data.publishMode === 'normal' ? 'poem' : 'normal';
+    this.setData({ 
+      publishMode: newMode,
+      // 切换到诗歌模式时重置图片
+      imageList: newMode === 'poem' && this.data.imageList.length > 1 ? [] : this.data.imageList,
+      maxImageCount: newMode === 'poem' ? 1 : 9
+    });
+  },
+
+  // 切换原创状态
+  toggleOriginal: function() {
+    this.setData({ isOriginal: !this.data.isOriginal });
   },
 
   handleChooseImage: function() {
@@ -202,7 +221,9 @@ Page({
     console.log('提交到数据库:', {
       uploadResults: uploadResults,
       title: this.data.title,
-      content: this.data.content
+      content: this.data.content,
+      publishMode: this.data.publishMode,
+      isOriginal: this.data.isOriginal
     });
     
     const imageUrls = uploadResults.map(result => result.compressedUrl);
@@ -212,7 +233,10 @@ Page({
       title: this.data.title,
       content: this.data.content,
       createTime: new Date(),
-      votes: 0
+      votes: 0,
+      // 新增诗歌相关字段
+      isPoem: this.data.publishMode === 'poem',
+      isOriginal: this.data.isOriginal
     };
     
     if (imageUrls.length > 0) {
@@ -220,6 +244,11 @@ Page({
       postData.imageUrls = imageUrls;
       postData.originalImageUrl = originalImageUrls[0];
       postData.originalImageUrls = originalImageUrls;
+      
+      // 如果是诗歌模式，第一张图片作为背景图
+      if (this.data.publishMode === 'poem' && imageUrls.length > 0) {
+        postData.poemBgImage = imageUrls[0];
+      }
     }
     
     return db.collection('posts').add({

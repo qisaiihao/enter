@@ -12,15 +12,27 @@ const $ = _.aggregate;
 // 云函数入口函数
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext();
-  const { skip = 0, limit = 10 } = event;
+  const { skip = 0, limit = 10, isPoem } = event; // 添加isPoem参数
 
   try {
-    console.log('开始获取帖子列表，参数:', { skip, limit });
+    console.log('开始获取帖子列表，参数:', { skip, limit, isPoem });
     
-    const postsRes = await db.collection('posts').aggregate()
+    let query = db.collection('posts').aggregate()
       .sort({ createTime: -1 })
       .skip(skip)
-      .limit(limit)
+      .limit(limit);
+    
+    // 如果指定了isPoem参数，添加筛选条件
+    if (isPoem !== undefined) {
+      console.log('添加诗歌筛选条件，isPoem:', isPoem);
+      query = query.match({
+        isPoem: isPoem
+      });
+    } else {
+      console.log('未指定isPoem参数，返回所有帖子');
+    }
+    
+    const postsRes = await query
       .lookup({
         from: 'users',
         localField: '_openid',
@@ -55,7 +67,7 @@ exports.main = async (event, context) => {
         as: 'userVote',
       })
       .project({
-        _id: 1, _openid: 1, title: 1, content: 1, createTime: 1, imageUrl: 1, imageUrls: 1, originalImageUrl: 1, originalImageUrls: 1, votes: 1,
+        _id: 1, _openid: 1, title: 1, content: 1, createTime: 1, imageUrl: 1, imageUrls: 1, originalImageUrl: 1, originalImageUrls: 1, votes: 1, isPoem: 1, isOriginal: 1, poemBgImage: 1,
         authorName: $.ifNull([$.arrayElemAt(['$authorInfo.nickName', 0]), '匿名用户']),
         authorAvatar: $.ifNull([$.arrayElemAt(['$authorInfo.avatarUrl', 0]), '']),
         commentCount: $.size('$comments'),
@@ -65,6 +77,20 @@ exports.main = async (event, context) => {
 
     const posts = postsRes.list;
     console.log('查询到帖子数量:', posts.length);
+    
+    // 添加调试信息，显示返回的帖子类型
+    posts.forEach((post, index) => {
+      console.log(`帖子${index + 1}:`, {
+        title: post.title,
+        isPoem: post.isPoem,
+        isOriginal: post.isOriginal,
+        hasBgImage: !!post.poemBgImage,
+        poemBgImage: post.poemBgImage,
+        imageUrls: post.imageUrls,
+        imageUrl: post.imageUrl,
+        _id: post._id
+      });
+    });
 
     // --- Efficiently convert FileIDs to temp URLs ---
     const fileIDs = [];
@@ -104,6 +130,10 @@ exports.main = async (event, context) => {
       }
       if (post.authorAvatar && post.authorAvatar.startsWith('cloud://')) {
         fileIDs.push(post.authorAvatar);
+      }
+      // 转换诗歌背景图片
+      if (post.poemBgImage && post.poemBgImage.startsWith('cloud://')) {
+        fileIDs.push(post.poemBgImage);
       }
     });
 
@@ -167,6 +197,10 @@ exports.main = async (event, context) => {
           if (post.authorAvatar && urlMap.has(post.authorAvatar)) {
             post.authorAvatar = urlMap.get(post.authorAvatar);
             console.log('转换authorAvatar:', post.authorAvatar);
+          }
+          if (post.poemBgImage && urlMap.has(post.poemBgImage)) {
+            post.poemBgImage = urlMap.get(post.poemBgImage);
+            console.log('转换poemBgImage:', post.poemBgImage);
           }
         });
       } catch (fileError) {

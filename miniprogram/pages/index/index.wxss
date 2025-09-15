@@ -3,8 +3,69 @@
   padding: 20rpx;
   background-color: #f7f8fa;
   min-height: 100vh;
-  padding-bottom: 140rpx; /* 为底部tabBar和悬浮按钮留出空间 */
+  padding-bottom: 100rpx; /* 为底部tabBar留出空间 */
 }
+
+
+/* 读诗模式容器 */
+.poem-mode-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  z-index: 100;
+  overflow: hidden;
+}
+
+
+/* 滑动指示器 */
+.swipe-indicator {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,0.8);
+  font-size: 28rpx;
+  padding: 20rpx 30rpx;
+  background: rgba(0,0,0,0.3);
+  border-radius: 50rpx;
+  backdrop-filter: blur(10rpx);
+}
+
+.swipe-indicator.left {
+  left: 30rpx;
+}
+
+.swipe-indicator.right {
+  right: 30rpx;
+}
+
+/* 帖子索引指示器 */
+.post-indicator {
+  position: absolute;
+  bottom: 60rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.9);
+  font-size: 24rpx;
+  padding: 12rpx 24rpx;
+  background: rgba(0,0,0,0.4);
+  border-radius: 30rpx;
+  backdrop-filter: blur(10rpx);
+}
+
+/* 列表模式容器 */
+.list-mode-container,
+.list-content {
+  display: block;
+}
+
+/* 广场模式容器 */
+.square-mode-container {
+  display: block;
+}
+
 
 .author-info {
   display: flex;

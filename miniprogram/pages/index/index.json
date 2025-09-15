@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "博客广场",
+  "navigationBarTitleText": "回车键",
   "enablePullDownRefresh": true,
   "usingComponents": {
     "skeleton": "/components/skeleton/skeleton"

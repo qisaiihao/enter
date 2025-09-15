@@ -1,51 +1,88 @@
 /* components/skeleton/skeleton.wxss */
 .skeleton-wrapper {
   width: 100%;
-  /* Removed padding */
-}
-
-.skeleton-item {
-  width: 100%;
-  padding: 30rpx; /* Added padding back */
-  margin-bottom: 20rpx;
-  border-radius: 8rpx;
-  background-color: #fff;
-  border: 1px solid #f0f0f0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx;
   box-sizing: border-box;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
-.skeleton-author {
+/* 读诗页骨架屏卡片样式 - 匹配读诗页设计 */
+.skeleton-poem-card {
+  width: calc(100% - 40rpx);
+  height: calc(100% - 80rpx);
+  display: flex;
+  flex-direction: column;
+  padding: 40rpx 20rpx;
+  box-sizing: border-box;
+  background: rgba(255,255,255,0.95);
+  margin: 40rpx 20rpx;
+  border-radius: 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0,0,0,0.1);
+  position: relative;
+}
+
+/* 第二个卡片透明度降低 */
+.skeleton-poem-card.skeleton-secondary {
+  opacity: 0.6;
+  position: absolute;
+  top: 20rpx;
+  left: 20rpx;
+  right: 20rpx;
+  bottom: 20rpx;
+  z-index: -1;
+  transform: scale(0.95);
+}
+
+/* 原创标识骨架 */
+.skeleton-original-badge {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  width: 80rpx;
+  height: 40rpx;
+  border-radius: 20rpx;
+}
+
+/* 作者信息骨架 */
+.skeleton-author-info {
   display: flex;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 15rpx;
+  padding-bottom: 10rpx;
 }
 
 .skeleton-avatar {
-  width: 60rpx;
-  height: 60rpx;
+  width: 80rpx;
+  height: 80rpx;
   border-radius: 50%;
   margin-right: 20rpx;
 }
 
 .skeleton-name {
-  width: 150rpx;
-  height: 30rpx;
-  border-radius: 4rpx;
+  width: 200rpx;
+  height: 32rpx;
+  border-radius: 16rpx;
 }
 
+/* 居中标题骨架 */
 .skeleton-title {
-  width: 40%;
+  width: 60%;
+  height: 40rpx;
+  margin: 0 auto 20rpx auto; /* 居中并增加下边距 */
+  border-radius: 20rpx;
+  text-align: center;
+}
+
+/* 大内容区域骨架 */
+.skeleton-content-large {
+  width: 100%;
   height: 40rpx;
   margin-bottom: 20rpx;
-  border-radius: 4rpx;
-}
-
-.skeleton-content {
-  width: 100%;
-  height: 30rpx;
-  margin-bottom: 15rpx;
-  border-radius: 4rpx;
+  border-radius: 20rpx;
 }
 
 .skeleton-animate {
