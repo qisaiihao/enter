@@ -45,6 +45,7 @@
 }
 
 .post-detail-card {
+  position: relative; /* 为绝对定位的子元素提供参照 */
   background-color: #fff;
   border-radius: 16rpx;
   padding: 30rpx;
@@ -578,4 +579,15 @@
   font-size: 24rpx;
   z-index: 10;
   backdrop-filter: blur(10rpx);
+}
+.original-badge {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  background-color: #ff4757;
+  color: white;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  font-weight: bold;
 }

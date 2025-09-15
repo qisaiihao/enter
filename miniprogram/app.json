@@ -4,6 +4,7 @@
     "pages/my-likes/my-likes",
     "pages/index/index",
     "pages/poem/poem",
+    "pages/mountain/mountain",
     "pages/profile/profile",
     "pages/profile-edit/profile-edit",
     "pages/post-detail/post-detail",
@@ -30,7 +31,13 @@
       },
       {
         "pagePath": "pages/poem/poem",
-        "text": "读诗",
+        "text": "路",
+        "iconPath": "images/icons/examples.png",
+        "selectedIconPath": "images/icons/examples-active.png"
+      },
+      {
+        "pagePath": "pages/mountain/mountain",
+        "text": "山",
         "iconPath": "images/icons/examples.png",
         "selectedIconPath": "images/icons/examples-active.png"
       },

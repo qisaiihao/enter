@@ -12,24 +12,36 @@ const $ = _.aggregate;
 // 云函数入口函数
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext();
-  const { skip = 0, limit = 10, isPoem } = event; // 添加isPoem参数
+  const { skip = 0, limit = 10, isPoem, isOriginal } = event; // 添加isPoem和isOriginal参数
 
   try {
-    console.log('开始获取帖子列表，参数:', { skip, limit, isPoem });
+    console.log('开始获取帖子列表，参数:', { skip, limit, isPoem, isOriginal });
     
     let query = db.collection('posts').aggregate()
       .sort({ createTime: -1 })
       .skip(skip)
       .limit(limit);
     
-    // 如果指定了isPoem参数，添加筛选条件
+    // 构建筛选条件
+    const matchConditions = {};
+    
+    // 如果指定了isPoem参数，添加诗歌筛选条件
     if (isPoem !== undefined) {
       console.log('添加诗歌筛选条件，isPoem:', isPoem);
-      query = query.match({
-        isPoem: isPoem
-      });
+      matchConditions.isPoem = isPoem;
+    }
+    
+    // 如果指定了isOriginal参数，添加原创筛选条件
+    if (isOriginal !== undefined) {
+      console.log('添加原创筛选条件，isOriginal:', isOriginal);
+      matchConditions.isOriginal = isOriginal;
+    }
+    
+    // 如果有筛选条件，应用match
+    if (Object.keys(matchConditions).length > 0) {
+      query = query.match(matchConditions);
     } else {
-      console.log('未指定isPoem参数，返回所有帖子');
+      console.log('未指定筛选参数，返回所有帖子');
     }
     
     const postsRes = await query
@@ -67,7 +79,19 @@ exports.main = async (event, context) => {
         as: 'userVote',
       })
       .project({
-        _id: 1, _openid: 1, title: 1, content: 1, createTime: 1, imageUrl: 1, imageUrls: 1, originalImageUrl: 1, originalImageUrls: 1, votes: 1, isPoem: 1, isOriginal: 1, poemBgImage: 1,
+        _id: '$_id',
+        _openid: '$_openid',
+        title: '$title',
+        content: '$content',
+        createTime: '$createTime',
+        imageUrl: '$imageUrl',
+        imageUrls: '$imageUrls',
+        originalImageUrl: '$originalImageUrl',
+        originalImageUrls: '$originalImageUrls',
+        votes: '$votes',
+        isPoem: '$isPoem',
+        isOriginal: '$isOriginal',
+        poemBgImage: '$poemBgImage',
         authorName: $.ifNull([$.arrayElemAt(['$authorInfo.nickName', 0]), '匿名用户']),
         authorAvatar: $.ifNull([$.arrayElemAt(['$authorInfo.avatarUrl', 0]), '']),
         commentCount: $.size('$comments'),

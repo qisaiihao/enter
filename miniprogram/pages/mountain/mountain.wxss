@@ -1,27 +1,26 @@
+/* mountain.wxss */
 page {
   background: transparent;
   padding: 0;
 }
 
-/* poem.wxss - 原创诗歌页面（路） */
 .container {
   padding: 0;
-  background-color: transparent; /* 移除背景色，让背景图显示 */
+  background-color: transparent;
   min-height: 100vh;
   padding-bottom: 0;
   position: relative;
 }
 
-/* 读诗模式容器 */
+/* 山模式容器 */
 .poem-mode-container {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 1; /* 降低z-index，避免遮挡背景 */
+  z-index: 1;
   overflow: hidden;
-  /* 移除背景色，让container的背景图显示 */
 }
 
 /* 背景图片样式 */
@@ -30,7 +29,7 @@ page {
   background-size: cover;
   background-position: center center;
   background-attachment: fixed;
-  transition: background-image 0.5s ease-in-out; /* 背景图切换动画 */
+  transition: background-image 0.5s ease-in-out;
 }
 
 /* 单帖内容区域 */
@@ -41,49 +40,49 @@ page {
   flex-direction: column;
   padding: 40rpx 20rpx;
   box-sizing: border-box;
-  background: rgba(255,255,255,0.95); /* 提高透明度确保文字清晰 */
+  background: rgba(245,245,220,0.95); /* 山主题：米白色背景 */
   margin: 40rpx 20rpx;
   border-radius: 24rpx;
-  box-shadow: 0 8rpx 32rpx rgba(0,0,0,0.1);
-  position: relative; /* 为原创标识定位 */
-  transition: transform 0.3s ease-in-out; /* 卡片切换动画 */
-  transform: translateX(0); /* 默认位置 */
+  box-shadow: 0 8rpx 32rpx rgba(0,0,0,0.15);
+  position: relative;
+  transition: transform 0.3s ease-in-out;
+  transform: translateX(0);
 }
 
 /* 切换动画状态 */
 .single-post-content.is-transitioning {
-  transform: translateX(-10rpx); /* 切换时稍微向左移动 */
-  opacity: 0.9; /* 切换时稍微透明 */
+  transform: translateX(-10rpx);
+  opacity: 0.9;
 }
 
-/* 原创诗歌特殊样式 */
-.original-poem {
-  background: rgba(255,255,255,0.9);
-  border: 2rpx solid #07c160;
+/* 山诗歌特殊样式 */
+.mountain-poem {
+  background: rgba(232,224,208,0.95); /* 山主题：大地色系 */
+  border: 2rpx solid #8B7355;
 }
 
-/* 原创标识 */
-.original-badge {
+/* 山标识 */
+.mountain-badge {
   position: absolute;
   top: 20rpx;
   right: 20rpx;
-  background: #07c160;
+  background: #8B7355;
   color: white;
   padding: 8rpx 16rpx;
   border-radius: 20rpx;
   font-size: 24rpx;
   font-weight: bold;
-  box-shadow: 0 2rpx 8rpx rgba(7, 193, 96, 0.3);
-  z-index: 10; /* 确保在最上层 */
+  box-shadow: 0 2rpx 8rpx rgba(139, 115, 85, 0.3);
+  z-index: 10;
 }
 
 /* 作者信息 */
 .single-author-info {
   display: flex;
   align-items: center;
-  margin-bottom: 15rpx; /* 减小作者信息与标题的间距 */
-  padding-bottom: 10rpx; /* 减小底部内边距 */
-  border-bottom: 1rpx solid rgba(240,240,240,0.5); /* 半透明白色分割线 */
+  margin-bottom: 15rpx;
+  padding-bottom: 10rpx;
+  border-bottom: 1rpx solid rgba(139, 115, 85, 0.3);
 }
 
 .single-author-avatar {
@@ -98,65 +97,36 @@ page {
 
 .single-author-name {
   font-size: 32rpx;
-  color: #333;
+  color: #5D4E37;
   font-weight: 600;
-  text-shadow: 0 1rpx 2rpx rgba(255,255,255,0.8); /* 添加文字阴影 */
+  text-shadow: 0 1rpx 2rpx rgba(255,255,255,0.8);
 }
 
 /* 标题 */
 .single-post-title {
   font-size: 36rpx;
   font-weight: bold;
-  color: #2c3e50;
-  margin-bottom: 10rpx; /* 减小标题与内容的间距 */
+  color: #4A4A4A;
+  margin-bottom: 10rpx;
   line-height: 1.4;
-  text-align: center; /* 标题居中显示 */
-  text-shadow: 0 1rpx 2rpx rgba(255,255,255,0.8); /* 添加文字阴影 */
-}
-
-/* 图片容器 */
-.single-image-container {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 20rpx 0;
-  border-radius: 16rpx;
-  overflow: hidden;
-  background: #f8f9fa;
-  width: 100%;
-  height: 100%;
-  max-height: 50vh;
-}
-
-.single-post-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  border-radius: 16rpx;
-}
-
-/* 多张图片轮播 */
-.single-image-swiper {
-  width: 100%;
-  height: 50vh;
-  border-radius: 16rpx;
+  text-align: center;
+  text-shadow: 0 1rpx 2rpx rgba(255,255,255,0.8);
 }
 
 /* 内容文字 */
 .single-post-content-text {
   font-size: 32rpx;
-  color: #333;
+  color: #5D4E37;
   line-height: 1.8;
   margin-top: 20rpx;
-  padding: 30rpx 40rpx; /* 增加内边距，让文字距离边框更远 */
-  background: transparent; /* 完全透明背景 */
-  border-radius: 0; /* 移除圆角 */
-  max-height: 60vh; /* 大幅增加高度，使用视窗高度的60% */
+  padding: 30rpx 40rpx;
+  background: transparent;
+  border-radius: 0;
+  max-height: 60vh;
   overflow-y: auto;
   font-family: -apple-system-font, 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   letter-spacing: 1rpx;
-  text-shadow: 0 1rpx 2rpx rgba(255,255,255,0.8); /* 添加文字阴影增强可读性 */
+  text-shadow: 0 1rpx 2rpx rgba(255,255,255,0.8);
 }
 
 /* 骨架屏容器 */
@@ -166,7 +136,7 @@ page {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(255,255,255,0.95);
+  background: rgba(245,245,220,0.95);
   z-index: 999;
 }
 
@@ -183,18 +153,18 @@ page {
 .empty-icon {
   font-size: 80rpx;
   margin-bottom: 20rpx;
-  opacity: 0.5;
+  opacity: 0.7;
 }
 
 .empty-text {
   font-size: 32rpx;
-  color: #666;
+  color: #8B7355;
   margin-bottom: 10rpx;
 }
 
 .empty-subtext {
   font-size: 28rpx;
-  color: #999;
+  color: #A0826D;
 }
 
 /* 悬浮发布按钮 */
@@ -204,14 +174,14 @@ page {
   right: 30rpx;
   width: 100rpx;
   height: 100rpx;
-  background-color: #07c160;
+  background-color: #8B7355;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 48rpx;
-  box-shadow: 0 4rpx 16rpx rgba(7, 193, 96, 0.3);
+  box-shadow: 0 4rpx 16rpx rgba(139, 115, 85, 0.3);
   z-index: 1000;
 }
 
@@ -222,13 +192,13 @@ page {
   right: 30rpx;
   width: 80rpx;
   height: 80rpx;
-  background-color: #ff9500;
+  background-color: #D2691E;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 32rpx;
-  box-shadow: 0 4rpx 16rpx rgba(255, 149, 0, 0.3);
+  box-shadow: 0 4rpx 16rpx rgba(210, 105, 30, 0.3);
   z-index: 1000;
 }

@@ -12,6 +12,7 @@
         <image wx:if="{{post.authorAvatar}}" class="author-avatar" src="{{post.authorAvatar}}" mode="aspectFill" binderror="onAvatarError"></image>
         <text class="author-name">{{post.authorName}}</text>
       </view>
+      <view wx:if="{{post.isOriginal}}" class="original-badge">原创</view>
       <view class="post-title">{{post.title}}</view>
       <view class="post-content" wx:if="{{post.content}}">{{post.content}}</view>
       
