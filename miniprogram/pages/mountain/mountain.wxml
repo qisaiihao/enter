@@ -1,5 +1,8 @@
 <!-- mountain.wxml -->
 <view class="container" style="background-image: {{backgroundImage ? 'url(' + backgroundImage + ')' : 'none'}}; background-size: cover; background-position: center;">
+  <!-- 模糊背景层 -->
+  <view wx:if="{{backgroundImage}}" class="blur-background" style="background-image: url({{backgroundImage}});"></view>
+
   <!-- 骨架屏 -->
   <view wx:if="{{isLoading && postList.length === 0}}" class="skeleton-container">
     <skeleton />

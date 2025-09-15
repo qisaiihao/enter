@@ -10,6 +10,7 @@ page {
   min-height: 100vh;
   padding-bottom: 0;
   position: relative;
+  overflow: hidden; /* 防止模糊层溢出 */
 }
 
 /* 读诗模式容器 */
@@ -19,9 +20,8 @@ page {
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 1; /* 降低z-index，避免遮挡背景 */
+  z-index: 1; /* 确保在模糊层之上 */
   overflow: hidden;
-  /* 移除背景色，让container的背景图显示 */
 }
 
 /* 背景图片样式 */
@@ -31,6 +31,21 @@ page {
   background-position: center center;
   background-attachment: fixed;
   transition: background-image 0.5s ease-in-out; /* 背景图切换动画 */
+}
+
+/* 模糊背景层 - 高斯模糊效果 */
+.blur-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center center;
+  background-attachment: fixed;
+  filter: blur(30px) brightness(0.7); /* 高斯模糊30px，降低亮度增强对比度 */
+  transform: scale(1.1); /* 稍微放大避免边缘模糊不均 */
+  z-index: 0; /* 放在最底层 */
 }
 
 /* 单帖内容区域 */
@@ -79,7 +94,7 @@ page {
 
 .single-author-name {
   font-size: 32rpx;
-  color: #333;
+  color: #000;
   font-weight: 600;
   text-shadow: 0 1rpx 2rpx rgba(255,255,255,0.8); /* 添加文字阴影 */
 }
@@ -88,7 +103,7 @@ page {
 .single-post-title {
   font-size: 36rpx;
   font-weight: bold;
-  color: #2c3e50;
+  color: #000;
   margin-bottom: 10rpx; /* 减小标题与内容的间距 */
   line-height: 1.4;
   text-align: center; /* 标题居中显示 */
@@ -127,7 +142,7 @@ page {
 /* 内容文字 */
 .single-post-content-text {
   font-size: 32rpx;
-  color: #333;
+  color: #000;
   line-height: 1.8;
   margin-top: 20rpx;
   padding: 30rpx 40rpx; /* 增加内边距，让文字距离边框更远 */
