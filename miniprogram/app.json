@@ -2,8 +2,8 @@
   "pages": [
     "pages/login/login",
     "pages/my-likes/my-likes",
-    "pages/index/index",
     "pages/poem/poem",
+    "pages/index/index",
     "pages/profile/profile",
     "pages/profile-edit/profile-edit",
     "pages/post-detail/post-detail",
@@ -23,16 +23,16 @@
     "borderStyle": "black",
     "list": [
       {
-        "pagePath": "pages/index/index",
-        "text": "广场",
-        "iconPath": "images/icons/home.png",
-        "selectedIconPath": "images/icons/home-active.png"
-      },
-      {
         "pagePath": "pages/poem/poem",
         "text": "读诗",
         "iconPath": "images/icons/examples.png",
         "selectedIconPath": "images/icons/examples-active.png"
+      },
+      {
+        "pagePath": "pages/index/index",
+        "text": "广场",
+        "iconPath": "images/icons/home.png",
+        "selectedIconPath": "images/icons/home-active.png"
       },
       {
         "pagePath": "pages/profile/profile",

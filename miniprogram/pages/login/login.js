@@ -147,9 +147,9 @@ Page({
           app.globalData.userInfo = userInfo;
           // Save userInfo to local storage
           wx.setStorageSync('userInfo', userInfo);
-          // Redirect to the home page
+          // Redirect to the home page (poem page)
           wx.switchTab({
-            url: '/pages/index/index',
+            url: '/pages/poem/poem',
           });
         } else {
           wx.showToast({

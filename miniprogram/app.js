@@ -28,8 +28,8 @@ App({
       console.log("从缓存中找到用户信息，执行自动登录", userInfo);
       this.globalData.userInfo = userInfo;
       this.globalData.openid = userInfo._openid;
-      // If login is successful from cache, go to the main page
-      wx.switchTab({ url: '/pages/index/index' });
+      // If login is successful from cache, go to the main page (poem page)
+      wx.switchTab({ url: '/pages/poem/poem' });
     } else {
       // 2. If no cache, perform the full login flow
       console.log("缓存未命中，执行云端登录流程");
@@ -57,8 +57,8 @@ App({
               wx.setStorageSync('userInfo', userInfo); // Update local storage
               console.log('[数据库] [查询记录] 成功: ', userInfo);
               
-              // Navigate to the main page after successful login
-              wx.switchTab({ url: '/pages/index/index' });
+              // Navigate to the main page after successful login (poem page)
+              wx.switchTab({ url: '/pages/poem/poem' });
             } else {
               // User is not registered, redirect to the login page
               console.log('[数据库] [查询记录] 失败: 用户未注册');
