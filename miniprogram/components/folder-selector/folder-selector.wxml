@@ -1,0 +1,48 @@
+<!--components/folder-selector/folder-selector.wxml-->
+<view wx:if="{{show}}" class="modal-overlay" bindtap="hideModal">
+  <view class="modal-content" catchtap="">
+    <view class="modal-header">
+      <view class="modal-title">选择收藏夹</view>
+      <view class="close-btn" bindtap="hideModal">×</view>
+    </view>
+    
+    <view class="modal-body">
+      <!-- 加载状态 -->
+      <view wx:if="{{isLoading}}" class="loading-container">
+        <view class="loading-text">加载中...</view>
+      </view>
+      
+      <!-- 收藏夹列表 -->
+      <view wx:elif="{{folders.length > 0}}" class="folders-list">
+        <view class="folder-item {{selectedFolderId === item._id ? 'selected' : ''}}"
+              wx:for="{{folders}}" 
+              wx:key="_id"
+              data-folder-id="{{item._id}}"
+              bindtap="selectFolder">
+          <view class="folder-icon">📁</view>
+          <view class="folder-info">
+            <view class="folder-name">{{item.name}}</view>
+            <view class="folder-count">{{item.itemCount}} 个收藏</view>
+          </view>
+          <view wx:if="{{selectedFolderId === item._id}}" class="selected-icon">✓</view>
+        </view>
+      </view>
+      
+      <!-- 空状态 -->
+      <view wx:else class="empty-state">
+        <view class="empty-icon">📁</view>
+        <view class="empty-text">还没有收藏夹</view>
+        <view class="empty-subtext">先创建一个收藏夹吧</view>
+      </view>
+    </view>
+    
+    <view class="modal-footer">
+      <button class="modal-btn secondary-btn" bindtap="createFolder">创建收藏夹</button>
+      <button class="modal-btn primary-btn" 
+              bindtap="confirmFavorite"
+              disabled="{{!selectedFolderId}}">
+        确认收藏
+      </button>
+    </view>
+  </view>
+</view>
