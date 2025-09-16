@@ -4,6 +4,9 @@ wx.cloud.init({
 });
 const db = wx.cloud.database();
 const PAGE_SIZE = 5;
+const dataCache = require('../../utils/dataCache');
+const imageOptimizer = require('../../utils/imageOptimizer');
+const performanceMonitor = require('../../utils/performanceMonitor');
 
 Page({
   data: {
@@ -14,12 +17,15 @@ Page({
     isLoading: false,
     swiperHeights: {},
     imageClampHeights: {}, // 新增：单图瘦高图钳制高度
-    displayMode: 'square' // 首页只负责广场模式
+    displayMode: 'square', // 首页只负责广场模式
+    imageCache: {}, // 图片缓存
+    visiblePosts: new Set() // 可见的帖子ID集合
   },
 
   onLoad: function (options) {
     // 首页只负责广场模式
     this.setData({ displayMode: 'square' });
+    this.pageLoadStartTime = Date.now();
   },
 
   onShow: function () {
@@ -28,8 +34,24 @@ Page({
       if (shouldRefresh) {
         wx.setStorageSync('shouldRefreshIndex', false);
         this.refreshData();
+        return;
       }
     } catch (e) {}
+
+    // 检查缓存
+    const cachedData = dataCache.get('index_postList_cache');
+    if (cachedData) {
+      console.log('使用缓存数据');
+      performanceMonitor.recordCacheHit('index_postList_cache', true);
+      this.setData({
+        postList: cachedData,
+        page: Math.ceil(cachedData.length / PAGE_SIZE)
+      });
+      performanceMonitor.recordPageLoad('index', this.pageLoadStartTime);
+      return;
+    } else {
+      performanceMonitor.recordCacheHit('index_postList_cache', false);
+    }
 
     if (this.data.postList.length === 0) {
       this.getPostList();
@@ -37,6 +59,9 @@ Page({
   },
 
   refreshData: function() {
+    // 清除缓存
+    dataCache.remove('index_postList_cache');
+
     this.setData({
       postList: [],
       swiperHeights: {},
@@ -49,6 +74,9 @@ Page({
   },
 
   onPullDownRefresh: function () {
+    // 清除缓存
+    dataCache.remove('index_postList_cache');
+
     this.setData({
       postList: [],
       swiperHeights: {},
@@ -66,57 +94,15 @@ Page({
     this.getPostList();
   },
 
-  getPostList: function (cb) {
-    if (this.data.isLoading) return;
-    this.setData({ isLoading: true });
-    
-    const skip = this.data.page * PAGE_SIZE;
-
-    wx.cloud.callFunction({
-      name: 'getPostList',
-      data: { skip: skip, limit: PAGE_SIZE },
-      success: res => {
-        if (res.result && res.result.success) {
-          const posts = res.result.posts || [];
-          
-          posts.forEach(post => {
-            if (!post.imageUrls || post.imageUrls.length === 0) {
-              post.imageUrls = post.imageUrl ? [post.imageUrl] : [];
-            }
-          });
-
-          const newPostList = this.data.page === 0 ? posts : this.data.postList.concat(posts);
-
-          // 调试：检查帖子数据中是否包含_openid
-          console.log('【首页】帖子数据示例:', posts.slice(0, 2).map(post => ({
-            _id: post._id,
-            title: post.title,
-            authorName: post.authorName,
-            _openid: post._openid,
-            hasOpenid: !!post._openid
-          })));
-
-          this.setData({
-            postList: newPostList,
-            page: this.data.page + 1,
-            hasMore: posts.length === PAGE_SIZE,
-          });
-        } else {
-          wx.showToast({ title: '加载失败', icon: 'none' });
-        }
-      },
-      fail: () => wx.showToast({ title: '网络错误', icon: 'none' }),
-      complete: () => {
-        this.setData({ isLoading: false });
-        if (typeof cb === 'function') cb();
-      }
-    });
-  },
 
   onImageLoad: function(e) {
     const { postid, postindex = 0, imgindex = 0, type } = e.currentTarget.dataset;
     const { width: originalWidth, height: originalHeight } = e.detail;
     if (!originalWidth || !originalHeight) return;
+
+    // 缓存图片尺寸信息
+    const imageKey = `${postid}_${imgindex}`;
+    this.data.imageCache[imageKey] = { width: originalWidth, height: originalHeight };
 
     // 多图 Swiper 逻辑
     if (type === 'multi' && imgindex === 0) {
@@ -214,6 +200,18 @@ Page({
   onImageError: function(e) { console.error('图片加载失败', e.detail); },
   onAvatarError: function(e) { console.error('头像加载失败', e.detail); },
 
+  // 图片预加载
+  preloadImages: function(posts) {
+    const imageUrls = posts
+      .filter(post => post.imageUrls && post.imageUrls.length > 0)
+      .map(post => post.imageUrls[0])
+      .slice(0, 3); // 只预加载前3张图片
+    
+    if (imageUrls.length > 0) {
+      imageOptimizer.preloadImages(imageUrls, (url, success) => {
+        if (success) {
+          console.log('图片预加载成功:', url);
+        }
   // 新增：跳转到用户个人主页
   navigateToUserProfile: function(e) {
     console.log('【头像点击】事件触发', e);
@@ -255,6 +253,68 @@ Page({
         icon: 'none'
       });
     }
+  },
+
+  // 优化数据获取，添加预加载和缓存
+  getPostList: function (cb) {
+    if (this.data.isLoading) return;
+    this.setData({ isLoading: true });
+    
+    const skip = this.data.page * PAGE_SIZE;
+    const apiStartTime = Date.now();
+
+    wx.cloud.callFunction({
+      name: 'getPostList',
+      data: { skip: skip, limit: PAGE_SIZE },
+      success: res => {
+        performanceMonitor.recordApiCall('getPostList', apiStartTime);
+        
+        if (res.result && res.result.success) {
+          const posts = res.result.posts || [];
+          
+          posts.forEach(post => {
+            if (!post.imageUrls || post.imageUrls.length === 0) {
+              post.imageUrls = post.imageUrl ? [post.imageUrl] : [];
+            }
+          });
+
+          const newPostList = this.data.page === 0 ? posts : this.data.postList.concat(posts);
+
+          // 调试：检查帖子数据中是否包含_openid
+          console.log('【首页】帖子数据示例:', posts.slice(0, 2).map(post => ({
+            _id: post._id,
+            title: post.title,
+            authorName: post.authorName,
+            _openid: post._openid,
+            hasOpenid: !!post._openid
+          })));
+
+          this.setData({
+            postList: newPostList,
+            page: this.data.page + 1,
+            hasMore: posts.length === PAGE_SIZE,
+          });
+
+          // 缓存数据（只在第一页时缓存）
+          if (this.data.page === 1) {
+            dataCache.set('index_postList_cache', newPostList);
+            
+            // 预加载图片
+            this.preloadImages(posts);
+            
+            // 记录页面加载完成
+            performanceMonitor.recordPageLoad('index', this.pageLoadStartTime);
+          }
+        } else {
+          wx.showToast({ title: '加载失败', icon: 'none' });
+        }
+      },
+      fail: () => wx.showToast({ title: '网络错误', icon: 'none' }),
+      complete: () => {
+        this.setData({ isLoading: false });
+        if (typeof cb === 'function') cb();
+      }
+    });
   },
 
   // 模式切换现在通过底部tabBar实现，不再需要手动切换
