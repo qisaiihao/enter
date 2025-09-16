@@ -1,0 +1,6 @@
+<view class="splash-container {{fadeOut ? 'fade-out' : ''}}" id="splashContainer">
+  <image class="splash-image {{zoomOut ? 'zoom-out' : ''}}" id="splashImage" src="../../images/splash.png" mode="aspectFill"></image>
+  <view class="loading-indicator" wx:if="{{isPreloading}}">
+    正在加载内容...
+  </view>
+</view>

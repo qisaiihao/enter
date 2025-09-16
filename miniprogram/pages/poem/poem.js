@@ -19,7 +19,30 @@ Page({
 
   onLoad: function () {
     console.log('路页面加载');
-    this.getPostList();
+    
+    // 检查是否有预加载的数据
+    const app = getApp();
+    if (app.globalData.preloadedPoemData && app.globalData.preloadedPoemData.length > 0) {
+      console.log('使用预加载的数据');
+      this.setData({
+        postList: app.globalData.preloadedPoemData,
+        currentPostIndex: 0,
+        page: 1, // 因为已经加载了第一页
+        hasMore: true
+      });
+      
+      // 设置第一张背景图
+      if (app.globalData.preloadedPoemData[0].backgroundImage) {
+        this.setData({
+          backgroundImage: app.globalData.preloadedPoemData[0].backgroundImage
+        });
+      }
+      
+      // 清除预加载数据
+      app.globalData.preloadedPoemData = null;
+    } else {
+      this.getPostList();
+    }
   },
 
   onShow: function () {

@@ -1,6 +1,17 @@
 page {
   background: transparent;
   padding: 0;
+  opacity: 0;
+  animation: fadeIn 0.8s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* poem.wxss - 原创诗歌页面（路） */
