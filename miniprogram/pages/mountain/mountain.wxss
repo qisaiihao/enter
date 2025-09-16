@@ -5,12 +5,11 @@ page {
 }
 
 .container {
-  padding: 0;
-  background-color: transparent;
-  min-height: 100vh;
-  padding-bottom: 0;
+  /* 移除 background-image, background-size 等都删掉 */
+  /* transition: background-image 0.5s ease-in-out;  <-- 必须删除这一行 */
   position: relative;
-  overflow: hidden; /* 防止模糊层溢出 */
+  overflow: hidden;
+  min-height: 100vh;
 }
 
 /* 山模式容器 */
@@ -24,28 +23,35 @@ page {
   overflow: hidden;
 }
 
-/* 背景图片样式 */
-.container {
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center center;
-  background-attachment: fixed;
-  transition: background-image 0.5s ease-in-out;
-}
-
-/* 模糊背景层 - 高斯模糊效果 */
-.blur-background {
+/* 新增：背景图的容器和样式 */
+.background-wrapper, .blur-background-wrapper {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-size: cover;
-  background-position: center center;
-  background-attachment: fixed;
-  filter: blur(30px) brightness(0.7); /* 高斯模糊30px，降低亮度增强对比度 */
-  transform: scale(1.1); /* 稍微放大避免边缘模糊不均 */
-  z-index: 0; /* 放在最底层 */
+  z-index: -2; /* 确保在最底层 */
+}
+
+.bg-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0; /* 默认隐藏 */
+  transition: opacity 0.5s ease-in-out; /* 关键：平滑的透明度过渡 */
+}
+
+.bg-image.visible {
+  opacity: 1; /* 显示 */
+}
+
+/* 新增：模糊背景的容器和样式 */
+.blur-background-wrapper {
+  z-index: -1;
+  filter: blur(30px) brightness(0.7);
+  transform: scale(1.1);
 }
 
 /* 收藏按钮 */
@@ -92,8 +98,9 @@ page {
 
 /* 切换动画状态 */
 .single-post-content.is-transitioning {
-  transform: translateX(-10rpx);
-  opacity: 0.9;
+  /* 可以尝试只改变透明度，而不是位移 */
+  opacity: 0.95; 
+  transform: scale(0.99);
 }
 
 /* 山诗歌特殊样式 */

@@ -11,19 +11,41 @@ Page({
     isLoading: false,
     hasMore: true,
     page: 0,
-    backgroundImage: '', // 背景图片
-    isTransitioning: false, // 切换动画状态
-    preloadedImages: {}, // 预加载的图片缓存
-    
+    backgroundImage: '', // 这个变量可以废弃了，或者只用来做逻辑判断
+    isTransitioning: false,
+    preloadedImages: {},
+
+    // --- 新增数据 ---
+    currentPost: null, // 专门存放当前帖子的数据
+    bgLayers: [ // 管理背景图层的数组
+      { url: '', visible: false },
+      { url: '', visible: false }
+    ],
+    activeLayerIndex: 0 // 当前激活的图层索引 (0 或 1)
   },
 
   onLoad: function () {
-    console.log('山页面加载');
+    console.log('Mountain 页面 onLoad');
+    
+    // 新增一个标志位，告诉 onShow 这是第一次加载
+    this.isFirstLoad = true; 
+
     this.getPostList();
   },
 
   onShow: function () {
-    // 强制刷新，避免显示非诗歌帖子
+    console.log('Mountain 页面 onShow');
+    
+    // 检查是否是首次加载
+    if (this.isFirstLoad) {
+      // 如果是，那么 onLoad 已经处理好了一切，
+      // 我们只需要把标志位重置，然后什么都不做。
+      this.isFirstLoad = false;
+      return; 
+    }
+
+    // 如果不是首次加载（例如从详情页返回），才执行强制刷新逻辑
+    console.log('从其他页面返回，执行刷新');
     this.setData({
       postList: [],
       currentPostIndex: 0,
@@ -77,8 +99,8 @@ Page({
             hasMore: posts.length === PAGE_SIZE,
           });
 
-          // 设置背景图片为第一个诗歌帖子的背景图，并预加载下一首
-          if (newPostList.length > 0) {
+          // 首次加载或刷新后，初始化显示
+          if (this.data.page === 1 && newPostList.length > 0) {
             console.log('第一个山诗歌帖子数据:', {
               title: newPostList[0].title,
               imageUrls: newPostList[0].imageUrls,
@@ -86,17 +108,11 @@ Page({
               hasBgImage: !!newPostList[0].poemBgImage
             });
 
-            // 设置当前背景图
-            const currentBgImage = newPostList[0].poemBgImage || (newPostList[0].imageUrls && newPostList[0].imageUrls[0]) || '';
-            if (currentBgImage) {
-              console.log('设置山背景图片:', currentBgImage);
-              this.setData({
-                backgroundImage: currentBgImage
-              });
-            }
-
-            // 预加载下一首的背景图
-            this.preloadNextBackgroundImage(0);
+            this.updatePostDisplay(0); // 使用新函数来统一更新显示
+            
+            // 预加载后续几张图片，例如第2、3张
+            if (newPostList.length > 1) this.loadImageForIndex(1);
+            if (newPostList.length > 2) this.loadImageForIndex(2);
           } else {
             console.log('未获取到山诗歌帖子数据');
           }
@@ -131,73 +147,18 @@ Page({
 
   nextPost: function() {
     if (this.data.currentPostIndex < this.data.postList.length - 1) {
-      // 添加切换动画效果
-      this.setData({ 
-        isTransitioning: true
-      });
+      this.setData({ isTransitioning: true });
       
-      const nextIndex = this.data.currentPostIndex + 1;
-      this.setData({ 
-        currentPostIndex: nextIndex
-      });
-      
-      // 更新背景图片为当前诗歌的背景图
-      const currentPost = this.data.postList[nextIndex];
-      console.log('切换到下一个山帖子:', currentPost.title, '背景图:', currentPost.poemBgImage);
+      this.updatePostDisplay(this.data.currentPostIndex + 1); // 调用新函数
 
-      if (currentPost && currentPost.poemBgImage) {
-        console.log('更新山背景图片为:', currentPost.poemBgImage);
-        this.setData({
-          backgroundImage: currentPost.poemBgImage
-        });
-      } else if (currentPost && currentPost.imageUrls && currentPost.imageUrls.length > 0) {
-        console.log('使用imageUrls[0]作为山背景图:', currentPost.imageUrls[0]);
-        this.setData({
-          backgroundImage: currentPost.imageUrls[0]
-        });
-      } else {
-        console.log('当前山帖子没有图片，清空背景图');
-        this.setData({
-          backgroundImage: ''
-        });
-      }
-
-      // 动画结束
       setTimeout(() => {
         this.setData({ isTransitioning: false });
-      }, 300);
-
-      // 预加载下下首的背景图（提前两首）
-      this.preloadNextBackgroundImage(nextIndex);
+      }, 500); // 动画时长与CSS中的 transition 一致
     } else {
       if (this.data.hasMore && !this.data.isLoading) {
         this.getPostList(() => {
           if (this.data.postList.length > this.data.currentPostIndex + 1) {
-            const nextIndex = this.data.currentPostIndex + 1;
-            this.setData({ 
-              currentPostIndex: nextIndex
-            });
-            
-            // 更新背景图片
-            const currentPost = this.data.postList[nextIndex];
-            console.log('加载更多山后切换到下一个帖子:', currentPost.title, '背景图:', currentPost.poemBgImage);
-            
-            if (currentPost && currentPost.poemBgImage) {
-              console.log('更新山背景图片为:', currentPost.poemBgImage);
-              this.setData({
-                backgroundImage: currentPost.poemBgImage
-              });
-            } else if (currentPost && currentPost.imageUrls && currentPost.imageUrls.length > 0) {
-              console.log('使用imageUrls[0]作为山背景图:', currentPost.imageUrls[0]);
-              this.setData({
-                backgroundImage: currentPost.imageUrls[0]
-              });
-            } else {
-              console.log('当前山帖子没有图片，清空背景图');
-              this.setData({
-                backgroundImage: ''
-              });
-            }
+            this.updatePostDisplay(this.data.currentPostIndex + 1);
           }
         });
       }
@@ -206,44 +167,13 @@ Page({
 
   prevPost: function() {
     if (this.data.currentPostIndex > 0) {
-      // 添加切换动画效果
-      this.setData({ 
-        isTransitioning: true
-      });
+      this.setData({ isTransitioning: true });
       
-      const prevIndex = this.data.currentPostIndex - 1;
-      this.setData({ 
-        currentPostIndex: prevIndex
-      });
-      
-      // 更新背景图片为当前诗歌的背景图
-      const currentPost = this.data.postList[prevIndex];
-      console.log('切换到上一个山帖子:', currentPost.title, '背景图:', currentPost.poemBgImage);
-      
-      if (currentPost && currentPost.poemBgImage) {
-        console.log('更新山背景图片为:', currentPost.poemBgImage);
-        this.setData({
-          backgroundImage: currentPost.poemBgImage
-        });
-      } else if (currentPost && currentPost.imageUrls && currentPost.imageUrls.length > 0) {
-        console.log('使用imageUrls[0]作为山背景图:', currentPost.imageUrls[0]);
-        this.setData({
-          backgroundImage: currentPost.imageUrls[0]
-        });
-      } else {
-        console.log('当前山帖子没有图片，清空背景图');
-        this.setData({
-          backgroundImage: ''
-        });
-      }
-      
-      // 动画结束
+      this.updatePostDisplay(this.data.currentPostIndex - 1); // 调用新函数
+
       setTimeout(() => {
         this.setData({ isTransitioning: false });
-      }, 300);
-
-      // 预加载下下首的背景图（提前两首）
-      this.preloadNextBackgroundImage(prevIndex);
+      }, 500);
     }
   },
 
@@ -300,17 +230,70 @@ Page({
     this.loadImageForIndex(nextIndex);
   },
 
+  // --- 核心新函数 ---
+  // 统一更新帖子内容和背景的函数
+  updatePostDisplay: function(index) {
+    if (index < 0 || index >= this.data.postList.length) {
+      return;
+    }
+
+    const post = this.data.postList[index];
+    if (!post) return;
+
+    // 1. 更新卡片内容
+    this.setData({
+      currentPost: post,
+      currentPostIndex: index
+    });
+
+    // 2. 准备切换背景
+    const imageUrl = post.poemBgImage || (post.imageUrls && post.imageUrls[0]) || '';
+    // 优先使用预加载好的本地缓存路径
+    const finalImageUrl = this.data.preloadedImages[imageUrl] || imageUrl;
+    this.switchBackgroundImage(finalImageUrl);
+
+    // 3. 预加载下一张
+    this.preloadNextBackgroundImage(index);
+  },
+
+  // 双图层切换函数
+  switchBackgroundImage: function(newImageUrl) {
+    if (!newImageUrl) return;
+
+    const currentActiveIndex = this.data.activeLayerIndex;
+    const nextActiveIndex = (currentActiveIndex + 1) % 2; // 0 -> 1, 1 -> 0
+
+    this.setData({
+      [`bgLayers[${nextActiveIndex}].url`]: newImageUrl,
+      [`bgLayers[${currentActiveIndex}].visible`]: false, // 当前层淡出
+      [`bgLayers[${nextActiveIndex}].visible`]: true,   // 下一层淡入
+      activeLayerIndex: nextActiveIndex
+    });
+  },
+
   // 为指定索引加载图片
-  loadImageForIndex: function(index) {
+  loadImageForIndex: function(index, callback) {
     const post = this.data.postList[index];
     if (!post) return;
 
     const imageUrl = post.poemBgImage || (post.imageUrls && post.imageUrls[0]) || '';
     if (!imageUrl) return;
 
-    // 如果已经预加载过，跳过
+    // 检查全局预加载缓存
+    const app = getApp();
+    if (app.globalData.preloadedImages && app.globalData.preloadedImages[imageUrl]) {
+      console.log('使用全局预加载缓存:', imageUrl);
+      this.setData({
+        [`preloadedImages.${imageUrl}`]: app.globalData.preloadedImages[imageUrl]
+      });
+      if (typeof callback === 'function') {
+        callback(app.globalData.preloadedImages[imageUrl]);
+      }
+      return;
+    }
+
+    // 检查本地预加载缓存
     if (this.data.preloadedImages[imageUrl]) {
-      console.log('山图片已预加载:', imageUrl);
       return;
     }
 
@@ -325,6 +308,10 @@ Page({
           this.setData({
             [`preloadedImages.${imageUrl}`]: res.tempFilePath
           });
+          // 如果有回调函数，则执行
+          if (typeof callback === 'function') {
+            callback(res.tempFilePath);
+          }
         }
       },
       fail: (err) => {

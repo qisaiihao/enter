@@ -1,7 +1,25 @@
 <!-- poem.wxml - 原创诗歌页面（路） -->
-<view class="container" style="background-image: {{backgroundImage ? 'url(' + backgroundImage + ')' : 'none'}}; background-size: cover; background-position: center;">
-  <!-- 模糊背景层 -->
-  <view wx:if="{{backgroundImage}}" class="blur-background" style="background-image: url({{backgroundImage}});"></view>
+<view class="container">
+  <!-- 双图层清晰背景 -->
+  <view class="background-wrapper">
+    <image 
+      wx:for="{{bgLayers}}" 
+      wx:key="index" 
+      class="bg-image {{item.visible ? 'visible' : ''}}" 
+      src="{{item.url}}"
+      mode="aspectFill"
+    ></image>
+  </view>
+  <!-- 双图层模糊背景 -->
+  <view class="blur-background-wrapper">
+    <image 
+      wx:for="{{bgLayers}}" 
+      wx:key="index" 
+      class="bg-image blur-image {{item.visible ? 'visible' : ''}}" 
+      src="{{item.url}}"
+      mode="aspectFill"
+    ></image>
+  </view>
 
   <!-- 骨架屏 -->
   <view wx:if="{{isLoading && postList.length === 0}}" class="skeleton-container">
@@ -11,19 +29,23 @@
   <!-- 路模式（原创诗歌） -->
   <view wx:if="{{postList.length > 0}}" class="poem-mode-container" bindtouchstart="touchStart" bindtouchend="touchEnd">
     
-    
-    <view class="single-post-content" catchtap="onSinglePostTap" data-postid="{{postList[currentPostIndex]._id}}">
+    <!-- 
+      核心改动：
+      不再使用 postList[currentPostIndex]，而是使用独立的 currentPost 对象。
+      这样切换时，小程序只会更新 image 和 text 的内容，而不会重新渲染整个 view 结构。
+    -->
+    <view class="single-post-content {{isTransitioning ? 'is-transitioning' : ''}}" catchtap="onSinglePostTap" data-postid="{{currentPost._id}}">
       <!-- 作者信息 -->
       <view class="single-author-info">
-        <image wx:if="{{postList[currentPostIndex].authorAvatar}}" class="single-author-avatar" src="{{postList[currentPostIndex].authorAvatar}}" mode="aspectFill" />
-        <text class="single-author-name">{{postList[currentPostIndex].authorName}}</text>
+        <image wx:if="{{currentPost.authorAvatar}}" class="single-author-avatar" src="{{currentPost.authorAvatar}}" mode="aspectFill" />
+        <text class="single-author-name">{{currentPost.authorName}}</text>
       </view>
       
       <!-- 标题 -->
-      <view class="single-post-title" wx:if="{{postList[currentPostIndex].title}}">{{postList[currentPostIndex].title}}</view>
+      <view class="single-post-title" wx:if="{{currentPost.title}}">{{currentPost.title}}</view>
       
       <!-- 内容 -->
-      <view class="single-post-content-text" wx:if="{{postList[currentPostIndex].content}}" style="white-space: pre-wrap;">{{postList[currentPostIndex].content}}</view>
+      <view class="single-post-content-text" wx:if="{{currentPost.content}}" style="white-space: pre-wrap;">{{currentPost.content}}</view>
       
     </view>
     

@@ -6,118 +6,170 @@ Page({
 
   onLoad: function () {
     // 开始预加载
-    this.startPreload();
-    
-    setTimeout(() => {
-      this.navigateToTarget();
-    }, 2000); // 2 seconds
+    this.startPreloadAndNavigate();
   },
 
-  startPreload: function() {
+  async startPreloadAndNavigate() {
     const app = getApp();
+    
+    // 创建一个数组来存放所有的预加载任务 (Promise)
+    const preloadTasks = [];
+
     if (app.globalData.userInfo && app.globalData.openid) {
-      // 用户已登录，预加载poem页面数据
-      this.preloadTabIcons();
-      this.preloadPoemData();
+      // 任务1：预加载 Tab 图标
+      preloadTasks.push(this.preloadTabIcons());
+      // 任务2：预加载诗歌数据和相关图片
+      preloadTasks.push(this.preloadPoemData());
     }
+
+    // 等待所有预加载任务完成
+    await Promise.all(preloadTasks);
+
+    // 所有任务完成后，立即跳转
+    this.navigateToTarget();
   },
 
+  // 使用 async/await 语法来更清晰地处理异步流程
   preloadPoemData: function() {
-    this.setData({ isPreloading: true });
-    
-    // 预加载poem页面的数据
-    wx.cloud.callFunction({
-      name: 'getPostList',
-      data: { skip: 0, limit: 5, isPoem: true, isOriginal: true },
-      success: res => {
-        if (res.result && res.result.success) {
-          // 将数据存储到全局，供poem页面使用
-          const app = getApp();
-          app.globalData.preloadedPoemData = res.result.data;
-          
-          // 预加载第一张背景图片和相关信息
-          if (res.result.data.length > 0) {
-            this.preloadFirstPost(res.result.data[0]);
+    // Promise 的执行函数本身也可以是 async 函数
+    return new Promise(async (resolve, reject) => {
+      this.setData({ isPreloading: true });
+      
+      wx.cloud.callFunction({
+        name: 'getPostList',
+        data: { skip: 0, limit: 5, isPoem: true, isOriginal: true },
+        success: async (res) => { // <-- success 回调也变成 async
+          try {
+            if (res.result && res.result.success && res.result.posts) {
+              const app = getApp();
+              app.globalData.preloadedPoemData = res.result.posts;
+              
+              if (res.result.posts.length > 0) {
+                console.log('诗歌数据获取成功，开始预加载相关图片...');
+                // 关键改动：等待图片下载任务完成！
+                await this.preloadFirstPostImages(res.result.posts[0]); 
+                console.log('相关图片预加载完成！');
+              }
+            }
+            resolve(); // <-- 成功路径的 resolve 移动到这里
+          } catch (e) {
+            reject(e); // 捕获内部错误
           }
+        },
+        fail: (err) => {
+          reject(err); // 网络或云函数错误
+        },
+        complete: () => {
+          // complete 里的 resolve 需要移除，因为它执行得太早了
+          console.log('诗歌数据预加载流程结束');
+          this.setData({ preloadProgress: 100, isPreloading: false });
         }
-        this.setData({ preloadProgress: 100, isPreloading: false });
-      },
-      fail: err => {
-        console.error('预加载poem数据失败:', err);
-        this.setData({ isPreloading: false });
-      }
+      });
     });
   },
 
   preloadTabIcons: function() {
-    // 预加载tab栏图标
-    const tabIcons = [
-      'images/icons/home.png',
-      'images/icons/home-active.png',
-      'images/icons/examples.png',
-      'images/icons/examples-active.png',
-      'images/icons/usercenter.png',
-      'images/icons/usercenter-active.png'
-    ];
-    
-    tabIcons.forEach(iconPath => {
-      wx.getImageInfo({
-        src: iconPath,
-        success: () => {
-          console.log('Tab图标预加载成功:', iconPath);
-        },
-        fail: (err) => {
-          console.error('Tab图标预加载失败:', iconPath, err);
-        }
+    return new Promise(resolve => {
+      const tabIcons = [
+        '/images/icons/home.png',
+        '/images/icons/home-active.png',
+        '/images/icons/examples.png',
+        '/images/icons/examples-active.png',
+        '/images/icons/usercenter.png',
+        '/images/icons/usercenter-active.png'
+      ];
+      
+      let loadedCount = 0;
+      const totalCount = tabIcons.length;
+
+      if (totalCount === 0) {
+        resolve(); // 如果没有图标，直接完成
+        return;
+      }
+
+      tabIcons.forEach(iconPath => {
+        wx.getImageInfo({
+          src: iconPath,
+          complete: () => { // 使用 complete 确保无论成功失败都会计数
+            loadedCount++;
+            if (loadedCount === totalCount) {
+              console.log('所有Tab图标预加载尝试完毕');
+              resolve(); // 所有图标都处理完后，完成 Promise
+            }
+          }
+        });
       });
     });
   },
 
-  preloadFirstPost: function(post) {
+  // 这个函数现在需要返回一个 Promise，它包裹了所有图片下载任务
+  preloadFirstPostImages: function(post) {
+    const app = getApp();
+    if (!app.globalData.preloadedImages) {
+      app.globalData.preloadedImages = {};
+    }
+    
+    // 创建一个数组来收集所有图片下载的 Promise
+    const imageDownloadTasks = [];
+
     // 预加载背景图片
-    if (post.backgroundImage) {
-      wx.getImageInfo({
-        src: post.backgroundImage,
-        success: () => {
-          console.log('首张背景图预加载成功');
-        },
-        fail: (err) => {
-          console.error('首张背景图预加载失败:', err);
-        }
-      });
+    const bgImageUrl = post.poemBgImage || (post.imageUrls && post.imageUrls[0]);
+    if (bgImageUrl) {
+      // 为每个下载任务创建一个 Promise
+      imageDownloadTasks.push(new Promise(resolve => {
+        wx.downloadFile({
+          url: bgImageUrl,
+          success: (res) => {
+            if (res.statusCode === 200) {
+              console.log('首张背景图预加载成功:', res.tempFilePath);
+              app.globalData.preloadedImages[bgImageUrl] = res.tempFilePath;
+            }
+          },
+          complete: () => {
+            resolve(); // 无论成功失败，都算完成，不阻塞主流程
+          }
+        });
+      }));
     }
     
     // 预加载用户头像
     if (post.authorAvatar) {
-      wx.getImageInfo({
-        src: post.authorAvatar,
-        success: () => {
-          console.log('作者头像预加载成功');
-        },
-        fail: (err) => {
-          console.error('作者头像预加载失败:', err);
-        }
-      });
+      imageDownloadTasks.push(new Promise(resolve => {
+        wx.downloadFile({
+          url: post.authorAvatar,
+          success: (res) => {
+            if (res.statusCode === 200) {
+              console.log('作者头像预加载成功');
+              app.globalData.preloadedImages[post.authorAvatar] = res.tempFilePath;
+            }
+          },
+          complete: () => {
+            resolve();
+          }
+        });
+      }));
     }
     
-    // 预加载其他可能用到的图片
+    // 预加载其他可能用到的图片（移除svg）
     const commonImages = [
-      'images/like.png',
-      'images/liked.png',
-      'images/menu-icon.svg'
+      '/images/like.png',
+      '/images/liked.png'
     ];
     
     commonImages.forEach(imagePath => {
-      wx.getImageInfo({
-        src: imagePath,
-        success: () => {
-          console.log('通用图片预加载成功:', imagePath);
-        },
-        fail: (err) => {
-          console.error('通用图片预加载失败:', imagePath, err);
-        }
-      });
+      imageDownloadTasks.push(new Promise(resolve => {
+        wx.getImageInfo({
+          src: imagePath,
+          complete: () => {
+            console.log('通用图片预加载尝试完毕:', imagePath);
+            resolve(); // 无论成功失败，都算完成
+          }
+        });
+      }));
     });
+    
+    // 返回一个 Promise.all，它会等待所有图片下载任务都完成
+    return Promise.all(imageDownloadTasks);
   },
 
   navigateToTarget: function() {

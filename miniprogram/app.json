@@ -37,8 +37,8 @@
       {
         "pagePath": "pages/poem/poem",
         "text": "路",
-        "iconPath": "images/icons/examples.png",
-        "selectedIconPath": "images/icons/examples-active.png"
+        "iconPath": "images/road.png",
+        "selectedIconPath": "images/roadplus.png"
       },
       {
         "pagePath": "pages/mountain/mountain",

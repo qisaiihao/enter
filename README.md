@@ -4,6 +4,40 @@
 
 ## 最近更新
 
+### 2024年UI图标优化
+- **更新路tab图标**：将路tab的图标从examples更换为专门的road和roadplus图标，提升视觉识别度
+
+### 2024年开屏预加载优化
+- **修复图片路径问题**：将所有本地图片的相对路径改为绝对路径，解决"file not found"错误
+- **统一云函数数据字段**：修复splash.js和poem.js中数据字段不一致问题，统一使用posts字段
+- **优化预加载机制**：使用wx.downloadFile替代wx.getImageInfo，实现更可靠的图片预加载
+- **Promise.all优化时机**：使用Promise.all等待所有预加载任务完成，避免固定setTimeout的弊端
+- **全局预加载缓存**：创建app.globalData.preloadedImages全局缓存，实现开屏和poem页面无缝衔接
+- **智能跳转机制**：预加载完成后立即跳转，实现"最快加载，无缝跳转"的理想效果
+- **修复Promise链条断裂**：解决preloadFirstPostImages异步任务未等待完成就跳转的关键bug
+- **移除svg预加载**：小程序不支持svg格式，移除相关预加载避免错误
+- **完善异步流程**：使用async/await确保图片下载完成后再跳转，彻底解决闪烁问题
+- **修复onLoad与onShow冲突**：使用isFirstLoad标志位避免预加载数据被onShow强制清空
+- **解决骨架屏闪烁**：首次加载时onShow跳过刷新逻辑，保持预加载数据，实现真正秒开
+
+### 2024年mountain页面双图层背景优化
+- **实现双图层背景切换**：采用两个image标签实现真正的交叉淡入淡出效果，替代无效的background-image过渡
+- **独立内容数据管理**：使用currentPost对象替代postList[currentPostIndex]，避免整个卡片重新渲染
+- **极致流畅切换体验**：通过opacity透明度控制实现平滑过渡，视觉上更加高级自然
+- **性能优化提升**：减少小程序渲染开销，在低端机型上表现更佳
+- **代码结构优化**：将updatePostDisplay和switchBackgroundImage逻辑分离，代码更清晰易维护
+- **预加载机制保留**：继续使用wx.downloadFile预加载图片到本地，确保切换瞬间完成
+- **修复onLoad与onShow冲突**：使用isFirstLoad标志位避免预加载数据被onShow强制清空
+- **全局预加载缓存支持**：支持使用开屏预加载的图片缓存，实现无缝衔接
+
+### 2024年poem页面双图层背景优化
+- **实现双图层背景切换**：采用两个image标签实现真正的交叉淡入淡出效果，替代无效的background-image过渡
+- **独立内容数据管理**：使用currentPost对象替代postList[currentPostIndex]，避免整个卡片重新渲染
+- **极致流畅切换体验**：通过opacity透明度控制实现平滑过渡，视觉上更加高级自然
+- **性能优化提升**：减少小程序渲染开销，在低端机型上表现更佳
+- **代码结构优化**：将updatePostDisplay和switchBackgroundImage逻辑分离，代码更清晰易维护
+- **预加载机制保留**：继续使用wx.downloadFile预加载图片到本地，确保切换瞬间完成
+
 ### 2024年开屏页面优化
 - **修复开屏页面显示问题**：解决小程序启动时直接跳转到poem页面而不显示开屏页面的问题
 - **优化页面跳转逻辑**：将自动登录逻辑从app.js移到开屏页面，确保开屏页面正常显示
