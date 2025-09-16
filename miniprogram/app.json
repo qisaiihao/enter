@@ -31,8 +31,8 @@
       {
         "pagePath": "pages/index/index",
         "text": "广场",
-        "iconPath": "images/icons/home.png",
-        "selectedIconPath": "images/icons/home-active.png"
+        "iconPath": "images/market.png",
+        "selectedIconPath": "images/marketplus.png"
       },
       {
         "pagePath": "pages/poem/poem",
@@ -43,13 +43,13 @@
       {
         "pagePath": "pages/mountain/mountain",
         "text": "山",
-        "iconPath": "images/mountain.png",
-        "selectedIconPath": "images/mountainplus.png"
+        "iconPath": "images/mountainplus.png",
+        "selectedIconPath": "images/mountain.png"
       },
       {
         "pagePath": "pages/profile/profile",
-        "text": "我的",
-        "iconPath": "images/icons/usercenter.png",
+        "text": "湖",
+        "iconPath": "images/pools.png",
         "selectedIconPath": "images/icons/usercenter-active.png"
       }
     ]
