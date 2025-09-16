@@ -416,6 +416,40 @@ async function addToFavorite(openid, postId, folderId) {
       }
     });
 
+    // === 新增：创建收藏消息通知 ===
+    try {
+      // 获取收藏者信息
+      const userResult = await db.collection('users').where({
+        _openid: openid
+      }).limit(1).get()
+      const user = userResult.data[0]
+      
+      // 如果给自己收藏，不发送通知
+      if (post.data._openid === openid) {
+        console.log('用户给自己收藏，不发送通知')
+      } else {
+        // 创建消息记录
+        await db.collection('messages').add({
+          data: {
+            fromUserId: openid,
+            fromUserName: user ? user.nickName : '微信用户',
+            fromUserAvatar: user ? user.avatarUrl : '',
+            toUserId: post.data._openid,
+            type: 'favorite',
+            postId: postId,
+            postTitle: post.data.title || '无标题',
+            content: `${user ? user.nickName : '微信用户'} 收藏了你的帖子`,
+            isRead: false,
+            createTime: new Date()
+          }
+        })
+        console.log('收藏消息已创建')
+      }
+    } catch (msgError) {
+      console.error('创建收藏消息失败:', msgError)
+      // 不影响主流程，只是记录错误
+    }
+
     return {
       success: true,
       favoriteId: result._id,

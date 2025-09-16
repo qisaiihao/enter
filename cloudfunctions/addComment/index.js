@@ -58,6 +58,49 @@ exports.main = async (event, context) => {
       }
     });
 
+    // === 新增：创建评论消息通知 ===
+    try {
+      // 获取帖子信息
+      const postResult = await db.collection('posts').doc(postId).get()
+      const post = postResult.data
+      
+      // 获取评论者信息
+      const userResult = await db.collection('users').where({
+        _openid: openid
+      }).limit(1).get()
+      const user = userResult.data[0]
+      
+      // 如果给自己评论，不发送通知
+      if (post._openid === openid) {
+        console.log('用户给自己评论，不发送通知')
+      } else {
+        // 创建消息记录
+        const messageContent = parentId ? 
+          `${user ? user.nickName : '微信用户'} 回复了你的评论` :
+          `${user ? user.nickName : '微信用户'} 评论了你的帖子`
+          
+        await db.collection('messages').add({
+          data: {
+            fromUserId: openid,
+            fromUserName: user ? user.nickName : '微信用户',
+            fromUserAvatar: user ? user.avatarUrl : '',
+            toUserId: post._openid,
+            type: 'comment',
+            postId: postId,
+            postTitle: post.title || '无标题',
+            content: messageContent,
+            commentId: result._id,
+            isRead: false,
+            createTime: new Date()
+          }
+        })
+        console.log('评论消息已创建')
+      }
+    } catch (msgError) {
+      console.error('创建评论消息失败:', msgError)
+      // 不影响主流程，只是记录错误
+    }
+
     return {
       success: true,
       message: 'Comment added successfully.',

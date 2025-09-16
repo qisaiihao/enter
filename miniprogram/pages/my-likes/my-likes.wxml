@@ -49,7 +49,7 @@
           <!-- 多张图片 -->
           <block wx:elif="{{item.imageUrls && item.imageUrls.length > 1}}">
             <swiper id="swiper-{{item._id}}" class="image-swiper" indicator-dots="true" circular="true" style="width: 100%; height: {{swiperHeights[index] ? swiperHeights[index] + 'px' : '220px'}};">
-              <block wx:for="{{item.imageUrls}}" wx:for-item="img" wx:for-index="imgindex">
+              <block wx:for="{{item.imageUrls}}" wx:for-item="img" wx:for-index="imgindex" wx:key="*this">
                 <swiper-item>
                   <image
                     src="{{img}}"
