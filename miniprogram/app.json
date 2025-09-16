@@ -50,7 +50,7 @@
         "pagePath": "pages/profile/profile",
         "text": "湖",
         "iconPath": "images/pools.png",
-        "selectedIconPath": "images/icons/usercenter-active.png"
+        "selectedIconPath": "images/poolsplus.png"
       }
     ]
   },
