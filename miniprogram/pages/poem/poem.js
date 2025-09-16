@@ -235,9 +235,10 @@ Page({
         });
       }, 50); // 减少延迟提高响应速度
     } else {
-      // 如果图片相同，直接切换
+      // 如果图片相同，也要更新背景图片和索引
       this.setData({ 
-        currentPostIndex: index
+        currentPostIndex: index,
+        backgroundImage: finalImageUrl
       });
     }
 
@@ -276,7 +277,7 @@ Page({
   },
 
   onImageError: function(e) {
-    console.error('图片加载失败', e.detail);
+    // 图片加载失败
   },
 
   // 智能预加载系统 - 预加载周围图片确保平滑切换
