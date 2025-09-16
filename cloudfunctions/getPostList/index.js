@@ -15,7 +15,7 @@ exports.main = async (event, context) => {
   const { skip = 0, limit = 10, isPoem, isOriginal } = event; // 添加isPoem和isOriginal参数
 
   try {
-    console.log('开始获取帖子列表，参数:', { skip, limit, isPoem, isOriginal });
+    // 移除调试日志以提升性能
 
     let query = db.collection('posts').aggregate();
 
@@ -24,22 +24,17 @@ exports.main = async (event, context) => {
 
     // 如果指定了isPoem参数，添加诗歌筛选条件
     if (isPoem !== undefined) {
-      console.log('添加诗歌筛选条件，isPoem:', isPoem);
       matchConditions.isPoem = isPoem;
     }
 
     // 如果指定了isOriginal参数，添加原创筛选条件
     if (isOriginal !== undefined) {
-      console.log('添加原创筛选条件，isOriginal:', isOriginal);
       matchConditions.isOriginal = isOriginal;
     }
 
     // 如果有筛选条件，应用match
     if (Object.keys(matchConditions).length > 0) {
-      console.log('应用筛选条件:', JSON.stringify(matchConditions));
       query = query.match(matchConditions);
-    } else {
-      console.log('未指定筛选参数，不进行match筛选');
     }
 
     // 在筛选后进行排序和分页
@@ -103,148 +98,63 @@ exports.main = async (event, context) => {
       .end();
 
     const posts = postsRes.list;
-    console.log('查询到帖子数量:', posts.length);
 
-    // 添加调试信息，显示返回的帖子类型
-    posts.forEach((post, index) => {
-      console.log(`帖子${index + 1}:`, {
-        title: post.title,
-        isPoem: post.isPoem,
-        isOriginal: post.isOriginal,
-        hasBgImage: !!post.poemBgImage,
-        poemBgImage: post.poemBgImage,
-        imageUrls: post.imageUrls,
-        imageUrl: post.imageUrl,
-        _id: post._id,
-        // 检查这些字段是否存在
-        hasIsPoemField: post.hasOwnProperty('isPoem'),
-        hasIsOriginalField: post.hasOwnProperty('isOriginal')
-      });
-    });
+    // 移除调试信息以提升性能
 
-    // --- Efficiently convert FileIDs to temp URLs ---
-    const fileIDs = [];
-    posts.forEach((post, index) => {
-      console.log(`处理第${index + 1}个帖子的图片字段:`, {
-        imageUrl: post.imageUrl,
-        imageUrls: post.imageUrls,
-        originalImageUrl: post.originalImageUrl,
-        originalImageUrls: post.originalImageUrls,
-        authorAvatar: post.authorAvatar
-      });
-      
+    // --- 优化图片URL转换逻辑 ---
+    const fileIDs = new Set(); // 使用Set避免重复fileID
+    
+    posts.forEach(post => {
       // 保证 imageUrls、originalImageUrls 一定为数组
       if (!Array.isArray(post.imageUrls)) post.imageUrls = post.imageUrls ? [post.imageUrls] : [];
       if (!Array.isArray(post.originalImageUrls)) post.originalImageUrls = post.originalImageUrls ? [post.originalImageUrls] : [];
       
-      // 下面保持原有 fileID 收集逻辑
-      if (post.imageUrls && Array.isArray(post.imageUrls)) {
-        post.imageUrls.forEach(url => {
-          if (url && url.startsWith('cloud://')) {
-            fileIDs.push(url);
-          }
-        });
-      }
-      if (post.originalImageUrls && Array.isArray(post.originalImageUrls)) {
-        post.originalImageUrls.forEach(url => {
-          if (url && url.startsWith('cloud://')) {
-            fileIDs.push(url);
-          }
-        });
-      }
-      if (post.imageUrl && post.imageUrl.startsWith('cloud://')) {
-        fileIDs.push(post.imageUrl);
-      }
-      if (post.originalImageUrl && post.originalImageUrl.startsWith('cloud://')) {
-        fileIDs.push(post.originalImageUrl);
-      }
-      if (post.authorAvatar && post.authorAvatar.startsWith('cloud://')) {
-        fileIDs.push(post.authorAvatar);
-      }
-      // 转换诗歌背景图片
-      if (post.poemBgImage && post.poemBgImage.startsWith('cloud://')) {
-        fileIDs.push(post.poemBgImage);
-      }
+      // 收集所有需要转换的fileID
+      const urlsToCheck = [
+        ...post.imageUrls,
+        ...post.originalImageUrls,
+        post.imageUrl,
+        post.originalImageUrl,
+        post.authorAvatar,
+        post.poemBgImage
+      ].filter(url => url && url.startsWith('cloud://'));
+      
+      urlsToCheck.forEach(url => fileIDs.add(url));
     });
 
-    console.log('需要转换的fileID数量:', fileIDs.length);
-    console.log('fileID列表:', fileIDs);
-
-    if (fileIDs.length > 0) {
+    if (fileIDs.size > 0) {
       try {
-        const fileListResult = await cloud.getTempFileURL({ fileList: fileIDs });
-        console.log('getTempFileURL返回结果:', fileListResult);
-        
+        const fileListResult = await cloud.getTempFileURL({ fileList: Array.from(fileIDs) });
         const urlMap = new Map();
+        
         fileListResult.fileList.forEach(item => {
-          console.log('处理文件转换结果:', {
-            fileID: item.fileID,
-            status: item.status,
-            tempFileURL: item.tempFileURL,
-            errMsg: item.errMsg
-          });
-          
           if (item.status === 0) {
             urlMap.set(item.fileID, item.tempFileURL);
-          } else {
-            console.error('文件转换失败:', item.fileID, item.errMsg);
           }
         });
 
-        console.log('成功转换的URL数量:', urlMap.size);
-
-              posts.forEach((post, index) => {
-          console.log(`转换第${index + 1}个帖子的图片URL`);
+        // 批量转换所有帖子的图片URL
+        posts.forEach(post => {
+          const convertUrl = (url) => urlMap.get(url) || url;
           
-          if (post.imageUrl && urlMap.has(post.imageUrl)) {
-            post.imageUrl = urlMap.get(post.imageUrl);
-            console.log('转换imageUrl:', post.imageUrl);
+          if (post.imageUrl) post.imageUrl = convertUrl(post.imageUrl);
+          if (post.originalImageUrl) post.originalImageUrl = convertUrl(post.originalImageUrl);
+          if (post.authorAvatar) post.authorAvatar = convertUrl(post.authorAvatar);
+          if (post.poemBgImage) post.poemBgImage = convertUrl(post.poemBgImage);
+          
+          if (Array.isArray(post.imageUrls)) {
+            post.imageUrls = post.imageUrls.map(convertUrl);
           }
-          if (post.originalImageUrl && urlMap.has(post.originalImageUrl)) {
-            post.originalImageUrl = urlMap.get(post.originalImageUrl);
-            console.log('转换originalImageUrl:', post.originalImageUrl);
-          }
-          if (post.imageUrls && Array.isArray(post.imageUrls)) {
-            post.imageUrls = post.imageUrls.map(url => {
-              if (url && urlMap.has(url)) {
-                const convertedUrl = urlMap.get(url);
-                console.log('转换imageUrls中的URL:', url, '->', convertedUrl);
-                return convertedUrl;
-              }
-              return url;
-            });
-          }
-          if (post.originalImageUrls && Array.isArray(post.originalImageUrls)) {
-            post.originalImageUrls = post.originalImageUrls.map(url => {
-              if (url && urlMap.has(url)) {
-                const convertedUrl = urlMap.get(url);
-                console.log('转换originalImageUrls中的URL:', url, '->', convertedUrl);
-                return convertedUrl;
-              }
-              return url;
-            });
-          }
-          if (post.authorAvatar && urlMap.has(post.authorAvatar)) {
-            post.authorAvatar = urlMap.get(post.authorAvatar);
-            console.log('转换authorAvatar:', post.authorAvatar);
-          }
-          if (post.poemBgImage && urlMap.has(post.poemBgImage)) {
-            post.poemBgImage = urlMap.get(post.poemBgImage);
-            console.log('转换poemBgImage:', post.poemBgImage);
+          if (Array.isArray(post.originalImageUrls)) {
+            post.originalImageUrls = post.originalImageUrls.map(convertUrl);
           }
         });
       } catch (fileError) {
         console.error('文件URL转换失败:', fileError);
-        // 即使文件转换失败，也要返回帖子数据
       }
     }
 
-    console.log('最终返回的帖子数据示例:', posts.length > 0 ? {
-      _id: posts[0]._id,
-      title: posts[0].title,
-      imageUrls: posts[0].imageUrls,
-      authorAvatar: posts[0].authorAvatar
-    } : '无帖子数据');
+    // 移除调试日志以提升性能
 
     return {
       success: true,
