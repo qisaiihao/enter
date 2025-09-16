@@ -87,6 +87,15 @@ Page({
 
           const newPostList = this.data.page === 0 ? posts : this.data.postList.concat(posts);
 
+          // 调试：检查帖子数据中是否包含_openid
+          console.log('【首页】帖子数据示例:', posts.slice(0, 2).map(post => ({
+            _id: post._id,
+            title: post.title,
+            authorName: post.authorName,
+            _openid: post._openid,
+            hasOpenid: !!post._openid
+          })));
+
           this.setData({
             postList: newPostList,
             page: this.data.page + 1,
@@ -207,10 +216,43 @@ Page({
 
   // 新增：跳转到用户个人主页
   navigateToUserProfile: function(e) {
+    console.log('【头像点击】事件触发', e);
+    console.log('【头像点击】dataset:', e.currentTarget.dataset);
+    
     const userId = e.currentTarget.dataset.userId;
+    console.log('【头像点击】提取的userId:', userId);
+    
     if (userId) {
-      wx.navigateTo({
-        url: `/pages/profile/profile?userId=${userId}`
+      const app = getApp();
+      const currentUserOpenid = app.globalData.openid;
+      
+      // 检查是否点击的是自己的头像
+      if (userId === currentUserOpenid) {
+        console.log('【头像点击】点击的是自己头像，切换到我的页面');
+        wx.switchTab({
+          url: '/pages/profile/profile'
+        });
+      } else {
+        console.log('【头像点击】点击的是他人头像，跳转到用户主页');
+        wx.navigateTo({
+          url: `/pages/user-profile/user-profile?userId=${userId}`,
+          success: function() {
+            console.log('【头像点击】跳转成功');
+          },
+          fail: function(err) {
+            console.error('【头像点击】跳转失败:', err);
+            wx.showToast({
+              title: '跳转失败',
+              icon: 'none'
+            });
+          }
+        });
+      }
+    } else {
+      console.error('【头像点击】userId为空，无法跳转');
+      wx.showToast({
+        title: '用户信息获取失败',
+        icon: 'none'
       });
     }
   },

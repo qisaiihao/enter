@@ -23,23 +23,9 @@ Page({
     favoriteHasMore: true, // 收藏是否有更多
     favoriteLoading: false, // 收藏加载状态
     
-    // 新增：用户主页相关
-    targetUserId: '', // 目标用户ID，空表示查看自己
-    isViewingSelf: true, // 是否查看自己的主页
   },
 
   onLoad: function (options) {
-    // 检查是否有传入用户ID
-    const targetUserId = options.userId || '';
-    const isViewingSelf = !targetUserId;
-    
-    console.log('【profile】页面加载', { targetUserId, isViewingSelf });
-    
-    this.setData({
-      targetUserId: targetUserId,
-      isViewingSelf: isViewingSelf
-    });
-    
     this.checkLoginAndFetchData();
     // 计算3:4比例高度（宽3高4，竖图）
     const windowWidth = wx.getSystemInfoSync().windowWidth;
@@ -146,36 +132,22 @@ Page({
   },
 
   fetchUserProfile: function() {
-    if (this.data.isViewingSelf) {
-      // 查看自己的信息
-      wx.cloud.callFunction({
-        name: 'getMyProfileData',
-        success: res => {
-          console.log('getMyProfileData 返回：', res);
-          if (res.result && res.result.success && res.result.userInfo) {
-            const user = res.result.userInfo;
-            if (user.birthday) {
-              user.age = this.calculateAge(user.birthday);
-            } else {
-              user.age = '';
-            }
-            // 只更新 userInfo，不更新 myPosts
-            this.setData({ userInfo: user });
+    wx.cloud.callFunction({
+      name: 'getMyProfileData',
+      success: res => {
+        console.log('getMyProfileData 返回：', res);
+        if (res.result && res.result.success && res.result.userInfo) {
+          const user = res.result.userInfo;
+          if (user.birthday) {
+            user.age = this.calculateAge(user.birthday);
           } else {
-            wx.showToast({ title: '个人资料数据异常', icon: 'none', duration: 3000 });
-            console.error('个人资料数据异常', res);
-            const storedUserInfo = wx.getStorageSync('userInfo');
-            if(storedUserInfo) {
-              if (storedUserInfo.birthday) {
-                storedUserInfo.age = this.calculateAge(storedUserInfo.birthday);
-              }
-              this.setData({ userInfo: storedUserInfo });
-            }
+            user.age = '';
           }
-        },
-        fail: err => {
-          wx.showToast({ title: 'getMyProfileData 云函数失败', icon: 'none', duration: 3000 });
-          console.error('getMyProfileData 云函数失败', err);
+          // 只更新 userInfo，不更新 myPosts
+          this.setData({ userInfo: user });
+        } else {
+          wx.showToast({ title: '个人资料数据异常', icon: 'none', duration: 3000 });
+          console.error('个人资料数据异常', res);
           const storedUserInfo = wx.getStorageSync('userInfo');
           if(storedUserInfo) {
             if (storedUserInfo.birthday) {
@@ -184,33 +156,19 @@ Page({
             this.setData({ userInfo: storedUserInfo });
           }
         }
-      });
-    } else {
-      // 查看他人的信息
-      wx.cloud.callFunction({
-        name: 'getUserProfile',
-        data: { userId: this.data.targetUserId },
-        success: res => {
-          console.log('getUserProfile 返回：', res);
-          if (res.result && res.result.success && res.result.userInfo) {
-            const user = res.result.userInfo;
-            if (user.birthday) {
-              user.age = this.calculateAge(user.birthday);
-            } else {
-              user.age = '';
-            }
-            this.setData({ userInfo: user });
-          } else {
-            wx.showToast({ title: '获取用户信息失败', icon: 'none' });
-            console.error('获取用户信息失败', res);
+      },
+      fail: err => {
+        wx.showToast({ title: 'getMyProfileData 云函数失败', icon: 'none', duration: 3000 });
+        console.error('getMyProfileData 云函数失败', err);
+        const storedUserInfo = wx.getStorageSync('userInfo');
+        if(storedUserInfo) {
+          if (storedUserInfo.birthday) {
+            storedUserInfo.age = this.calculateAge(storedUserInfo.birthday);
           }
-        },
-        fail: err => {
-          wx.showToast({ title: '网络错误', icon: 'none' });
-          console.error('getUserProfile 云函数失败', err);
+          this.setData({ userInfo: storedUserInfo });
         }
-      });
-    }
+      }
+    });
   },
 
   loadMyPosts: function (cb) {
@@ -219,70 +177,35 @@ Page({
     console.log('【profile】请求分页参数', { page, PAGE_SIZE, skip: page * PAGE_SIZE, limit: PAGE_SIZE });
     this.setData({ isLoading: true });
     
-    if (this.data.isViewingSelf) {
-      // 加载自己的帖子
-      wx.cloud.callFunction({
-        name: 'getMyProfileData',
-        data: {
-          skip: page * PAGE_SIZE,
-          limit: PAGE_SIZE
-        },
-        success: res => {
-          if (res.result && res.result.success) {
-            const posts = res.result.posts || [];
-            console.log('【profile】本次返回帖子数量:', posts.length);
-            posts.forEach(post => {
-              if (post.createTime) {
-                post.formattedCreateTime = this.formatTime(post.createTime);
-              }
-            });
-            const newMyPosts = page === 0 ? posts : this.data.myPosts.concat(posts);
-            console.log('【profile】更新后 myPosts 长度:', newMyPosts.length, 'hasMore:', posts.length === PAGE_SIZE, 'page:', page + 1);
-            this.setData({
-              myPosts: newMyPosts,
-              page: page + 1,
-              hasMore: posts.length === PAGE_SIZE
-            });
-          }
-        },
-        complete: () => {
-          this.setData({ isLoading: false });
-          if (typeof cb === 'function') cb();
+    wx.cloud.callFunction({
+      name: 'getMyProfileData',
+      data: {
+        skip: page * PAGE_SIZE,
+        limit: PAGE_SIZE
+      },
+      success: res => {
+        if (res.result && res.result.success) {
+          const posts = res.result.posts || [];
+          console.log('【profile】本次返回帖子数量:', posts.length);
+          posts.forEach(post => {
+            if (post.createTime) {
+              post.formattedCreateTime = this.formatTime(post.createTime);
+            }
+          });
+          const newMyPosts = page === 0 ? posts : this.data.myPosts.concat(posts);
+          console.log('【profile】更新后 myPosts 长度:', newMyPosts.length, 'hasMore:', posts.length === PAGE_SIZE, 'page:', page + 1);
+          this.setData({
+            myPosts: newMyPosts,
+            page: page + 1,
+            hasMore: posts.length === PAGE_SIZE
+          });
         }
-      });
-    } else {
-      // 加载他人的帖子
-      wx.cloud.callFunction({
-        name: 'getUserProfile',
-        data: {
-          userId: this.data.targetUserId,
-          skip: page * PAGE_SIZE,
-          limit: PAGE_SIZE
-        },
-        success: res => {
-          if (res.result && res.result.success) {
-            const posts = res.result.posts || [];
-            console.log('【profile】本次返回他人帖子数量:', posts.length);
-            posts.forEach(post => {
-              if (post.createTime) {
-                post.formattedCreateTime = this.formatTime(post.createTime);
-              }
-            });
-            const newMyPosts = page === 0 ? posts : this.data.myPosts.concat(posts);
-            console.log('【profile】更新后他人帖子长度:', newMyPosts.length, 'hasMore:', posts.length === PAGE_SIZE, 'page:', page + 1);
-            this.setData({
-              myPosts: newMyPosts,
-              page: page + 1,
-              hasMore: posts.length === PAGE_SIZE
-            });
-          }
-        },
-        complete: () => {
-          this.setData({ isLoading: false });
-          if (typeof cb === 'function') cb();
-        }
-      });
-    }
+      },
+      complete: () => {
+        this.setData({ isLoading: false });
+        if (typeof cb === 'function') cb();
+      }
+    });
   },
 
   // 根据生日计算年龄

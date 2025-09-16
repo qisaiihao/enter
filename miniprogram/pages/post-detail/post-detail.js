@@ -442,9 +442,21 @@ Page({
   navigateToUserProfile: function(e) {
     const userId = e.currentTarget.dataset.userId;
     if (userId) {
-      wx.navigateTo({
-        url: `/pages/profile/profile?userId=${userId}`
-      });
+      const app = getApp();
+      const currentUserOpenid = app.globalData.openid;
+      
+      // 检查是否点击的是自己的头像
+      if (userId === currentUserOpenid) {
+        console.log('【帖子详情】点击的是自己头像，切换到我的页面');
+        wx.switchTab({
+          url: '/pages/profile/profile'
+        });
+      } else {
+        console.log('【帖子详情】点击的是他人头像，跳转到用户主页');
+        wx.navigateTo({
+          url: `/pages/user-profile/user-profile?userId=${userId}`
+        });
+      }
     }
   }
 });

@@ -1,0 +1,181 @@
+/* pages/user-profile/user-profile.wxss */
+.container {
+  min-height: 100vh;
+  background-color: #f7f8fa;
+  padding-bottom: 100rpx;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400rpx;
+  background-color: #fff;
+  border-radius: 16rpx;
+  margin: 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #999;
+}
+
+/* 用户信息卡片 */
+.profile-card {
+  margin: 30rpx;
+  padding: 40rpx;
+  background-color: #fff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.profile-avatar {
+  margin-bottom: 20rpx;
+}
+
+.profile-avatar image {
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 50%;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.profile-name {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.profile-bio {
+  font-size: 28rpx;
+  color: #999;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* 帖子部分 */
+.posts-section {
+  margin: 0 30rpx 30rpx 30rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+  padding: 0 10rpx;
+}
+
+.post-card {
+  background: #fff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
+  margin-bottom: 20rpx;
+  box-sizing: border-box;
+  padding: 30rpx;
+  transition: transform 0.2s ease;
+}
+
+.post-card:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.post-header {
+  margin-bottom: 15rpx;
+}
+
+.post-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  line-height: 1.4;
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* 图片容器 */
+.image-container {
+  width: 100%;
+  margin: 15rpx 0;
+}
+
+.image-swiper {
+  width: 100%;
+  background-color: #fff;
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+
+.post-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  border-radius: 12rpx;
+}
+
+.post-content {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.5;
+  margin: 15rpx 0;
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.post-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.post-stats {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.stat-item {
+  font-size: 26rpx;
+  color: #999;
+}
+
+.post-time {
+  font-size: 24rpx;
+  color: #ccc;
+}
+
+.empty-tip {
+  text-align: center;
+  color: #bbb;
+  font-size: 28rpx;
+  margin: 40rpx 0;
+  padding: 60rpx 0;
+  background-color: #fff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}

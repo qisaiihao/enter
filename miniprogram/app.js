@@ -8,6 +8,9 @@ App({
       userInfo: null,
       openid: null,
       env: "cloud1-5gb0pbyl400845f5", // An empty string means the default environment
+      // 新增：用户主页相关
+      targetUserId: null, // 要查看的目标用户ID
+      viewOtherUser: false, // 是否查看他人主页
     };
 
     // Initialize cloud capabilities

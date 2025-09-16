@@ -13,15 +13,16 @@
       <view class="empty-subtext">快来发布第一条帖子吧！</view>
     </view>
     <view wx:for="{{postList}}" wx:key="_id" class="post-item-wrapper">
+      <!-- 作者信息放在navigator外面，避免事件冲突 -->
+      <view class="author-info-outside">
+        <image wx:if="{{item.authorAvatar}}" class="author-avatar" src="{{item.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindload="onAvatarLoad" data-postindex="{{index}}" bindtap="navigateToUserProfile" data-user-id="{{item._openid}}"></image>
+        <text class="author-name">{{item.authorName}}</text>
+      </view>
       <navigator 
         class="post-item"
         url="/pages/post-detail/post-detail?id={{item._id}}"
         hover-class="post-item-active"
       >
-        <view class="author-info">
-          <image wx:if="{{item.authorAvatar}}" class="author-avatar" src="{{item.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindload="onAvatarLoad" data-postindex="{{index}}" catch:tap="navigateToUserProfile" data-user-id="{{item._openid}}"></image>
-          <text class="author-name">{{item.authorName}}</text>
-        </view>
       
         <view class="post-title">{{item.title}}</view>
         

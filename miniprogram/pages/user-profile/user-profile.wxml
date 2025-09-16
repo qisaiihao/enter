@@ -1,0 +1,105 @@
+<!--pages/user-profile/user-profile.wxml-->
+<view class="container">
+  <!-- 加载状态 -->
+  <view wx:if="{{isLoading && userPosts.length === 0}}" class="loading-container">
+    <view class="loading-text">加载中...</view>
+  </view>
+
+  <!-- 主内容 -->
+  <view wx:else>
+    <!-- 用户信息卡片 -->
+    <view class="profile-card">
+      <view class="profile-avatar">
+        <image src="{{userInfo.avatarUrl || '../../images/avatar.png'}}" mode="aspectFill" binderror="onAvatarError"></image>
+      </view>
+      <view class="profile-info">
+        <text class="profile-name">{{userInfo.nickName || '微信用户'}}</text>
+        <text class="profile-bio">{{userInfo.bio || '这个用户很懒，什么都还没留下...'}}</text>
+      </view>
+    </view>
+
+    <!-- 帖子列表 -->
+    <view class="posts-section">
+      <view class="section-title">TA的帖子</view>
+      <block wx:if="{{userPosts.length > 0}}">
+        <view wx:for="{{userPosts}}" wx:key="_id" class="post-card" bind:tap="navigateToPostDetail" data-id="{{item._id}}" hover-class="post-item-active">
+          <view class="post-header">
+            <text class="post-title">{{item.title}}</text>
+          </view>
+          
+          <!-- 图片显示 -->
+          <view class="image-container" wx:if="{{item.imageUrls && item.imageUrls.length > 0}}">
+            <!-- 多图轮播 -->
+            <block wx:if="{{item.imageUrls.length > 1}}">
+              <swiper id="user-swiper-{{index}}" class="image-swiper" indicator-dots="true" circular="false" autoplay="false" style="width: 100%; height: {{swiperHeights[index] ? swiperHeights[index] + 'px' : '220px'}};">
+                <block wx:for="{{item.imageUrls}}" wx:for-item="imageUrl" wx:key="*this" wx:for-index="imgindex">
+                  <swiper-item>
+                    <image
+                      id="user-swiper-img-{{index}}-{{imgindex}}"
+                      class="post-image"
+                      src="{{imageUrl}}"
+                      mode="aspectFill"
+                      catch:tap="handlePreview"
+                      data-src="{{imageUrl}}"
+                      data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}"
+                      binderror="onImageError"
+                      bindload="onImageLoad"
+                      data-postindex="{{index}}"
+                      data-imgindex="{{imgindex}}"
+                      data-type="multi"
+                      lazy-load="{{true}}"
+                      style="width: 100%; height: 100%; object-fit: cover; background-color: #f0f0f0;"
+                    ></image>
+                  </swiper-item>
+                </block>
+              </swiper>
+            </block>
+            
+            <!-- 单图 -->
+            <block wx:elif="{{item.imageUrls.length === 1}}">
+              <image
+                id="user-single-img-{{index}}"
+                class="post-image"
+                src="{{item.imageUrls[0]}}"
+                mode="{{imageClampHeights[index] ? 'aspectFill' : 'widthFix'}}"
+                catch:tap="handlePreview"
+                data-src="{{item.imageUrls[0]}}"
+                data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}"
+                binderror="onImageError"
+                bindload="onImageLoad"
+                data-postindex="{{index}}"
+                data-imgindex="0"
+                data-type="single"
+                lazy-load="{{true}}"
+                style="width: 100%; height: {{imageClampHeights[index] ? imageClampHeights[index] + 'px' : 'auto'}}; object-fit: {{imageClampHeights[index] ? 'cover' : 'contain'}}; background-color: #f0f0f0;"
+              ></image>
+            </block>
+          </view>
+          
+          <view class="post-content" wx:if="{{item.content}}">{{item.content}}</view>
+          
+          <!-- 帖子信息 -->
+          <view class="post-footer">
+            <view class="post-stats">
+              <text class="stat-item">👍 {{item.votes || 0}}</text>
+              <text class="stat-item">💬 {{item.commentCount || 0}}</text>
+            </view>
+            <view class="post-time">{{item.formattedCreateTime}}</view>
+          </view>
+        </view>
+        
+        <!-- 加载更多提示 -->
+        <view wx:if="{{isLoading && userPosts.length > 0}}" class="loading-container">
+          <view class="loading-text">加载中...</view>
+        </view>
+        
+        <!-- 占位空白，便于触发 onReachBottom -->
+        <view style="height: 200rpx;"></view>
+      </block>
+      
+      <view wx:else class="empty-tip">
+        <text>TA还没有发布过帖子</text>
+      </view>
+    </view>
+  </view>
+</view>
