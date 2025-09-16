@@ -1,0 +1,85 @@
+<!--pages/messages/messages.wxml-->
+<view class="container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <text class="page-title">消息通知</text>
+    <view class="header-actions">
+      <text wx:if="{{unreadCount > 0}}" class="unread-count">{{unreadCount}}条未读</text>
+      <text class="clear-btn" bindtap="clearAllMessages">清空</text>
+    </view>
+  </view>
+
+  <!-- 消息类型标签 -->
+  <view class="tab-container">
+    <view class="tab-item {{activeTab === 'all' ? 'active' : ''}}" bindtap="switchTab" data-tab="all">
+      <text>全部</text>
+      <view wx:if="{{activeTab === 'all'}}" class="tab-indicator"></view>
+    </view>
+    <view class="tab-item {{activeTab === 'like' ? 'active' : ''}}" bindtap="switchTab" data-tab="like">
+      <text>点赞</text>
+      <view wx:if="{{activeTab === 'like'}}" class="tab-indicator"></view>
+    </view>
+    <view class="tab-item {{activeTab === 'comment' ? 'active' : ''}}" bindtap="switchTab" data-tab="comment">
+      <text>评论</text>
+      <view wx:if="{{activeTab === 'comment'}}" class="tab-indicator"></view>
+    </view>
+    <view class="tab-item {{activeTab === 'favorite' ? 'active' : ''}}" bindtap="switchTab" data-tab="favorite">
+      <text>收藏</text>
+      <view wx:if="{{activeTab === 'favorite'}}" class="tab-indicator"></view>
+    </view>
+  </view>
+
+  <!-- 消息列表 -->
+  <scroll-view scroll-y="true" class="message-list" bindscrolltolower="onReachBottom">
+    <view wx:if="{{messages.length === 0 && !isLoading}}" class="empty-container">
+      <image class="empty-icon" src="../../images/icons/empty-message.svg" mode="aspectFit"></image>
+      <text class="empty-text">暂无消息通知</text>
+    </view>
+
+    <view wx:for="{{messages}}" wx:key="_id" wx:for-index="index" class="message-item {{!item.isRead ? 'unread' : ''}}">
+      <!-- 消息内容 -->
+      <view class="message-content" bindtap="navigateToPost" data-postid="{{item.postId}}">
+        <!-- 用户头像 -->
+        <image class="user-avatar" src="{{item.fromUserAvatar || '../../images/avatar.png'}}" mode="aspectFill"></image>
+        
+        <!-- 消息主体 -->
+        <view class="message-body">
+          <!-- 消息类型图标和标题 -->
+          <view class="message-header">
+            <view class="message-type">
+              <text class="type-icon">{{item.type === 'like' ? '👍' : item.type === 'comment' ? '💬' : '⭐'}}</text>
+              <text class="type-text">{{item.type === 'like' ? '点赞' : item.type === 'comment' ? '评论' : '收藏'}}</text>
+            </view>
+            <text class="message-time">{{item.formattedTime}}</text>
+          </view>
+          
+          <!-- 消息文本 -->
+          <text class="message-text">{{item.content}}</text>
+          
+          <!-- 相关帖子预览 -->
+          <view wx:if="{{item.postTitle}}" class="post-preview">
+            <text class="post-title">{{item.postTitle}}</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 删除按钮 -->
+      <view class="delete-btn" bindtap="deleteMessage" data-messageid="{{item._id}}" data-index="{{index}}">
+        <text>删除</text>
+      </view>
+      
+      <!-- 未读标记 -->
+      <view wx:if="{{!item.isRead}}" class="unread-dot"></view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view wx:if="{{isLoading && messages.length > 0}}" class="loading-more">
+      <text>加载中...</text>
+    </view>
+    
+    <!-- 没有更多 -->
+    <view wx:if="{{!hasMore && messages.length > 0}}" class="no-more">
+      <text>没有更多消息了</text>
+    </view>
+  </scroll-view>
+</view>

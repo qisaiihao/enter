@@ -33,7 +33,6 @@ page {
   transition: background-image 0.5s ease-in-out;
 }
 
-<<<<<<< Updated upstream
 /* 模糊背景层 - 高斯模糊效果 */
 .blur-background {
   position: fixed;
@@ -47,7 +46,8 @@ page {
   filter: blur(30px) brightness(0.7); /* 高斯模糊30px，降低亮度增强对比度 */
   transform: scale(1.1); /* 稍微放大避免边缘模糊不均 */
   z-index: 0; /* 放在最底层 */
-=======
+}
+
 /* 收藏按钮 */
 .favorite-btn {
   position: absolute;
@@ -61,7 +61,7 @@ page {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
-  z-index: 10;
+  z-index: 999;
   transition: all 0.3s ease;
 }
 
@@ -71,7 +71,6 @@ page {
 
 .favorite-icon {
   font-size: 36rpx;
->>>>>>> Stashed changes
 }
 
 /* 单帖内容区域 */

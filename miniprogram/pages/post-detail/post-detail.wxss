@@ -177,6 +177,26 @@
   align-items: center;
 }
 
+.favorite-button {
+  margin-right: 20rpx;
+  background-color: #ffc300;
+  color: white;
+  border: none;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  padding: 8rpx 16rpx;
+  line-height: 1.2;
+  transition: background-color 0.2s ease;
+}
+
+.favorite-button:active {
+  background-color: #e6b000;
+}
+
+.favorite-button::after {
+  border: none;
+}
+
 .vote-button {
   margin: 0;
   background-color: #07c160;

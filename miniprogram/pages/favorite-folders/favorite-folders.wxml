@@ -40,14 +40,15 @@
   </view>
 
   <!-- 创建收藏夹弹窗 -->
-  <view wx:if="{{showCreateModal}}" class="modal-overlay" bindtap="hideCreateModal">
-    <view class="modal-content" catchtap="">
+  <view wx:if="{{showCreateModal}}" class="modal-overlay">
+    <view class="modal-content">
       <view class="modal-title">创建收藏夹</view>
-      <input class="modal-input" 
-             placeholder="请输入收藏夹名称" 
+      <input class="modal-input"
+             placeholder="请输入收藏夹名称"
              value="{{newFolderName}}"
              bindinput="onFolderNameInput"
-             maxlength="20" />
+             maxlength="20"
+             catchtap="true" />
       <view class="modal-buttons">
         <button class="modal-btn cancel-btn" bindtap="hideCreateModal">取消</button>
         <button class="modal-btn confirm-btn" bindtap="createFolder">创建</button>
@@ -56,14 +57,15 @@
   </view>
 
   <!-- 编辑收藏夹弹窗 -->
-  <view wx:if="{{showEditModal}}" class="modal-overlay" bindtap="hideEditModal">
-    <view class="modal-content" catchtap="">
+  <view wx:if="{{showEditModal}}" class="modal-overlay">
+    <view class="modal-content">
       <view class="modal-title">重命名收藏夹</view>
-      <input class="modal-input" 
-             placeholder="请输入收藏夹名称" 
+      <input class="modal-input"
+             placeholder="请输入收藏夹名称"
              value="{{editFolderName}}"
              bindinput="onEditFolderNameInput"
-             maxlength="20" />
+             maxlength="20"
+             catchtap="true" />
       <view class="modal-buttons">
         <button class="modal-btn cancel-btn" bindtap="hideEditModal">取消</button>
         <button class="modal-btn confirm-btn" bindtap="updateFolderName">保存</button>

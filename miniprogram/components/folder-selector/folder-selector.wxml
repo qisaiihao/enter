@@ -1,6 +1,6 @@
 <!--components/folder-selector/folder-selector.wxml-->
-<view wx:if="{{show}}" class="modal-overlay" bindtap="hideModal">
-  <view class="modal-content" catchtap="">
+<view wx:if="{{show}}" class="modal-overlay">
+  <view class="modal-content">
     <view class="modal-header">
       <view class="modal-title">选择收藏夹</view>
       <view class="close-btn" bindtap="hideModal">×</view>
@@ -15,10 +15,11 @@
       <!-- 收藏夹列表 -->
       <view wx:elif="{{folders.length > 0}}" class="folders-list">
         <view class="folder-item {{selectedFolderId === item._id ? 'selected' : ''}}"
-              wx:for="{{folders}}" 
+              wx:for="{{folders}}"
               wx:key="_id"
               data-folder-id="{{item._id}}"
-              bindtap="selectFolder">
+              bindtap="selectFolder"
+>
           <view class="folder-icon">📁</view>
           <view class="folder-info">
             <view class="folder-name">{{item.name}}</view>
@@ -38,10 +39,38 @@
     
     <view class="modal-footer">
       <button class="modal-btn secondary-btn" bindtap="createFolder">创建收藏夹</button>
-      <button class="modal-btn primary-btn" 
+      <button class="modal-btn primary-btn"
               bindtap="confirmFavorite"
               disabled="{{!selectedFolderId}}">
         确认收藏
+      </button>
+    </view>
+  </view>
+</view>
+
+<!-- 创建收藏夹弹窗 -->
+<view wx:if="{{showCreateModal}}" class="modal-overlay">
+  <view class="modal-content create-modal">
+    <view class="modal-header">
+      <view class="modal-title">创建收藏夹</view>
+      <view class="close-btn" bindtap="hideCreateModal" catchtap="true">×</view>
+    </view>
+    
+    <view class="modal-body">
+      <input class="folder-name-input"
+             placeholder="请输入收藏夹名称"
+             value="{{newFolderName}}"
+             bindinput="onFolderNameInput"
+             focus="{{true}}"
+             catchtap="true" />
+    </view>
+    
+    <view class="modal-footer">
+      <button class="modal-btn secondary-btn" bindtap="hideCreateModal">取消</button>
+      <button class="modal-btn primary-btn"
+              bindtap="createNewFolder"
+              disabled="{{!newFolderName}}">
+        创建
       </button>
     </view>
   </view>

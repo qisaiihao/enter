@@ -10,16 +10,20 @@
       <text class="sidebar-nickname">{{userInfo.nickName || '微信用户'}}</text>
     </view>
     <view class="sidebar-menu">
-      <view class="sidebar-item" bindtap="navigateToEditProfile">
-        <text>修改资料</text>
+        <view class="sidebar-item" bindtap="navigateToEditProfile">
+          <text>修改资料</text>
+        </view>
+        <view class="sidebar-item" bindtap="navigateToMessages">
+          <text>消息通知</text>
+          <view wx:if="{{unreadCount > 0}}" class="unread-badge">{{unreadCount}}</view>
+        </view>
+        <view class="sidebar-item" bindtap="navigateToMyLikes">
+          <text>我的点赞</text>
+        </view>
+        <view class="sidebar-item" bindtap="navigateToFavoriteFolders">
+          <text>我的收藏夹</text>
+        </view>
       </view>
-      <view class="sidebar-item" bindtap="navigateToMyLikes">
-        <text>我的点赞</text>
-      </view>
-      <view class="sidebar-item" bindtap="navigateToFavoriteFolders">
-        <text>我的收藏夹</text>
-      </view>
-    </view>
   </view>
 
   <!-- Main Content -->

@@ -14,6 +14,7 @@ Page({
     swiperHeights: {}, // 多图swiper高度
     imageClampHeights: {}, // 单图瘦高图钳制高度
     _hasFirstShow: false, // 新增：标记是否首次进入
+    unreadCount: 0, // 未读消息数量
   },
 
   onLoad: function (options) {
@@ -42,6 +43,7 @@ Page({
     }
 
     this.fetchUserProfile();
+    this.checkUnreadMessages(); // 检查未读消息
 
     if (this.data.myPosts.length === 0) {
       this.loadMyPosts();
@@ -410,6 +412,30 @@ Page({
   navigateToFavoriteFolders: function() {
     wx.navigateTo({
       url: '/pages/favorite-folders/favorite-folders',
+    });
+  },
+
+  // 跳转到消息通知页面
+  navigateToMessages: function() {
+    wx.navigateTo({
+      url: '/pages/messages/messages',
+    });
+  },
+
+  // 检查未读消息数量
+  checkUnreadMessages: function() {
+    wx.cloud.callFunction({
+      name: 'getUnreadMessageCount',
+      success: res => {
+        if (res.result && res.result.success) {
+          this.setData({
+            unreadCount: res.result.count || 0
+          });
+        }
+      },
+      fail: err => {
+        console.error('检查未读消息失败:', err);
+      }
     });
   }
 });

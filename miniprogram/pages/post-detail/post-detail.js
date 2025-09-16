@@ -17,6 +17,7 @@ Page({
     imageContainerHeight: null, // 用于控制swiper的高度
     swiperHeights: {}, // 多图swiper高度
     imageClampHeights: {}, // 单图瘦高图钳制高度
+    showFavoriteModal: false, // 控制收藏弹窗
   },
 
   onLoad: function (options) {
@@ -140,6 +141,27 @@ Page({
       complete: () => {
         this.setData({ votingInProgress: false });
       }
+    });
+  },
+
+  // --- 收藏功能 ---
+  onFavorite: function() {
+    this.setData({
+      showFavoriteModal: true,
+    });
+  },
+
+  hideFavoriteModal: function() {
+    this.setData({
+      showFavoriteModal: false,
+    });
+  },
+
+  onFavoriteSuccess: function() {
+    this.hideFavoriteModal();
+    wx.showToast({
+      title: '收藏成功',
+      icon: 'success',
     });
   },
 

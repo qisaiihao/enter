@@ -274,7 +274,10 @@ async function getFavoriteFolders(openid) {
 // 创建收藏夹
 async function createFavoriteFolder(openid, folderName) {
   try {
+    console.log('开始创建收藏夹，用户:', openid, '名称:', folderName);
+
     if (!folderName || folderName.trim() === '') {
+      console.log('收藏夹名称为空');
       return {
         success: false,
         message: '收藏夹名称不能为空'
@@ -282,18 +285,21 @@ async function createFavoriteFolder(openid, folderName) {
     }
 
     // 检查用户是否已有同名收藏夹
+    console.log('检查同名收藏夹...');
     const existingFolder = await db.collection('favorite_folders').where({
       _openid: openid,
       name: folderName.trim()
     }).get();
 
     if (existingFolder.data.length > 0) {
+      console.log('找到同名收藏夹:', existingFolder.data[0]);
       return {
         success: false,
         message: '收藏夹名称已存在'
       };
     }
 
+    console.log('未找到同名收藏夹，开始创建...');
     // 创建新收藏夹
     const result = await db.collection('favorite_folders').add({
       data: {
@@ -305,6 +311,7 @@ async function createFavoriteFolder(openid, folderName) {
       }
     });
 
+    console.log('收藏夹创建成功，ID:', result._id);
     return {
       success: true,
       folderId: result._id,
@@ -312,10 +319,24 @@ async function createFavoriteFolder(openid, folderName) {
     };
   } catch (error) {
     console.error('创建收藏夹失败:', error);
+    console.error('错误码:', error.code);
+    console.error('错误信息:', error.message);
+
+    // 如果是集合不存在错误
+    if (error.code === -502001) {
+      return {
+        success: false,
+        message: '数据库集合不存在，请联系管理员创建 favorite_folders 集合',
+        error: error.message,
+        code: error.code
+      };
+    }
+
     return {
       success: false,
       message: '创建收藏夹失败',
-      error: error.message
+      error: error.message,
+      code: error.code
     };
   }
 }

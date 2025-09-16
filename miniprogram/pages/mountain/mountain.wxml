@@ -10,10 +10,7 @@
 
   <!-- 山模式 -->
   <view wx:if="{{postList.length > 0}}" class="poem-mode-container" bindtouchstart="touchStart" bindtouchend="touchEnd">
-    <!-- 收藏按钮 -->
-    <view class="favorite-btn" bindtap="showFavoriteModal" data-post-id="{{postList[currentPostIndex]._id}}">
-      <view class="favorite-icon">❤️</view>
-    </view>
+    
     
     <view class="single-post-content {{postList[currentPostIndex].isOriginal ? 'original-poem' : ''}}" catchtap="onSinglePostTap" data-postid="{{postList[currentPostIndex]._id}}">
       <!-- 作者信息 -->
@@ -43,10 +40,5 @@
     <view>🐛</view>
   </view>
 
-  <!-- 收藏夹选择器 -->
-  <folder-selector 
-    show="{{showFavoriteModal}}"
-    post-id="{{currentPostId}}"
-    bind:hide="hideFavoriteModal"
-    bind:favoriteSuccess="onFavoriteSuccess" />
+  
 </view>

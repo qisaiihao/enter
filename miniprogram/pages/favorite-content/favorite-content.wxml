@@ -1,6 +1,6 @@
 <!--pages/favorite-content/favorite-content.wxml-->
 <view class="container">
-  <!-- 加载状态 -->
+  <!-- 初始加载状态 -->
   <view wx:if="{{isLoading && favorites.length === 0}}" class="loading-container">
     <view class="loading-text">加载中...</view>
   </view>
@@ -34,29 +34,49 @@
       <!-- 内容 -->
       <view wx:if="{{item.postContent}}" class="post-content">{{item.postContent}}</view>
 
-      <!-- 图片 -->
-      <view wx:if="{{item.postImageUrls && item.postImageUrls.length > 0}}" class="post-images">
-        <view wx:if="{{item.postImageUrls.length === 1}}" class="single-image">
-          <image class="post-image" 
-                 src="{{item.postImageUrls[0]}}" 
-                 mode="aspectFill"
-                 data-src="{{item.postImageUrls[0]}}"
-                 data-urls="{{item.postImageUrls}}"
-                 bindtap="onImagePreview"
-                 catchtap="onImagePreview" />
-        </view>
-        <view wx:else class="multi-images">
-          <image class="post-image" 
-                 wx:for="{{item.postImageUrls}}" 
-                 wx:for-item="imageUrl"
-                 wx:key="*this"
-                 src="{{imageUrl}}" 
-                 mode="aspectFill"
-                 data-src="{{imageUrl}}"
-                 data-urls="{{item.postImageUrls}}"
-                 bindtap="onImagePreview"
-                 catchtap="onImagePreview" />
-        </view>
+      <!-- 图片显示逻辑（迁移自点赞页面，支持单图瘦高图钳制和多图swiper高度） -->
+      <view wx:if="{{(item.postImageUrl || (item.postImageUrls && item.postImageUrls.length > 0))}}" class="image-container" id="image-container-{{index}}">
+        <!-- 单张图片 -->
+        <block wx:if="{{item.postImageUrls && item.postImageUrls.length === 1}}">
+          <image
+            id="single-image-{{item.postId}}"
+            src="{{item.postImageUrls[0]}}"
+            mode="{{imageClampHeights[item.postId] ? 'aspectFill' : 'widthFix'}}"
+            style="width: 100%; height: {{imageClampHeights[item.postId] ? imageClampHeights[item.postId] + 'px' : 'auto'}}; object-fit: {{imageClampHeights[item.postId] ? 'cover' : 'contain'}}; background-color: #f0f0f0;"
+            bindload="onImageLoad"
+            data-postid="{{item.postId}}"
+            data-type="single"
+            binderror="onImageError"
+            catch:tap="handlePreview"
+            data-src="{{item.postImageUrls[0]}}"
+            data-original-image-urls="{{item.postImageUrls}}"
+            lazy-load="{{true}}"
+          />
+        </block>
+        <!-- 多张图片 -->
+        <block wx:elif="{{item.postImageUrls && item.postImageUrls.length > 1}}">
+          <swiper id="swiper-{{item.postId}}" class="image-swiper" indicator-dots="true" circular="true" style="width: 100%; height: {{swiperHeights[index] ? swiperHeights[index] + 'px' : '220px'}};">
+            <block wx:for="{{item.postImageUrls}}" wx:for-item="img" wx:for-index="imgindex">
+              <swiper-item>
+                <image
+                  src="{{img}}"
+                  mode="aspectFill"
+                  bindload="onImageLoad"
+                  data-postid="{{item.postId}}"
+                  data-postindex="{{index}}"
+                  data-imgindex="{{imgindex}}"
+                  data-type="multi"
+                  binderror="onImageError"
+                  catch:tap="handlePreview"
+                  data-src="{{img}}"
+                  data-original-image-urls="{{item.postImageUrls}}"
+                  lazy-load="{{true}}"
+                  style="width: 100%; height: 100%; object-fit: cover; background-color: #f0f0f0;"
+                />
+              </swiper-item>
+            </block>
+          </swiper>
+        </block>
       </view>
 
       <!-- 收藏时间 -->
@@ -78,6 +98,7 @@
     <view class="empty-icon">📖</view>
     <view class="empty-text">收藏夹是空的</view>
     <view class="empty-subtext">去发现一些好诗收藏起来吧</view>
+    <button bindtap="manualLoad" style="margin-top: 20rpx; padding: 15rpx 30rpx; background: #07c160; color: white; border-radius: 8rpx; font-size: 26rpx;">刷新</button>
   </view>
 
   <!-- 加载更多 -->

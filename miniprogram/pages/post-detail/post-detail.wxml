@@ -71,7 +71,10 @@
           <view class="vote-count {{post.isVoted ? 'voted' : ''}}">👍 {{post.votes || 0}}</view>
           <view class="comment-count">💬 {{commentCount}}</view>
         </view>
-        <view class="button-group">
+                <view class="button-group">
+          <button class="favorite-button" size="mini" catch:tap="onFavorite">
+            收藏
+          </button>
           <button class="vote-button {{post.isVoted ? 'voted' : ''}}" size="mini" catch:tap="onVote" data-postid="{{post._id}}">
             {{post.isVoted ? '已点赞' : '点赞'}}
           </button>
@@ -179,3 +182,10 @@
 
 <!-- Cloud Tip Modal -->
 <cloud-tip-modal showUploadTip="{{showUploadTip}}"></cloud-tip-modal>
+
+<!-- 收藏夹选择器 -->
+<folder-selector 
+  show="{{showFavoriteModal}}"
+  post-id="{{post._id}}"
+  bind:hide="hideFavoriteModal"
+  bind:favoriteSuccess="onFavoriteSuccess" />

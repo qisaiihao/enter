@@ -11,10 +11,12 @@ Page({
   },
 
   onLoad: function() {
+    console.log('=== 收藏夹列表页面 onLoad ===');
     this.loadFolders();
   },
 
   onShow: function() {
+    console.log('=== 收藏夹列表页面 onShow ===');
     this.loadFolders();
   },
 
@@ -24,14 +26,35 @@ Page({
       name: 'getMyProfileData',
       data: { action: 'getFavoriteFolders' },
       success: res => {
+        console.log('获取收藏夹返回数据:', res);
         if (res.result && res.result.success) {
+          const folders = res.result.folders || [];
+          console.log('收藏夹数据:', folders);
+
+          // 检查数据结构
+          folders.forEach((folder, index) => {
+            console.log(`收藏夹${index}:`, {
+              _id: folder._id,
+              name: folder.name,
+              itemCount: folder.itemCount,
+              createTime: folder.createTime
+            });
+          });
+
           this.setData({
-            folders: res.result.folders,
+            folders: folders,
             isLoading: false
           });
         } else {
-          wx.showToast({ title: '加载失败', icon: 'none' });
-          this.setData({ isLoading: false });
+          console.error('获取收藏夹失败:', res.result);
+          wx.showToast({
+            title: res.result?.message || '加载失败',
+            icon: 'none'
+          });
+          this.setData({
+            isLoading: false,
+            folders: []
+          });
         }
       },
       fail: err => {
@@ -68,37 +91,83 @@ Page({
       return;
     }
 
+    console.log('开始创建收藏夹，名称:', folderName);
     wx.showLoading({ title: '创建中...' });
     wx.cloud.callFunction({
       name: 'getMyProfileData',
       data: { action: 'createFavoriteFolder', folderName: folderName },
       success: res => {
         wx.hideLoading();
-        if (res.result && res.result.success) {
-          wx.showToast({ title: '创建成功' });
-          this.setData({ showCreateModal: false });
-          this.loadFolders();
+        console.log('创建收藏夹云函数返回:', res);
+
+        // 更详细的返回结果检查
+        if (res && res.result) {
+          if (res.result.success) {
+            wx.showToast({ title: '创建成功' });
+            // 先清空输入框，再关闭弹窗，避免状态混乱
+            this.setData({
+              showCreateModal: false,
+              newFolderName: ''  // 清空输入框
+            });
+            // 延迟加载，确保状态更新完成
+            setTimeout(() => {
+              this.loadFolders();
+            }, 300);
+          } else {
+            console.error('创建收藏夹业务失败:', res.result);
+            wx.showToast({
+              title: res.result.message || '创建失败',
+              icon: 'none'
+            });
+          }
         } else {
-          wx.showToast({ 
-            title: res.result.message || '创建失败', 
-            icon: 'none' 
-          });
+          console.error('创建收藏夹返回格式异常:', res);
+          wx.showToast({ title: '创建失败：返回格式错误', icon: 'none' });
         }
       },
       fail: err => {
         wx.hideLoading();
-        console.error('创建收藏夹失败:', err);
-        wx.showToast({ title: '网络错误', icon: 'none' });
+        console.error('创建收藏夹云函数调用失败:', err);
+        wx.showToast({
+          title: '网络错误：' + (err.errMsg || '未知错误'),
+          icon: 'none'
+        });
       }
     });
   },
 
   // 进入收藏夹
   enterFolder: function(e) {
+    console.log('=== 点击收藏夹项 ===');
+    console.log('事件对象:', e);
+    console.log('dataset:', e.currentTarget.dataset);
+
     const folderId = e.currentTarget.dataset.folderId;
     const folderName = e.currentTarget.dataset.folderName;
+
+    console.log('提取的folderId:', folderId);
+    console.log('提取的folderName:', folderName);
+
+    if (!folderId) {
+      console.error('错误：folderId 为空');
+      wx.showToast({
+        title: '收藏夹ID为空',
+        icon: 'none'
+      });
+      return;
+    }
+
+    const targetUrl = `/pages/favorite-content/favorite-content?folderId=${folderId}&folderName=${encodeURIComponent(folderName || '')}`;
+    console.log('跳转URL:', targetUrl);
+
     wx.navigateTo({
-      url: `/pages/favorite-content/favorite-content?folderId=${folderId}&folderName=${encodeURIComponent(folderName)}`
+      url: targetUrl,
+      success: function() {
+        console.log('跳转成功');
+      },
+      fail: function(err) {
+        console.error('跳转失败:', err);
+      }
     });
   },
 
