@@ -24,47 +24,13 @@ page {
   overflow: hidden;
 }
 
-/* 双缓冲背景容器 */
-.background-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1;
-  overflow: hidden;
-}
-
-/* 背景图片样式 - 双缓冲避免闪烁 */
-.background-image {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+/* 背景图片样式 */
+.container {
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center center;
   background-attachment: fixed;
-  will-change: opacity;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-}
-
-/* 当前背景图片 */
-.background-image.current {
-  opacity: 1;
-  z-index: 2;
-  transition: opacity 0.15s ease-out;
-}
-
-/* 预加载背景图片 */
-.background-image.next {
-  opacity: 0;
-  z-index: 1;
-  transition: opacity 0.15s ease-in;
+  transition: background-image 0.5s ease-in-out; /* 背景图切换动画 */
 }
 
 /* 模糊背景层 - 高斯模糊效果 */
@@ -72,20 +38,15 @@ page {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   background-size: cover;
   background-position: center center;
-  filter: blur(10px);
-  z-index: 0;
-  transition: opacity 0.1s ease-in-out;
+  background-attachment: fixed;
+  filter: blur(30px) brightness(0.7); /* 高斯模糊30px，降低亮度增强对比度 */
+  transform: scale(1.1); /* 稍微放大避免边缘模糊不均 */
+  z-index: 0; /* 放在最底层 */
 }
-
-.blur-background.transitioning {
-  opacity: 0.7;
-}
-
-/* 移除预加载指示器样式 - 不再需要 */
 
 /* 收藏按钮 */
 .favorite-btn {
