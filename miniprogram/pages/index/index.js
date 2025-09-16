@@ -212,6 +212,10 @@ Page({
         if (success) {
           console.log('图片预加载成功:', url);
         }
+      });
+    }
+  },
+
   // 新增：跳转到用户个人主页
   navigateToUserProfile: function(e) {
     console.log('【头像点击】事件触发', e);
