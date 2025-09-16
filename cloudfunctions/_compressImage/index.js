@@ -13,8 +13,11 @@ exports.main = async (event, context) => {
     const tempFileURL = tempFileRes.fileList[0].tempFileURL
 
     // 2. ★ 在临时链接后，手动拼接图片处理指令 ★
-    // 这是数据万象最经典的图片处理URL格式
-    const transformedURL = tempFileURL + '?imageMogr2/thumbnail/800x/quality/85'
+    // 使用更激进的压缩参数来减小文件大小
+    // thumbnail/600x: 最大宽度600px (从800px降低到600px)
+    // quality/65: 质量65% (从85%降低到65%)
+    // format/webp: 使用webp格式获得更好的压缩率
+    const transformedURL = tempFileURL + '?imageMogr2/thumbnail/600x/quality/65/format/webp'
 
     // 3. 使用 axios 下载“处理后”的图片内容
     const response = await axios({
@@ -33,7 +36,6 @@ exports.main = async (event, context) => {
       fileContent: compressedFileContent
     })
     
-    console.log('压缩并上传成功', uploadResult);
 
     return {
       success: true,
@@ -41,7 +43,6 @@ exports.main = async (event, context) => {
     }
 
   } catch (err) {
-    console.error('压缩失败', err)
     return {
       success: false,
       error: err

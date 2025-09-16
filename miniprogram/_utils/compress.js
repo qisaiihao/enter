@@ -17,8 +17,8 @@ function _compressImage(img, canvas, fileLimit) {
       let isIOS = /(ios)/ig.test(system);
       // 文件限制
       fileLimit = fileLimit || 2 * 1024 * 1024;
-      // 基础大小
-      let baseSize = 1280;
+      // 基础大小 - 降低到1024以减小文件大小
+      let baseSize = 1024;
       // 大于文件限制，手动压缩
       if (img.size > fileLimit) {
         return compressImg({src:img.path, size:img.size, canvas, baseSize, isIOS, pixelRatio}).then(response => {
@@ -76,10 +76,11 @@ function _compressImage(img, canvas, fileLimit) {
     return new Promise((resolve, reject) => {
       let quality = 100;
       if (isIOS) {
-        quality = 0.1;
+        quality = 0.08; // 进一步降低iOS压缩质量
       } else {
-        let temp = 30 - (size / 1024 / 1024);
-        quality = temp < 10 ? 10 : temp;
+        // 更激进的压缩算法
+        let temp = 25 - (size / 1024 / 1024);
+        quality = temp < 8 ? 8 : temp; // 最低质量从10降低到8
       }
       wx.compressImage({
         src,
@@ -123,21 +124,21 @@ function _compressImage(img, canvas, fileLimit) {
       if (imgWidth <= baseSize && imgHeight <= baseSize) {
         canvasWidth = imgWidth;
         canvasHeight = imgHeight;
-        quality = 0.3;
+        quality = 0.25; // 进一步降低质量
       } else {
         let compareFlag = true;
         // 图片的一边大于baseSize，宽高不变
         if (pixelRatio > 2 && (imgWidth > baseSize || imgHeight > baseSize) && (imgWidth < baseSize || imgHeight < baseSize)) {
           canvasWidth = imgWidth;
           canvasHeight = imgHeight;
-          quality = 0.3;
+          quality = 0.25; // 进一步降低质量
         } else {
           // 按照原图的宽高比压缩
           compareFlag = pixelRatio > 2 ? (imgWidth > imgHeight) : (imgWidth > imgHeight);
           // 宽比高大，宽按基准比例缩放，高设置为基准值，高比宽大，高按基准比例缩放，宽设置为基准值。
           canvasWidth = compareFlag ? parseInt(imgWidth / (imgHeight / baseSize)) : baseSize;
           canvasHeight = compareFlag ? baseSize : parseInt(imgHeight / (imgwidth / baseSize));
-          quality = 0.9;
+          quality = 0.7; // 进一步降低质量
         }
       }
       let pic = canvas.createImage();

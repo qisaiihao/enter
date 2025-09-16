@@ -15,7 +15,6 @@ exports.main = async (event, context) => {
       cloudPath: event.cloudPath // 把前端传过来的cloudPath再传回去
     };
   } catch (e) {
-    console.error(e);
     return e;
   }
 }

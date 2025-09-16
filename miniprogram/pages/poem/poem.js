@@ -24,7 +24,6 @@ Page({
   },
 
   onLoad: function () {
-    console.log('路页面加载');
     this.getPostList();
   },
 
@@ -40,7 +39,6 @@ Page({
       const cacheTimestamp = wx.getStorageSync(cacheTime);
       
       if (cachedData && cacheTimestamp && (now - cacheTimestamp < cacheExpiry)) {
-        console.log('使用诗歌缓存数据');
         this.setData({
           postList: cachedData,
           currentPostIndex: 0,
@@ -50,7 +48,7 @@ Page({
         return;
       }
     } catch (e) {
-      console.log('诗歌缓存读取失败，重新加载');
+      // 缓存读取失败，重新加载
     }
 
     // 强制刷新，避免显示非诗歌帖子
@@ -70,26 +68,13 @@ Page({
     this.setData({ isLoading: true });
     
     const skip = this.data.page * PAGE_SIZE;
-    console.log('开始获取路诗歌列表，skip:', skip, 'page:', this.data.page);
 
     wx.cloud.callFunction({
       name: 'getPostList',
       data: { skip: skip, limit: PAGE_SIZE, isPoem: true, isOriginal: true }, // 只获取原创诗歌
       success: res => {
-        console.log('获取路诗歌列表结果:', res);
         if (res.result && res.result.success) {
           const posts = res.result.posts || [];
-          console.log('获取到路诗歌数量:', posts.length);
-
-          // 调试：检查返回的诗歌数据
-          posts.forEach((post, index) => {
-            console.log(`路诗歌${index + 1}:`, {
-              title: post.title,
-              isPoem: post.isPoem,
-              isOriginal: post.isOriginal,
-              content: post.content ? post.content.substring(0, 50) + '...' : '无内容'
-            });
-          });
           
           posts.forEach(post => {
             if (!post.imageUrls || post.imageUrls.length === 0) {
@@ -98,8 +83,6 @@ Page({
           });
 
           const newPostList = this.data.page === 0 ? posts : this.data.postList.concat(posts);
-
-          console.log('路postList:', newPostList);
 
           this.setData({
             postList: newPostList,
@@ -113,7 +96,7 @@ Page({
               wx.setStorageSync('poem_postList_cache', newPostList);
               wx.setStorageSync('poem_postList_cache_time', Date.now());
             } catch (e) {
-              console.log('诗歌缓存保存失败:', e);
+              // 诗歌缓存保存失败
             }
           }
 
@@ -122,8 +105,9 @@ Page({
             // 立即预加载前几首诗歌的图片
             this.preloadNextBackgroundImage(0);
             
-            // 设置当前背景图
+            // 设置当前背景图 - 确保使用压缩图
             const currentPost = newPostList[0];
+            // 优先使用poemBgImage（压缩图），其次使用imageUrls[0]（压缩图），避免使用原图
             const imageUrl = currentPost.poemBgImage || (currentPost.imageUrls && currentPost.imageUrls[0]) || '';
             
             if (imageUrl) {
@@ -132,8 +116,8 @@ Page({
               });
             }
             
-            // 立即开始预加载更多图片
-            this.aggressivePreload();
+            // 立即开始智能预加载
+            this.smartPreload();
           }
         } else {
           wx.showToast({ title: '加载失败', icon: 'none' });
@@ -212,10 +196,10 @@ Page({
     }
   },
 
-  // 激进预加载 - 预加载更多图片
-  aggressivePreload: function() {
-    // 预加载前5首诗歌的图片
-    const preloadCount = Math.min(5, this.data.postList.length);
+  // 智能预加载 - 只预加载必要的图片
+  smartPreload: function() {
+    // 只预加载前3首诗歌的图片，减少内存占用
+    const preloadCount = Math.min(3, this.data.postList.length);
     for (let i = 0; i < preloadCount; i++) {
       this.loadImageForIndex(i);
     }
@@ -226,7 +210,7 @@ Page({
     const post = this.data.postList[index];
     if (!post) return;
 
-    // 获取预加载的图片URL
+    // 获取预加载的图片URL - 确保使用压缩图
     const imageUrl = post.poemBgImage || (post.imageUrls && post.imageUrls[0]) || '';
     let finalImageUrl = imageUrl;
 
@@ -295,24 +279,14 @@ Page({
     console.error('图片加载失败', e.detail);
   },
 
-  // 高效预加载系统 - 只预加载关键图片
+  // 精简预加载系统 - 只预加载最关键的图片
   preloadNextBackgroundImage: function(currentIndex) {
-    // 只预加载下一首和上一首的图片，减少预加载量
+    // 只预加载下一首的图片，减少预加载量和内存占用
     const preloadIndices = [];
     
     // 预加载下一首
     if (currentIndex + 1 < this.data.postList.length) {
       preloadIndices.push(currentIndex + 1);
-    }
-    
-    // 预加载上一首
-    if (currentIndex - 1 >= 0) {
-      preloadIndices.push(currentIndex - 1);
-    }
-    
-    // 预加载下一首的下一首（提前预加载）
-    if (currentIndex + 2 < this.data.postList.length) {
-      preloadIndices.push(currentIndex + 2);
     }
     
     // 并行预加载，不显示指示器
@@ -331,6 +305,7 @@ Page({
     const post = this.data.postList[index];
     if (!post) return;
 
+    // 确保使用压缩图而不是原图
     const imageUrl = post.poemBgImage || (post.imageUrls && post.imageUrls[0]) || '';
     if (!imageUrl) return;
 

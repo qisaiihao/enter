@@ -150,7 +150,6 @@ exports.main = async (event, context) => {
           }
         });
       } catch (fileError) {
-        console.error('文件URL转换失败:', fileError);
       }
     }
 
@@ -162,7 +161,6 @@ exports.main = async (event, context) => {
     };
 
   } catch (e) {
-    console.error("CRITICAL ERROR in getPostList:", e);
     return {
       success: false,
       error: {
