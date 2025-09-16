@@ -43,8 +43,8 @@
       {
         "pagePath": "pages/mountain/mountain",
         "text": "山",
-        "iconPath": "images/icons/examples.png",
-        "selectedIconPath": "images/icons/examples-active.png"
+        "iconPath": "images/mountain.png",
+        "selectedIconPath": "images/mountainplus.png"
       },
       {
         "pagePath": "pages/profile/profile",

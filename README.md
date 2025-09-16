@@ -16,6 +16,7 @@
 - **完善字数提示**：通过maxlength属性确保用户了解字数限制，避免发布时才发现超限
 
 ### 2024年UI图标优化
+- **更新山tab图标**：将山tab的图标从examples更换为专门的mountain和mountainplus图标，提升视觉识别度
 - **更新路tab图标**：将路tab的图标从examples更换为专门的road和roadplus图标，提升视觉识别度
 
 ### 2024年开屏预加载优化
