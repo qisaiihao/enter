@@ -15,6 +15,13 @@ Page({
     imageClampHeights: {}, // 单图瘦高图钳制高度
     _hasFirstShow: false, // 新增：标记是否首次进入
     unreadCount: 0, // 未读消息数量
+    
+    // 新增：标签切换相关
+    currentTab: 'posts', // 'posts' | 'favorites'
+    favoriteList: [], // 收藏列表
+    favoritePage: 0, // 收藏分页
+    favoriteHasMore: true, // 收藏是否有更多
+    favoriteLoading: false, // 收藏加载状态
   },
 
   onLoad: function (options) {
@@ -51,24 +58,45 @@ Page({
   },
 
   onPullDownRefresh: function () {
-    console.log('【profile】下拉刷新触发，重置分页');
-    this.setData({
-      myPosts: [],
-      page: 0,
-      hasMore: true,
-      swiperHeights: {},
-      imageClampHeights: {},
-    });
-    this.loadMyPosts(() => {
-      wx.stopPullDownRefresh();
-      console.log('【profile】下拉刷新结束');
-    });
+    console.log('【profile】下拉刷新触发，当前标签:', this.data.currentTab);
+    if (this.data.currentTab === 'posts') {
+      this.setData({
+        myPosts: [],
+        page: 0,
+        hasMore: true,
+        swiperHeights: {},
+        imageClampHeights: {},
+      });
+      this.loadMyPosts(() => {
+        wx.stopPullDownRefresh();
+        console.log('【profile】下拉刷新结束');
+      });
+    } else if (this.data.currentTab === 'favorites') {
+      this.setData({
+        favoriteList: [],
+        favoritePage: 0,
+        favoriteHasMore: true,
+        swiperHeights: {},
+        imageClampHeights: {},
+      });
+      this.loadFavorites(() => {
+        wx.stopPullDownRefresh();
+        console.log('【profile】收藏下拉刷新结束');
+      });
+    }
   },
 
   onReachBottom: function () {
-    console.log('【profile】触底加载触发', 'hasMore:', this.data.hasMore, 'isLoading:', this.data.isLoading, '当前页:', this.data.page);
-    if (!this.data.hasMore || this.data.isLoading) return;
-    this.loadMyPosts();
+    console.log('【profile】触底加载触发', 'currentTab:', this.data.currentTab);
+    if (this.data.currentTab === 'posts') {
+      console.log('【profile】触底加载我的帖子', 'hasMore:', this.data.hasMore, 'isLoading:', this.data.isLoading, '当前页:', this.data.page);
+      if (!this.data.hasMore || this.data.isLoading) return;
+      this.loadMyPosts();
+    } else if (this.data.currentTab === 'favorites') {
+      console.log('【profile】触底加载收藏', 'favoriteHasMore:', this.data.favoriteHasMore, 'favoriteLoading:', this.data.favoriteLoading);
+      if (!this.data.favoriteHasMore || this.data.favoriteLoading) return;
+      this.loadFavorites();
+    }
   },
 
   // 强制刷新数据
@@ -435,6 +463,121 @@ Page({
       },
       fail: err => {
         console.error('检查未读消息失败:', err);
+      }
+    });
+  },
+
+  // 新增：标签切换方法
+  switchTab: function(e) {
+    const tab = e.currentTarget.dataset.tab;
+    console.log('【profile】切换标签到:', tab);
+    
+    if (tab === this.data.currentTab) return; // 如果是当前标签，不做任何操作
+    
+    this.setData({ currentTab: tab });
+    
+    if (tab === 'favorites' && this.data.favoriteList.length === 0) {
+      // 首次加载收藏数据
+      this.loadFavorites();
+    }
+  },
+
+  // 新增：加载收藏列表
+  loadFavorites: function(cb) {
+    if (this.data.favoriteLoading) return;
+    
+    const { favoritePage, PAGE_SIZE } = this.data;
+    console.log('【profile】请求收藏分页参数', { favoritePage, PAGE_SIZE, skip: favoritePage * PAGE_SIZE, limit: PAGE_SIZE });
+    
+    this.setData({ favoriteLoading: true });
+    
+    wx.cloud.callFunction({
+      name: 'getMyProfileData',
+      data: {
+        action: 'getAllFavorites',
+        skip: favoritePage * PAGE_SIZE,
+        limit: PAGE_SIZE
+      },
+      success: res => {
+        console.log('【profile】获取收藏返回:', res);
+        if (res.result && res.result.success) {
+          const favorites = res.result.favorites || [];
+          console.log('【profile】本次返回收藏数量:', favorites.length);
+          
+          // 格式化时间
+          favorites.forEach(favorite => {
+            if (favorite.favoriteTime) {
+              favorite.formattedFavoriteTime = this.formatTime(favorite.favoriteTime);
+            }
+          });
+          
+          const newFavoriteList = favoritePage === 0 ? favorites : this.data.favoriteList.concat(favorites);
+          console.log('【profile】更新后收藏列表长度:', newFavoriteList.length, 'favoriteHasMore:', favorites.length === PAGE_SIZE, 'favoritePage:', favoritePage + 1);
+          
+          this.setData({
+            favoriteList: newFavoriteList,
+            favoritePage: favoritePage + 1,
+            favoriteHasMore: favorites.length === PAGE_SIZE
+          });
+        } else {
+          wx.showToast({ 
+            title: res.result?.message || '加载收藏失败', 
+            icon: 'none' 
+          });
+        }
+      },
+      fail: err => {
+        console.error('【profile】获取收藏失败:', err);
+        wx.showToast({ title: '网络错误', icon: 'none' });
+      },
+      complete: () => {
+        this.setData({ favoriteLoading: false });
+        if (typeof cb === 'function') cb();
+      }
+    });
+  },
+
+  // 新增：收藏项跳转到帖子详情
+  navigateToFavoriteDetail: function(e) {
+    const postId = e.currentTarget.dataset.id;
+    wx.navigateTo({ url: `/pages/post-detail/post-detail?id=${postId}` });
+  },
+
+  // 新增：取消收藏
+  removeFavorite: function(e) {
+    const favoriteId = e.currentTarget.dataset.favoriteId;
+    const index = e.currentTarget.dataset.index;
+    const that = this;
+
+    wx.showModal({
+      title: '确认取消收藏',
+      content: '确定要取消收藏这个内容吗？',
+      success: function(res) {
+        if (res.confirm) {
+          wx.showLoading({ title: '取消收藏中...' });
+          wx.cloud.callFunction({
+            name: 'getMyProfileData',
+            data: { 
+              action: 'removeFromFavorite',
+              favoriteId: favoriteId 
+            },
+            success: function(res) {
+              wx.hideLoading();
+              if (res.result && res.result.success) {
+                wx.showToast({ title: '已取消收藏' });
+                // 从列表中移除该项
+                const newList = that.data.favoriteList.filter((item, i) => i !== index);
+                that.setData({ favoriteList: newList });
+              } else {
+                wx.showToast({ title: '取消收藏失败', icon: 'none' });
+              }
+            },
+            fail: function(err) {
+              wx.hideLoading();
+              wx.showToast({ title: '操作失败', icon: 'none' });
+            }
+          });
+        }
       }
     });
   }

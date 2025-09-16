@@ -33,6 +33,8 @@ exports.main = async (event, context) => {
     return await getFavoritesByFolder(openid, event.folderId, event.skip || 0, event.limit || 10);
   } else if (action === 'removeFromFavorite') {
     return await removeFromFavorite(openid, event.favoriteId);
+  } else if (action === 'getAllFavorites') {
+    return await getAllFavorites(openid, event.skip || 0, event.limit || 10);
   }
 
   try {
@@ -378,14 +380,39 @@ async function addToFavorite(openid, postId, folderId) {
       };
     }
 
-    // 获取帖子信息
-    const post = await db.collection('posts').doc(postId).get();
-    if (!post.data) {
+    // 获取帖子信息和作者信息
+    const postResult = await db.collection('posts').aggregate()
+      .match({ _id: postId })
+      .lookup({
+        from: 'users',
+        localField: '_openid',
+        foreignField: '_openid',
+        as: 'authorInfo'
+      })
+      .project({
+        _id: 1,
+        _openid: 1,
+        title: 1,
+        content: 1,
+        imageUrl: 1,
+        imageUrls: 1,
+        poemBgImage: 1,
+        isPoem: 1,
+        isOriginal: 1,
+        createTime: 1,
+        authorName: $.ifNull([$.arrayElemAt(['$authorInfo.nickName', 0]), '匿名用户']),
+        authorAvatar: $.ifNull([$.arrayElemAt(['$authorInfo.avatarUrl', 0]), ''])
+      })
+      .end();
+
+    if (!postResult.list || postResult.list.length === 0) {
       return {
         success: false,
         message: '帖子不存在'
       };
     }
+
+    const post = postResult.list[0];
 
     // 添加到收藏
     const result = await db.collection('favorites').add({
@@ -395,16 +422,16 @@ async function addToFavorite(openid, postId, folderId) {
         folderId: folderId,
         createTime: new Date(),
         // 保存帖子的关键信息，避免重复查询
-        postTitle: post.data.title,
-        postContent: post.data.content,
-        postImageUrl: post.data.imageUrl,
-        postImageUrls: post.data.imageUrls,
-        postPoemBgImage: post.data.poemBgImage,
-        postIsPoem: post.data.isPoem,
-        postIsOriginal: post.data.isOriginal,
-        postAuthorName: post.data.authorName || '匿名用户',
-        postAuthorAvatar: post.data.authorAvatar || '',
-        postCreateTime: post.data.createTime
+        postTitle: post.title,
+        postContent: post.content,
+        postImageUrl: post.imageUrl,
+        postImageUrls: post.imageUrls,
+        postPoemBgImage: post.poemBgImage,
+        postIsPoem: post.isPoem,
+        postIsOriginal: post.isOriginal,
+        postAuthorName: post.authorName || '匿名用户',
+        postAuthorAvatar: post.authorAvatar || '',
+        postCreateTime: post.createTime
       }
     });
 
@@ -425,7 +452,7 @@ async function addToFavorite(openid, postId, folderId) {
       const user = userResult.data[0]
       
       // 如果给自己收藏，不发送通知
-      if (post.data._openid === openid) {
+      if (post._openid === openid) {
         console.log('用户给自己收藏，不发送通知')
       } else {
         // 创建消息记录
@@ -434,10 +461,10 @@ async function addToFavorite(openid, postId, folderId) {
             fromUserId: openid,
             fromUserName: user ? user.nickName : '微信用户',
             fromUserAvatar: user ? user.avatarUrl : '',
-            toUserId: post.data._openid,
+            toUserId: post._openid,
             type: 'favorite',
             postId: postId,
-            postTitle: post.data.title || '无标题',
+            postTitle: post.title || '无标题',
             content: `${user ? user.nickName : '微信用户'} 收藏了你的帖子`,
             isRead: false,
             createTime: new Date()
@@ -607,6 +634,159 @@ async function removeFromFavorite(openid, favoriteId) {
     return {
       success: false,
       message: '取消收藏失败',
+      error: error.message
+    };
+  }
+}
+
+// 获取用户的所有收藏（跨收藏夹，按时间排序）
+async function getAllFavorites(openid, skip, limit) {
+  try {
+    console.log('【getAllFavorites】开始获取用户所有收藏', { openid, skip, limit });
+
+    // 获取用户的所有收藏项，按收藏时间降序排列
+    const result = await db.collection('favorites').where({
+      _openid: openid
+    }).orderBy('createTime', 'desc').skip(skip).limit(limit).get();
+
+    console.log('【getAllFavorites】查询到收藏数量:', result.data.length);
+
+    // 转换FileID为临时URL
+    const fileIDs = [];
+    result.data.forEach(favorite => {
+      if (favorite.postImageUrl && favorite.postImageUrl.startsWith('cloud://')) {
+        fileIDs.push(favorite.postImageUrl);
+      }
+      if (favorite.postImageUrls && Array.isArray(favorite.postImageUrls)) {
+        favorite.postImageUrls.forEach(url => {
+          if (url && url.startsWith('cloud://')) {
+            fileIDs.push(url);
+          }
+        });
+      }
+      if (favorite.postPoemBgImage && favorite.postPoemBgImage.startsWith('cloud://')) {
+        fileIDs.push(favorite.postPoemBgImage);
+      }
+      if (favorite.postAuthorAvatar && favorite.postAuthorAvatar.startsWith('cloud://')) {
+        fileIDs.push(favorite.postAuthorAvatar);
+      }
+    });
+
+    // 转换云存储URL为临时URL
+    if (fileIDs.length > 0) {
+      try {
+        const fileListResult = await cloud.getTempFileURL({ fileList: fileIDs });
+        const urlMap = new Map();
+        fileListResult.fileList.forEach(item => {
+          if (item.status === 0) {
+            urlMap.set(item.fileID, item.tempFileURL);
+          }
+        });
+
+        // 转换URL
+        result.data.forEach(favorite => {
+          if (favorite.postImageUrl && urlMap.has(favorite.postImageUrl)) {
+            favorite.postImageUrl = urlMap.get(favorite.postImageUrl);
+          }
+          if (favorite.postImageUrls && Array.isArray(favorite.postImageUrls)) {
+            favorite.postImageUrls = favorite.postImageUrls.map(url => {
+              return urlMap.has(url) ? urlMap.get(url) : url;
+            });
+          }
+          if (favorite.postPoemBgImage && urlMap.has(favorite.postPoemBgImage)) {
+            favorite.postPoemBgImage = urlMap.get(favorite.postPoemBgImage);
+          }
+          if (favorite.postAuthorAvatar && urlMap.has(favorite.postAuthorAvatar)) {
+            favorite.postAuthorAvatar = urlMap.get(favorite.postAuthorAvatar);
+          }
+        });
+      } catch (fileError) {
+        console.error('【getAllFavorites】文件URL转换失败:', fileError);
+      }
+    }
+
+    // 对于作者信息缺失的收藏记录，需要重新查询
+    const needAuthorInfoFavorites = result.data.filter(favorite => 
+      !favorite.postAuthorName || favorite.postAuthorName === '匿名用户'
+    );
+
+    // 如果有需要补充作者信息的收藏记录，批量查询
+    const authorInfoMap = new Map();
+    if (needAuthorInfoFavorites.length > 0) {
+      const postIds = needAuthorInfoFavorites.map(f => f.postId);
+      const postsWithAuthor = await db.collection('posts').aggregate()
+        .match({ _id: db.command.in(postIds) })
+        .lookup({
+          from: 'users',
+          localField: '_openid',
+          foreignField: '_openid',
+          as: 'authorInfo'
+        })
+        .project({
+          _id: 1,
+          authorName: $.ifNull([$.arrayElemAt(['$authorInfo.nickName', 0]), '匿名用户']),
+          authorAvatar: $.ifNull([$.arrayElemAt(['$authorInfo.avatarUrl', 0]), ''])
+        })
+        .end();
+
+      postsWithAuthor.list.forEach(post => {
+        authorInfoMap.set(post._id, {
+          authorName: post.authorName,
+          authorAvatar: post.authorAvatar
+        });
+      });
+    }
+
+    // 格式化收藏数据，转换为类似帖子的格式以便前端复用组件
+    const formattedFavorites = result.data.map(favorite => {
+      // 处理图片数组，确保兼容性
+      let imageUrls = [];
+      let originalImageUrls = [];
+      
+      if (favorite.postImageUrls && Array.isArray(favorite.postImageUrls)) {
+        imageUrls = favorite.postImageUrls;
+        originalImageUrls = favorite.postImageUrls;
+      } else if (favorite.postImageUrl) {
+        imageUrls = [favorite.postImageUrl];
+        originalImageUrls = [favorite.postImageUrl];
+      }
+
+      // 获取作者信息（优先使用补充查询的结果）
+      const authorInfo = authorInfoMap.get(favorite.postId);
+      const authorName = authorInfo ? authorInfo.authorName : (favorite.postAuthorName || '匿名用户');
+      const authorAvatar = authorInfo ? authorInfo.authorAvatar : (favorite.postAuthorAvatar || '');
+
+      return {
+        _id: favorite.postId, // 使用原帖子ID，方便跳转详情
+        favoriteId: favorite._id, // 收藏记录的ID，用于取消收藏
+        title: favorite.postTitle || '无标题',
+        content: favorite.postContent || '',
+        imageUrls: imageUrls,
+        originalImageUrls: originalImageUrls,
+        poemBgImage: favorite.postPoemBgImage || '',
+        isPoem: favorite.postIsPoem || false,
+        isOriginal: favorite.postIsOriginal || false,
+        authorName: authorName,
+        authorAvatar: authorAvatar,
+        createTime: favorite.postCreateTime, // 原帖子创建时间
+        favoriteTime: favorite.createTime, // 收藏时间
+        votes: 0, // 收藏列表不显示点赞数
+        commentCount: 0, // 收藏列表不显示评论数
+        isFavorite: true // 标记为收藏项
+      };
+    });
+
+    console.log('【getAllFavorites】格式化后的收藏数据:', formattedFavorites.length);
+
+    return {
+      success: true,
+      favorites: formattedFavorites
+    };
+  } catch (error) {
+    console.error('【getAllFavorites】获取所有收藏失败:', error);
+    return {
+      success: false,
+      message: '获取收藏失败',
       error: error.message
     };
   }

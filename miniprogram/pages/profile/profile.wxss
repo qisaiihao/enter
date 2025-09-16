@@ -224,8 +224,55 @@
   white-space: nowrap;
 }
 
+/* Tab Navigation */
+.tab-navigation {
+  margin: 0 30rpx 20rpx 30rpx;
+  display: flex;
+  background: #fff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.tab-item {
+  flex: 1;
+  padding: 30rpx 20rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #666;
+  background: #fff;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.tab-item.active {
+  color: #07c160;
+  font-weight: 500;
+  background: #f8fffe;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 4rpx;
+  background: #07c160;
+  border-radius: 2rpx;
+}
+
+.tab-item:active {
+  background: #f5f5f5;
+}
+
 /* My Posts Section */
 .my-posts-section {
+  margin: 0 30rpx 30rpx 30rpx;
+}
+
+/* Favorites Section */
+.favorites-section {
   margin: 0 30rpx 30rpx 30rpx;
 }
 
@@ -376,6 +423,26 @@
 }
 
 .delete-btn::after {
+  border: none;
+}
+
+.remove-favorite-btn {
+  background-color: #f39c12;
+  color: #fff;
+  border: none;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  padding: 8rpx 16rpx;
+  line-height: 1.2;
+  min-width: 100rpx;
+  transition: background-color 0.2s ease;
+}
+
+.remove-favorite-btn:active {
+  background-color: #e67e22;
+}
+
+.remove-favorite-btn::after {
   border: none;
 }
 
