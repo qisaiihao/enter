@@ -500,6 +500,27 @@
   filter: grayscale(1) brightness(0.5);
   opacity: 0.7;
 }
+
+.back-btn {
+  position: absolute;
+  top: 24rpx;
+  left: 24rpx;
+  width: 56rpx;
+  height: 56rpx;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  font-size: 36rpx;
+  color: #333;
+  transition: background-color 0.2s ease;
+}
+
+.back-btn:active {
+  background: rgba(0, 0, 0, 0.2);
+}
 .profile-avatar-large image {
   width: 150rpx;
   height: 150rpx;

@@ -212,6 +212,12 @@ Page({
         if (success) {
           console.log('图片预加载成功:', url);
         }
+  // 新增：跳转到用户个人主页
+  navigateToUserProfile: function(e) {
+    const userId = e.currentTarget.dataset.userId;
+    if (userId) {
+      wx.navigateTo({
+        url: `/pages/profile/profile?userId=${userId}`
       });
     }
   },

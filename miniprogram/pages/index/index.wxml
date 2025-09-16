@@ -19,7 +19,7 @@
         hover-class="post-item-active"
       >
         <view class="author-info">
-          <image wx:if="{{item.authorAvatar}}" class="author-avatar" src="{{item.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindload="onAvatarLoad" data-postindex="{{index}}"></image>
+          <image wx:if="{{item.authorAvatar}}" class="author-avatar" src="{{item.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindload="onAvatarLoad" data-postindex="{{index}}" catch:tap="navigateToUserProfile" data-user-id="{{item._openid}}"></image>
           <text class="author-name">{{item.authorName}}</text>
         </view>
       
