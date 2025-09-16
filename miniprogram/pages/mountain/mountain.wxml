@@ -1,7 +1,25 @@
 <!-- mountain.wxml -->
-<view class="container" style="background-image: {{backgroundImage ? 'url(' + backgroundImage + ')' : 'none'}}; background-size: cover; background-position: center;">
+<view class="container">
+  <!-- 双缓冲背景图片层 - 避免闪烁 -->
+  <view class="background-container">
+    <!-- 当前背景图片 -->
+    <view wx:if="{{backgroundImage}}" 
+          class="background-image current" 
+          style="background-image: url({{backgroundImage}}); background-size: cover; background-position: center;">
+    </view>
+    
+    <!-- 预加载背景图片 -->
+    <view wx:if="{{nextBackgroundImage}}" 
+          class="background-image next" 
+          style="background-image: url({{nextBackgroundImage}}); background-size: cover; background-position: center;">
+    </view>
+  </view>
+  
   <!-- 模糊背景层 -->
-  <view wx:if="{{backgroundImage}}" class="blur-background" style="background-image: url({{backgroundImage}});"></view>
+  <view wx:if="{{backgroundImage}}" 
+        class="blur-background" 
+        style="background-image: url({{backgroundImage}});">
+  </view>
 
   <!-- 骨架屏 -->
   <view wx:if="{{isLoading && postList.length === 0}}" class="skeleton-container">

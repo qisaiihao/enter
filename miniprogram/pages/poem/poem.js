@@ -196,10 +196,10 @@ Page({
     }
   },
 
-  // 智能预加载 - 只预加载必要的图片
+  // 智能预加载 - 预加载前几首诗歌的图片
   smartPreload: function() {
-    // 只预加载前3首诗歌的图片，减少内存占用
-    const preloadCount = Math.min(3, this.data.postList.length);
+    // 预加载前5首诗歌的图片，确保滑动时有足够的预加载图片
+    const preloadCount = Math.min(5, this.data.postList.length);
     for (let i = 0; i < preloadCount; i++) {
       this.loadImageForIndex(i);
     }
@@ -233,7 +233,7 @@ Page({
           backgroundImage: finalImageUrl,
           nextBackgroundImage: ''
         });
-      }, 80); // 稍微增加延迟确保渲染完成
+      }, 50); // 减少延迟提高响应速度
     } else {
       // 如果图片相同，直接切换
       this.setData({ 
@@ -279,9 +279,8 @@ Page({
     console.error('图片加载失败', e.detail);
   },
 
-  // 精简预加载系统 - 只预加载最关键的图片
+  // 智能预加载系统 - 预加载周围图片确保平滑切换
   preloadNextBackgroundImage: function(currentIndex) {
-    // 只预加载下一首的图片，减少预加载量和内存占用
     const preloadIndices = [];
     
     // 预加载下一首
@@ -289,7 +288,17 @@ Page({
       preloadIndices.push(currentIndex + 1);
     }
     
-    // 并行预加载，不显示指示器
+    // 预加载上一首（如果存在）
+    if (currentIndex - 1 >= 0) {
+      preloadIndices.push(currentIndex - 1);
+    }
+    
+    // 预加载下下首（提前预加载）
+    if (currentIndex + 2 < this.data.postList.length) {
+      preloadIndices.push(currentIndex + 2);
+    }
+    
+    // 并行预加载
     preloadIndices.forEach(index => {
       this.loadImageForIndex(index);
     });

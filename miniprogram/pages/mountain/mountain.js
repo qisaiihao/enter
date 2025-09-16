@@ -11,7 +11,8 @@ Page({
     isLoading: false,
     hasMore: true,
     page: 0,
-    backgroundImage: '', // 背景图片
+    backgroundImage: '', // 当前背景图片
+    nextBackgroundImage: '', // 预加载背景图片
     isTransitioning: false, // 切换动画状态
     preloadedImages: {}, // 预加载的图片缓存
     
@@ -71,8 +72,8 @@ Page({
               });
             }
 
-            // 预加载下一首的背景图
-            this.preloadNextBackgroundImage(0);
+            // 立即开始预加载前几首的背景图
+            this.smartPreload();
           }
         } else {
           wx.showToast({ title: '加载失败', icon: 'none' });
@@ -88,6 +89,10 @@ Page({
 
   touchStart: function(e) {
     this.setData({ touchStartX: e.touches[0].clientX });
+    
+    // 在用户开始滑动时就开始预加载
+    const currentIndex = this.data.currentPostIndex;
+    this.preloadNextBackgroundImage(currentIndex);
   },
 
   touchEnd: function(e) {
@@ -115,21 +120,19 @@ Page({
         currentPostIndex: nextIndex
       });
       
-      // 更新背景图片为当前诗歌的背景图
+      // 更新背景图片为当前诗歌的背景图 - 使用预加载图片
       const currentPost = this.data.postList[nextIndex];
-      if (currentPost && currentPost.poemBgImage) {
-        this.setData({
-          backgroundImage: currentPost.poemBgImage
-        });
-      } else if (currentPost && currentPost.imageUrls && currentPost.imageUrls.length > 0) {
-        this.setData({
-          backgroundImage: currentPost.imageUrls[0]
-        });
-      } else {
-        this.setData({
-          backgroundImage: ''
-        });
+      const imageUrl = currentPost.poemBgImage || (currentPost.imageUrls && currentPost.imageUrls[0]) || '';
+      let finalImageUrl = imageUrl;
+      
+      // 如果图片已经预加载，使用预加载的本地路径
+      if (imageUrl && this.data.preloadedImages[imageUrl] && this.data.preloadedImages[imageUrl] !== 'loading') {
+        finalImageUrl = this.data.preloadedImages[imageUrl];
       }
+      
+      this.setData({
+        backgroundImage: finalImageUrl
+      });
 
       // 动画结束
       setTimeout(() => {
@@ -147,21 +150,19 @@ Page({
               currentPostIndex: nextIndex
             });
             
-            // 更新背景图片
+            // 更新背景图片 - 使用预加载图片
             const currentPost = this.data.postList[nextIndex];
-            if (currentPost && currentPost.poemBgImage) {
-              this.setData({
-                backgroundImage: currentPost.poemBgImage
-              });
-            } else if (currentPost && currentPost.imageUrls && currentPost.imageUrls.length > 0) {
-              this.setData({
-                backgroundImage: currentPost.imageUrls[0]
-              });
-            } else {
-              this.setData({
-                backgroundImage: ''
-              });
+            const imageUrl = currentPost.poemBgImage || (currentPost.imageUrls && currentPost.imageUrls[0]) || '';
+            let finalImageUrl = imageUrl;
+            
+            // 如果图片已经预加载，使用预加载的本地路径
+            if (imageUrl && this.data.preloadedImages[imageUrl] && this.data.preloadedImages[imageUrl] !== 'loading') {
+              finalImageUrl = this.data.preloadedImages[imageUrl];
             }
+            
+            this.setData({
+              backgroundImage: finalImageUrl
+            });
           }
         });
       }
@@ -180,21 +181,19 @@ Page({
         currentPostIndex: prevIndex
       });
       
-      // 更新背景图片为当前诗歌的背景图
+      // 更新背景图片为当前诗歌的背景图 - 使用预加载图片
       const currentPost = this.data.postList[prevIndex];
-      if (currentPost && currentPost.poemBgImage) {
-        this.setData({
-          backgroundImage: currentPost.poemBgImage
-        });
-      } else if (currentPost && currentPost.imageUrls && currentPost.imageUrls.length > 0) {
-        this.setData({
-          backgroundImage: currentPost.imageUrls[0]
-        });
-      } else {
-        this.setData({
-          backgroundImage: ''
-        });
+      const imageUrl = currentPost.poemBgImage || (currentPost.imageUrls && currentPost.imageUrls[0]) || '';
+      let finalImageUrl = imageUrl;
+      
+      // 如果图片已经预加载，使用预加载的本地路径
+      if (imageUrl && this.data.preloadedImages[imageUrl] && this.data.preloadedImages[imageUrl] !== 'loading') {
+        finalImageUrl = this.data.preloadedImages[imageUrl];
       }
+      
+      this.setData({
+        backgroundImage: finalImageUrl
+      });
       
       // 动画结束
       setTimeout(() => {
@@ -240,23 +239,43 @@ Page({
     console.error('山图片加载失败', e.detail);
   },
 
-  // 精简预加载 - 只预加载下一首的背景图
-  preloadNextBackgroundImage: function(currentIndex) {
-    const nextIndex = currentIndex + 1;
-    if (nextIndex >= this.data.postList.length) {
-      // 如果下一首不存在，检查是否需要加载更多
-      if (this.data.hasMore && !this.data.isLoading) {
-        this.getPostList(() => {
-          // 加载完成后再次尝试预加载
-          if (nextIndex < this.data.postList.length) {
-            this.loadImageForIndex(nextIndex);
-          }
-        });
-      }
-      return;
+  // 智能预加载 - 预加载前几首诗歌的图片
+  smartPreload: function() {
+    // 预加载前5首诗歌的图片，确保滑动时有足够的预加载图片
+    const preloadCount = Math.min(5, this.data.postList.length);
+    for (let i = 0; i < preloadCount; i++) {
+      this.loadImageForIndex(i);
     }
+  },
 
-    this.loadImageForIndex(nextIndex);
+  // 智能预加载系统 - 预加载周围图片确保平滑切换
+  preloadNextBackgroundImage: function(currentIndex) {
+    const preloadIndices = [];
+    
+    // 预加载下一首
+    if (currentIndex + 1 < this.data.postList.length) {
+      preloadIndices.push(currentIndex + 1);
+    }
+    
+    // 预加载上一首（如果存在）
+    if (currentIndex - 1 >= 0) {
+      preloadIndices.push(currentIndex - 1);
+    }
+    
+    // 预加载下下首（提前预加载）
+    if (currentIndex + 2 < this.data.postList.length) {
+      preloadIndices.push(currentIndex + 2);
+    }
+    
+    // 并行预加载
+    preloadIndices.forEach(index => {
+      this.loadImageForIndex(index);
+    });
+    
+    // 如果接近列表末尾，预加载更多数据
+    if (currentIndex >= this.data.postList.length - 2 && this.data.hasMore && !this.data.isLoading) {
+      this.getPostList();
+    }
   },
 
   // 为指定索引加载图片
@@ -282,12 +301,41 @@ Page({
           this.setData({
             [`preloadedImages.${imageUrl}`]: res.tempFilePath
           });
+          
+          // 如果这是当前显示的图片，立即更新背景
+          this.updateCurrentBackgroundIfNeeded(imageUrl, res.tempFilePath);
+        } else {
+          // 下载失败，回退到原URL
+          this.setData({
+            [`preloadedImages.${imageUrl}`]: imageUrl
+          });
         }
       },
       fail: (err) => {
         console.error('山图片预加载失败:', imageUrl, err);
       }
     });
+  },
+
+  // 更新当前背景图片（如果预加载完成）
+  updateCurrentBackgroundIfNeeded: function(imageUrl, preloadedPath) {
+    const currentPost = this.data.postList[this.data.currentPostIndex];
+    if (currentPost) {
+      const currentImageUrl = currentPost.poemBgImage || (currentPost.imageUrls && currentPost.imageUrls[0]) || '';
+      if (currentImageUrl === imageUrl && this.data.backgroundImage === imageUrl) {
+        // 使用双缓冲更新背景（微信小程序兼容）
+        this.setData({
+          nextBackgroundImage: preloadedPath
+        });
+        
+        setTimeout(() => {
+          this.setData({
+            backgroundImage: preloadedPath,
+            nextBackgroundImage: ''
+          });
+        }, 50);
+      }
+    }
   },
 
   
