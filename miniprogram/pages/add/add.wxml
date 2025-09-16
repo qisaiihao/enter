@@ -18,6 +18,7 @@
   class="input-title" 
   placeholder="请在这里输入标题" 
   bindinput="onTitleInput"
+  maxlength="50"
 />
 
 <!-- 2. 内容输入区域 -->
@@ -25,7 +26,9 @@
   class="textarea-content" 
   placeholder="请在这里尽情创作吧..." 
   bindinput="onContentInput"
+  maxlength="1500"
 ></textarea>
+<view class="char-count">{{content.length}}/1500</view>
 
 <!-- 3. 图片上传与预览区域 -->
 <view class="uploader-container">

@@ -91,6 +91,14 @@
     box-sizing: border-box; /* 保证padding不会撑大宽度 */
     font-size: 28rpx;
   }
+
+  .char-count {
+    text-align: right;
+    font-size: 24rpx;
+    color: #999;
+    margin-top: 10rpx;
+    margin-bottom: 20rpx;
+  }
   
   .submit-button {
     margin-top: 40rpx;

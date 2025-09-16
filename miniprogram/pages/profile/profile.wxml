@@ -125,7 +125,7 @@
                 ></image>
               </block>
             </view>
-            <view class="post-content" wx:if="{{item.content}}">{{item.content}}</view>
+            <view class="post-content" wx:if="{{item.content}}" style="white-space: pre-wrap;">{{item.content}}</view>
             <!-- 每个帖子自己的操作按钮 -->
             <view class="post-actions" catch:tap="stopPropagation">
               <view class="action-left">
@@ -212,7 +212,7 @@
                 ></image>
               </block>
             </view>
-            <view class="post-content" wx:if="{{item.content}}">{{item.content}}</view>
+            <view class="post-content" wx:if="{{item.content}}" style="white-space: pre-wrap;">{{item.content}}</view>
             <!-- 收藏时间和操作按钮 -->
             <view class="post-actions" catch:tap="stopPropagation">
               <view class="action-left">

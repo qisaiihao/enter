@@ -448,12 +448,12 @@ async function addToFavorite(openid, postId, folderId) {
       // 获取收藏者信息
       const userResult = await db.collection('users').where({
         _openid: openid
-      }).limit(1).get()
-      const user = userResult.data[0]
+      }).limit(1).get();
+      const user = userResult.data[0];
       
       // 如果给自己收藏，不发送通知
       if (post._openid === openid) {
-        console.log('用户给自己收藏，不发送通知')
+        console.log('用户给自己收藏，不发送通知');
       } else {
         // 创建消息记录
         await db.collection('messages').add({
@@ -469,11 +469,11 @@ async function addToFavorite(openid, postId, folderId) {
             isRead: false,
             createTime: new Date()
           }
-        })
-        console.log('收藏消息已创建')
+        });
+        console.log('收藏消息已创建');
       }
     } catch (msgError) {
-      console.error('创建收藏消息失败:', msgError)
+      console.error('创建收藏消息失败:', msgError);
       // 不影响主流程，只是记录错误
     }
 

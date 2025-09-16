@@ -32,7 +32,7 @@
       <view wx:if="{{item.postTitle}}" class="post-title">{{item.postTitle}}</view>
 
       <!-- 内容 -->
-      <view wx:if="{{item.postContent}}" class="post-content">{{item.postContent}}</view>
+      <view wx:if="{{item.postContent}}" class="post-content" style="white-space: pre-wrap;">{{item.postContent}}</view>
 
       <!-- 图片显示逻辑（迁移自点赞页面，支持单图瘦高图钳制和多图swiper高度） -->
       <view wx:if="{{(item.postImageUrl || (item.postImageUrls && item.postImageUrls.length > 0))}}" class="image-container" id="image-container-{{index}}">

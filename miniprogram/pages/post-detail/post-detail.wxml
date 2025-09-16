@@ -175,6 +175,7 @@
       bindinput="onCommentInput"
       confirm-hold
       adjust-position
+      maxlength="200"
     />
     <button class="submit-button" bindtap="onSubmitComment" disabled="{{isSubmitDisabled}}">发送</button>
   </view>
