@@ -9,7 +9,7 @@
     <!-- Post Card -->
     <view class="post-detail-card">
       <view class="author-info">
-        <image wx:if="{{post.authorAvatar}}" class="author-avatar" src="{{post.authorAvatar}}" mode="aspectFill" binderror="onAvatarError"></image>
+        <image wx:if="{{post.authorAvatar}}" class="author-avatar" src="{{post.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindtap="navigateToUserProfile" data-user-id="{{post._openid}}"></image>
         <text class="author-name">{{post.authorName}}</text>
       </view>
       <view wx:if="{{post.isOriginal}}" class="original-badge">原创</view>
@@ -88,7 +88,7 @@
       <view class="comment-list">
         <block wx:if="{{comments.length > 0}}">
           <view wx:for="{{comments}}" wx:key="_id" class="comment-item">
-            <image class="comment-avatar" src="{{item.authorAvatar}}" mode="aspectFill" binderror="onAvatarError"></image>
+            <image class="comment-avatar" src="{{item.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindtap="navigateToUserProfile" data-user-id="{{item._openid}}"></image>
             <view class="comment-main">
               <view class="comment-author">{{item.authorName}}</view>
               <view class="comment-content">{{item.content}}</view>
@@ -108,7 +108,7 @@
               <!-- Replies -->
               <view wx:if="{{item.replies && item.replies.length > 0}}" class="replies-container">
                 <view wx:for="{{item.replies}}" wx:key="_id" wx:for-item="reply" wx:for-index="replyIndex" class="reply-item" wx:if="{{replyIndex < (item.showAllReplies ? item.replies.length : 3)}}">
-                  <image class="reply-avatar" src="{{reply.authorAvatar}}" mode="aspectFill" binderror="onAvatarError"></image>
+                  <image class="reply-avatar" src="{{reply.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindtap="navigateToUserProfile" data-user-id="{{reply._openid}}"></image>
                   <view class="reply-main">
                     <view class="reply-author">{{reply.authorName}}</view>
                     <view class="reply-content">

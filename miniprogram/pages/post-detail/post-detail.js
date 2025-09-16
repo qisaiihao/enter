@@ -436,5 +436,15 @@ Page({
     if (days < 7) return `${days}天前`;
 
     return date.toLocaleDateString();
+  },
+
+  // 新增：跳转到用户个人主页
+  navigateToUserProfile: function(e) {
+    const userId = e.currentTarget.dataset.userId;
+    if (userId) {
+      wx.navigateTo({
+        url: `/pages/profile/profile?userId=${userId}`
+      });
+    }
   }
 });

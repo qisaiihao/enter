@@ -205,5 +205,15 @@ Page({
   onImageError: function(e) { console.error('图片加载失败', e.detail); },
   onAvatarError: function(e) { console.error('头像加载失败', e.detail); },
 
+  // 新增：跳转到用户个人主页
+  navigateToUserProfile: function(e) {
+    const userId = e.currentTarget.dataset.userId;
+    if (userId) {
+      wx.navigateTo({
+        url: `/pages/profile/profile?userId=${userId}`
+      });
+    }
+  },
+
   // 模式切换现在通过底部tabBar实现，不再需要手动切换
 });

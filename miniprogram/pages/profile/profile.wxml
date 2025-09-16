@@ -1,10 +1,10 @@
 <!--pages/profile/profile.wxml-->
 <view class="container">
-  <!-- Sidebar Mask -->
-  <view class="sidebar-mask" wx:if="{{isSidebarOpen}}" bindtap="toggleSidebar"></view>
+  <!-- Sidebar Mask (只在查看自己时显示) -->
+  <view wx:if="{{isViewingSelf}}" class="sidebar-mask" wx:if="{{isSidebarOpen}}" bindtap="toggleSidebar"></view>
 
-  <!-- Sidebar -->
-  <view class="sidebar {{isSidebarOpen ? 'open' : ''}}">
+  <!-- Sidebar (只在查看自己时显示) -->
+  <view wx:if="{{isViewingSelf}}" class="sidebar {{isSidebarOpen ? 'open' : ''}}">
     <view class="sidebar-header">
       <image class="sidebar-avatar" src="{{userInfo.avatarUrl || '../../images/avatar.png'}}" mode="aspectFill" binderror="onAvatarError"></image>
       <text class="sidebar-nickname">{{userInfo.nickName || '微信用户'}}</text>
@@ -37,7 +37,12 @@
     <view wx:else>
       <!-- User Profile Card -->
       <view class="profile-card profile-card-center">
-        <image src="../../images/icons/menu-icon.svg" class="menu-btn-large" bindtap="toggleSidebar" style="z-index:101;"></image>
+        <!-- 菜单按钮只在查看自己时显示 -->
+        <image wx:if="{{isViewingSelf}}" src="../../images/icons/menu-icon.svg" class="menu-btn-large" bindtap="toggleSidebar" style="z-index:101;"></image>
+        <!-- 返回按钮在查看他人时显示 -->
+        <view wx:else class="back-btn" bindtap="navigateBack">
+          <text>←</text>
+        </view>
         <view class="profile-avatar-large">
           <image src="{{userInfo.avatarUrl || '../../images/avatar.png'}}" mode="aspectFill" binderror="onAvatarError"></image>
         </view>
@@ -46,8 +51,8 @@
           <text class="profile-bio-center">{{userInfo.bio || '这个用户很懒,什么都还没留下...'}}</text>
         </view>
       </view>
-      <!-- 年龄和生日卡片 -->
-      <view class="profile-detail-card">
+      <!-- 年龄和生日卡片 (只在查看自己时显示详细信息) -->
+      <view wx:if="{{isViewingSelf}}" class="profile-detail-card">
         <text class="detail-item-inline">生日:{{userInfo.birthday ? userInfo.birthday : '未设置'}}</text>
         <text class="detail-item-inline">年龄:{{userInfo.age ? userInfo.age + '岁' : '未知'}}</text>
       </view>
@@ -56,9 +61,10 @@
         <view class="tab-item {{currentTab === 'posts' ? 'active' : ''}}" 
               data-tab="posts" 
               bindtap="switchTab">
-          <text>我发布的帖子</text>
+          <text>{{isViewingSelf ? '我发布的帖子' : 'TA的帖子'}}</text>
         </view>
-        <view class="tab-item {{currentTab === 'favorites' ? 'active' : ''}}" 
+        <!-- 收藏标签只在查看自己时显示 -->
+        <view wx:if="{{isViewingSelf}}" class="tab-item {{currentTab === 'favorites' ? 'active' : ''}}" 
               data-tab="favorites" 
               bindtap="switchTab">
           <text>收藏</text>
@@ -136,7 +142,7 @@
                 </view>
               </view>
               <view class="action-right">
-                <button class="delete-btn" size="mini" catch:tap="onDelete" data-postid="{{item._id}}" data-index="{{index}}">删除</button>
+                <button wx:if="{{isViewingSelf}}" class="delete-btn" size="mini" catch:tap="onDelete" data-postid="{{item._id}}" data-index="{{index}}">删除</button>
               </view>
             </view>
           </view>
@@ -148,7 +154,7 @@
           <view style="height: 200rpx;"></view>
         </block>
         <view wx:else class="empty-tip">
-          <text>你还没有发布过帖子哦～</text>
+          <text>{{isViewingSelf ? '你还没有发布过帖子哦～' : 'TA还没有发布过帖子'}}</text>
         </view>
       </view>
 
