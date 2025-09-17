@@ -1,7 +1,5 @@
 // index.js
-wx.cloud.init({
-  env: ''
-});
+// 云开发环境已在app.js中初始化，这里不需要重复初始化
 const db = wx.cloud.database();
 const PAGE_SIZE = 5;
 const dataCache = require('../../utils/dataCache');
@@ -14,7 +12,8 @@ Page({
     votingInProgress: {},
     page: 0,
     hasMore: true,
-    isLoading: false,
+    isLoading: false, // 恢复线上版本的初始值
+    isLoadingMore: false, // 新增：专门用于控制底部"加载中"UI的状态
     swiperHeights: {},
     imageClampHeights: {}, // 新增：单图瘦高图钳制高度
     displayMode: 'square', // 首页只负责广场模式
@@ -26,39 +25,28 @@ Page({
     // 首页只负责广场模式
     this.setData({ displayMode: 'square' });
     this.pageLoadStartTime = Date.now();
+    
+    // onLoad 只负责触发异步请求，然后立即结束
+    this.getIndexData();
   },
 
   onShow: function () {
-    console.log('index.js onShow is setting selected to 0'); // 添加这行日志
-    
-    // 更新tabBar选中状态
+    // TabBar 状态更新，必须保留
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      console.log('index.js: getTabBar() 存在，正在设置 selected: 0');
-      this.getTabBar().setData({
-        selected: 0
-      });
-      console.log('index.js: tabBar selected 已设置为 0');
-    } else {
-      console.log('index.js: getTabBar() 不存在或为空');
+      this.getTabBar().setData({ selected: 0 });
     }
-    
-    try {
-      const shouldRefresh = wx.getStorageSync('shouldRefreshIndex');
-      if (shouldRefresh) {
-        wx.setStorageSync('shouldRefreshIndex', false);
-        this.refreshData();
-        return;
-      }
-    } catch (e) {}
+  },
 
+  getIndexData: function () {
     // 检查缓存
     const cachedData = dataCache.get('index_postList_cache');
     if (cachedData) {
-      console.log('使用缓存数据');
+      console.log('Index: 使用缓存数据');
       performanceMonitor.recordCacheHit('index_postList_cache', true);
       this.setData({
         postList: cachedData,
-        page: Math.ceil(cachedData.length / PAGE_SIZE)
+        page: Math.ceil(cachedData.length / PAGE_SIZE),
+        isLoading: false // 关键：数据返回，关闭骨架屏
       });
       performanceMonitor.recordPageLoad('index', this.pageLoadStartTime);
       return;
@@ -66,9 +54,8 @@ Page({
       performanceMonitor.recordCacheHit('index_postList_cache', false);
     }
 
-    if (this.data.postList.length === 0) {
-      this.getPostList();
-    }
+    // 如果没有缓存，则加载数据
+    this.getPostList();
   },
 
   refreshData: function() {
@@ -102,9 +89,47 @@ Page({
     });
   },
 
+  // 移除或禁用 onReachBottom，避免与 onPageScroll 冲突
+  /*
   onReachBottom: function () {
-    if (!this.data.hasMore || this.data.isLoading) return;
+    console.log('【首页】onReachBottom触发，但主要加载逻辑在onPageScroll');
+    if (!this.data.hasMore || this.data.isLoading) {
+      return;
+    }
     this.getPostList();
+  },
+  */
+
+  // 优化页面滚动监听，使用更简单的防抖，移除 createSelectorQuery 提高性能
+  onPageScroll: function(e) {
+    if (this.scrollTimer) {
+      clearTimeout(this.scrollTimer);
+    }
+    
+    this.scrollTimer = setTimeout(() => {
+      // 只有在非加载中且还有更多数据时才进行后续判断
+      if (!this.data.hasMore || this.data.isLoading) {
+        return;
+      }
+
+      const windowInfo = wx.getWindowInfo();
+      const windowHeight = windowInfo.windowHeight;
+
+      // 使用 wx.createSelectorQuery() 获取页面总高度和最后一个元素的位置
+      wx.createSelectorQuery().select('#post-list-container').boundingClientRect(containerRect => {
+        if (containerRect && containerRect.height > 0) {
+          const scrollHeight = containerRect.height; // 使用容器高度更准确
+          const scrollTop = e.scrollTop;
+          const distanceToBottom = scrollHeight - scrollTop - windowHeight;
+          const preloadThreshold = windowHeight * 1.5; // 提前 1.5 屏预加载
+          
+          if (distanceToBottom < preloadThreshold) {
+            console.log('【首页】触发预加载');
+            this.getPostList();
+          }
+        }
+      }).exec();
+    }, 100); // 100ms 防抖
   },
 
 
@@ -212,6 +237,10 @@ Page({
 
   onImageError: function(e) { console.error('图片加载失败', e.detail); },
   onAvatarError: function(e) { console.error('头像加载失败', e.detail); },
+  onAvatarLoad: function(e) { 
+    // 头像加载成功，不需要特殊处理
+    console.log('头像加载成功', e.detail);
+  },
 
   // 图片预加载
   preloadImages: function(posts) {
@@ -272,14 +301,28 @@ Page({
     }
   },
 
-  // 优化数据获取，添加预加载和缓存
+  // 优化 getPostList 函数，这是核心
   getPostList: function (cb) {
-    if (this.data.isLoading) return;
-    this.setData({ isLoading: true });
+    // 【修复】同时检查 isLoading 和 isLoadingMore，确保只有一个请求在进行
+    if (this.data.isLoading || this.data.isLoadingMore || !this.data.hasMore) {
+      console.log('【首页】getPostList被阻止：正在加载中或没有更多数据');
+      if (typeof cb === 'function') cb();
+      return;
+    }
     
     const skip = this.data.page * PAGE_SIZE;
-    const apiStartTime = Date.now();
+    const isFirstLoad = this.data.page === 0;
 
+    // 根据加载类型设置不同的状态
+    if (isFirstLoad) {
+      // 首次加载：显示骨架屏
+      this.setData({ isLoading: true });
+    } else {
+      // 滑动加载更多：显示底部加载提示
+      this.setData({ isLoadingMore: true });
+    }
+    
+    const apiStartTime = Date.now();
     wx.cloud.callFunction({
       name: 'getPostList',
       data: { skip: skip, limit: PAGE_SIZE },
@@ -287,48 +330,56 @@ Page({
         performanceMonitor.recordApiCall('getPostList', apiStartTime);
         
         if (res.result && res.result.success) {
-          const posts = res.result.posts || [];
+          let posts = res.result.posts || [];
           
-          posts.forEach(post => {
+          // --- 关键优化：预处理图片尺寸，防止抖动 ---
+          posts = posts.map(post => {
             if (!post.imageUrls || post.imageUrls.length === 0) {
               post.imageUrls = post.imageUrl ? [post.imageUrl] : [];
             }
+
+            // 假设图片URL中包含了尺寸信息，或者你有固定的宽高比
+            // 如果没有，则需要在onImageLoad中动态计算并更新，但最好有预设值
+            // 这里我们假设一个默认的 4:3 比例用于占位
+            if (post.imageUrls.length > 0) {
+                post.imageStyle = `height: 0; padding-bottom: 75%;`; // 4:3 宽高比占位
+            }
+            return post;
           });
 
-          const newPostList = this.data.page === 0 ? posts : this.data.postList.concat(posts);
-
-          // 调试：检查帖子数据中是否包含_openid
-          console.log('【首页】帖子数据示例:', posts.slice(0, 2).map(post => ({
-            _id: post._id,
-            title: post.title,
-            authorName: post.authorName,
-            _openid: post._openid,
-            hasOpenid: !!post._openid
-          })));
-
-          this.setData({
+          const newPostsCount = posts.length;
+          const currentPostList = this.data.postList;
+          
+          // 使用更高效的方式更新列表数据 - 修复语法错误
+          const newPostList = currentPostList.concat(posts);
+          const updateData = {
             postList: newPostList,
             page: this.data.page + 1,
-            hasMore: posts.length === PAGE_SIZE,
-          });
+            hasMore: newPostsCount === PAGE_SIZE,
+          };
 
-          // 缓存数据（只在第一页时缓存）
-          if (this.data.page === 1) {
+          this.setData(updateData);
+
+          if (isFirstLoad) {
             dataCache.set('index_postList_cache', newPostList);
-            
-            // 预加载图片
             this.preloadImages(posts);
-            
-            // 记录页面加载完成
             performanceMonitor.recordPageLoad('index', this.pageLoadStartTime);
           }
         } else {
           wx.showToast({ title: '加载失败', icon: 'none' });
         }
       },
-      fail: () => wx.showToast({ title: '网络错误', icon: 'none' }),
+      fail: (err) => {
+        console.error('【首页】getPostList云函数调用失败:', err);
+        wx.showToast({ title: '网络错误', icon: 'none' });
+      },
       complete: () => {
-        this.setData({ isLoading: false });
+        // 请求完成后，根据加载类型释放相应的状态
+        if (isFirstLoad) {
+          this.setData({ isLoading: false });
+        } else {
+          this.setData({ isLoadingMore: false });
+        }
         if (typeof cb === 'function') cb();
       }
     });

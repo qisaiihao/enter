@@ -4,16 +4,17 @@ const PAGE_SIZE = 5;
 
 Page({
   data: {
+    isLoading: true, // 默认显示骨架屏
     postList: [],
     currentPostIndex: 0,
     touchStartX: 0,
     touchEndX: 0,
-    isLoading: false,
     hasMore: true,
     page: 0,
     backgroundImage: '', // 这个变量可以废弃了，或者只用来做逻辑判断
     isTransitioning: false,
     preloadedImages: {},
+    _hasFirstLoad: false, // 新增：标记是否首次加载
 
     // --- 新增数据 ---
     currentPost: null, // 专门存放当前帖子的数据
@@ -27,68 +28,57 @@ Page({
   onLoad: function () {
     console.log('Poem 页面 onLoad');
     
-    // 新增一个标志位，告诉 onShow 这是第一次加载
-    this.isFirstLoad = true; 
-
     const app = getApp();
+    // 检查预加载数据
     if (app.globalData.preloadedPoemData && app.globalData.preloadedPoemData.length > 0) {
-      console.log('成功使用预加载的数据！');
-      
-      // 使用 preloadedPoemData 来设置初始内容
-      const preloadedData = app.globalData.preloadedPoemData;
+      // 【情况A】预加载成功：直接渲染，不显示骨架屏
+      console.log('Poem: 使用预加载数据');
       this.setData({
-        postList: preloadedData,
-        currentPostIndex: 0,
-        page: 1, // 因为已经加载了第一页
-        hasMore: true
+        postList: app.globalData.preloadedPoemData,
+        isLoading: false, // 关键：直接关闭骨架屏
+        page: 1,
+        _hasFirstLoad: true // 标记已首次加载
       });
-      
       // 使用我们之前写的 updatePostDisplay 来统一更新界面
       this.updatePostDisplay(0);
-
-      // 清空全局数据，防止重复使用
-      app.globalData.preloadedPoemData = null;
+      app.globalData.preloadedPoemData = null; // 用完即焚
     } else {
-      console.log('没有预加载数据，正常加载');
+      // 【情况B】无预加载：显示骨架屏，并异步请求数据
+      console.log('Poem: 无预加载数据，开始请求');
       this.getPostList();
     }
   },
 
   onShow: function () {
-    console.log('Poem 页面 onShow');
-    console.log('poem.js onShow is setting selected to 1'); // 添加这行日志
-    
-    // 1. 无条件更新 TabBar 状态
-    // 这一步必须是 onShow 的第一件事，且没有任何条件判断
+    // TabBar 状态更新，必须保留
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      console.log('poem.js: getTabBar() 存在，正在设置 selected: 1');
-      this.getTabBar().setData({
-        selected: 1 // 1 是 "路" 的索引
-      });
-      console.log('poem.js: tabBar selected 已设置为 1');
-    } else {
-      console.log('poem.js: getTabBar() 不存在或为空');
+      this.getTabBar().setData({ selected: 1 });
     }
     
-    // 2. 处理页面数据刷新逻辑
-    // 这里的 isFirstLoad 逻辑可以保留，因为它只和页面内容有关，不影响 TabBar
-    if (this.isFirstLoad) {
-      this.isFirstLoad = false; // 重置标志位
-      // 第一次加载时，onLoad 已经获取了数据，所以这里不需要再做什么
-      console.log('首次显示 Poem 页面，数据已由 onLoad 加载');
+    // 首次进入时刷新数据，之后保持之前的内容
+    if (!this.data._hasFirstLoad) {
+      console.log('【poem】首次进入，刷新数据');
+      this.refreshPoemData();
     } else {
-      // 如果是从其他页面返回，执行你的刷新逻辑
-      console.log('从其他页面返回 Poem 页面，执行刷新');
-      this.setData({
-        postList: [],
-        currentPostIndex: 0,
-        page: 0,
-        hasMore: true,
-        backgroundImage: ''
-      }, () => {
-        this.getPostList();
-      });
+      console.log('【poem】再次进入，保持之前内容');
     }
+  },
+
+  // 新增：刷新诗歌数据的方法
+  refreshPoemData: function() {
+    console.log('【poem】开始刷新诗歌数据');
+    this.setData({
+      postList: [],
+      currentPostIndex: 0,
+      page: 0,
+      hasMore: true,
+      bgLayers: [
+        { url: '', visible: false },
+        { url: '', visible: false }
+      ],
+      activeLayerIndex: 0
+    });
+    this.getPostList();
   },
 
   getPostList: function (cb) {
@@ -156,7 +146,10 @@ Page({
       },
       fail: () => wx.showToast({ title: '网络错误', icon: 'none' }),
       complete: () => {
-        this.setData({ isLoading: false });
+        this.setData({ 
+          isLoading: false,
+          _hasFirstLoad: true // 标记首次加载完成
+        });
         if (typeof cb === 'function') cb();
       }
     });
@@ -190,7 +183,7 @@ Page({
       }, 500); // 动画时长与CSS中的 transition 一致
     } else {
       if (this.data.hasMore && !this.data.isLoading) {
-        this.getPostList(() => {
+        this.loadMorePosts(() => {
           if (this.data.postList.length > this.data.currentPostIndex + 1) {
             this.updatePostDisplay(this.data.currentPostIndex + 1);
           }
@@ -245,13 +238,59 @@ Page({
     console.error('图片加载失败', e.detail);
   },
 
+  // 加载更多帖子（不显示骨架屏）
+  loadMorePosts: function(cb) {
+    if (this.data.isLoading) return;
+    // 注意：这里不设置 isLoading: true，避免触发骨架屏
+    
+    const skip = this.data.page * PAGE_SIZE;
+    console.log('开始加载更多路诗歌，skip:', skip, 'page:', this.data.page);
+
+    wx.cloud.callFunction({
+      name: 'getPostList',
+      data: { skip: skip, limit: PAGE_SIZE, isPoem: true, isOriginal: true },
+      success: res => {
+        console.log('加载更多路诗歌结果:', res);
+        if (res.result && res.result.success) {
+          const posts = res.result.posts || [];
+          console.log('获取到更多路诗歌数量:', posts.length);
+          
+          posts.forEach(post => {
+            if (!post.imageUrls || post.imageUrls.length === 0) {
+              post.imageUrls = post.imageUrl ? [post.imageUrl] : [];
+            }
+          });
+
+          const newPostList = this.data.postList.concat(posts);
+
+          this.setData({
+            postList: newPostList,
+            page: this.data.page + 1,
+            hasMore: posts.length === PAGE_SIZE,
+          });
+
+          // 预加载新加载的图片
+          const startIndex = this.data.postList.length - posts.length;
+          posts.forEach((post, index) => {
+            this.loadImageForIndex(startIndex + index);
+          });
+        }
+      },
+      fail: () => console.error('加载更多路诗歌失败'),
+      complete: () => {
+        // 注意：这里不设置 isLoading: false，因为之前没有设置为 true
+        if (typeof cb === 'function') cb();
+      }
+    });
+  },
+
   // 预加载下一首的背景图
   preloadNextBackgroundImage: function(currentIndex) {
     const nextIndex = currentIndex + 1;
     if (nextIndex >= this.data.postList.length) {
       // 如果下一首不存在，检查是否需要加载更多
       if (this.data.hasMore && !this.data.isLoading) {
-        this.getPostList(() => {
+        this.loadMorePosts(() => {
           // 加载完成后再次尝试预加载
           if (nextIndex < this.data.postList.length) {
             this.loadImageForIndex(nextIndex);

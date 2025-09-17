@@ -21,48 +21,48 @@
     ></image>
   </view>
 
-  <!-- 骨架屏 -->
-  <view wx:if="{{isLoading && postList.length === 0}}" class="skeleton-container">
+  <!-- 骨架屏：当 isLoading 为 true 时显示 -->
+  <view wx:if="{{isLoading}}">
     <skeleton />
   </view>
 
-  <!-- 山模式 -->
-  <view wx:if="{{postList.length > 0}}" class="poem-mode-container" bindtouchstart="touchStart" bindtouchend="touchEnd">
-    
-    <!-- 
-      核心改动：
-      不再使用 postList[currentPostIndex]，而是使用独立的 currentPost 对象。
-      这样切换时，小程序只会更新 image 和 text 的内容，而不会重新渲染整个 view 结构。
-    -->
-    <view class="single-post-content {{isTransitioning ? 'is-transitioning' : ''}}" catchtap="onSinglePostTap" data-postid="{{currentPost._id}}">
-      <!-- 作者信息 -->
-      <view class="single-author-info">
-        <image wx:if="{{currentPost.authorAvatar}}" class="single-author-avatar" src="{{currentPost.authorAvatar}}" mode="aspectFill" />
-        <text class="single-author-name">{{currentPost.authorName}}</text>
+  <!-- 真实内容：当 isLoading 为 false 时显示 -->
+  <view wx:else>
+    <!-- 山模式 -->
+    <view wx:if="{{postList.length > 0}}" class="poem-mode-container" bindtouchstart="touchStart" bindtouchend="touchEnd">
+      
+      <!-- 
+        核心改动：
+        不再使用 postList[currentPostIndex]，而是使用独立的 currentPost 对象。
+        这样切换时，小程序只会更新 image 和 text 的内容，而不会重新渲染整个 view 结构。
+      -->
+      <view class="single-post-content {{isTransitioning ? 'is-transitioning' : ''}}" catchtap="onSinglePostTap" data-postid="{{currentPost._id}}">
+        <!-- 作者信息 -->
+        <view class="single-author-info">
+          <image wx:if="{{currentPost.authorAvatar}}" class="single-author-avatar" src="{{currentPost.authorAvatar}}" mode="aspectFill" />
+          <text class="single-author-name">{{currentPost.authorName}}</text>
+        </view>
+        
+        <!-- 标题 -->
+        <view class="single-post-title" wx:if="{{currentPost.title}}">{{currentPost.title}}</view>
+        
+        <!-- 内容 -->
+        <view class="single-post-content-text" wx:if="{{currentPost.content}}" style="white-space: pre-wrap;">{{currentPost.content}}</view>
+        
       </view>
       
-      <!-- 标题 -->
-      <view class="single-post-title" wx:if="{{currentPost.title}}">{{currentPost.title}}</view>
-      
-      <!-- 内容 -->
-      <view class="single-post-content-text" wx:if="{{currentPost.content}}" style="white-space: pre-wrap;">{{currentPost.content}}</view>
-      
+      <view wx:if="{{postList.length === 0 && !isLoading}}" class="empty-state">
+        <view class="empty-icon">⛰️</view>
+        <view class="empty-text">还没有山诗哦～</view>
+        <view class="empty-subtext">快去广场发现好诗吧！</view>
+      </view>
     </view>
-    
-    <view wx:if="{{postList.length === 0 && !isLoading}}" class="empty-state">
-      <view class="empty-icon">⛰️</view>
-      <view class="empty-text">还没有山诗哦～</view>
-      <view class="empty-subtext">快去广场发现好诗吧！</view>
+
+    <!-- 调试按钮 (仅在开发环境显示) -->
+    <view wx:if="{{false}}" class="debug-button" bindtap="testImageUrls">
+      <view>🐛</view>
     </view>
   </view>
-
-
-  <!-- 调试按钮 (仅在开发环境显示) -->
-  <view wx:if="{{false}}" class="debug-button" bindtap="testImageUrls">
-    <view>🐛</view>
-  </view>
-
-  
 </view>
 
 <!-- 自定义tabBar -->

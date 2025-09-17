@@ -4,9 +4,9 @@ const PAGE_SIZE = 5;
 
 Page({
   data: {
+    isLoading: true, // 默认显示骨架屏
     userInfo: {},
     isSidebarOpen: false,
-    isLoading: false,
     myPosts: [],
     page: 0,
     hasMore: true,
@@ -26,49 +26,79 @@ Page({
   },
 
   onLoad: function (options) {
-    this.checkLoginAndFetchData();
     // 计算3:4比例高度（宽3高4，竖图）
     const windowWidth = wx.getSystemInfoSync().windowWidth;
     const fixedHeight = Math.round(windowWidth * 4 / 3);
     this.setData({ swiperFixedHeight: fixedHeight });
+    
+    // onLoad 只负责触发异步请求，然后立即结束
+    this.getProfileData();
   },
 
   onShow: function () {
-    console.log('profile.js onShow is setting selected to 3'); // 添加这行日志
-    
-    // 更新tabBar选中状态
+    // TabBar 状态更新，必须保留
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      console.log('profile.js: getTabBar() 存在，正在设置 selected: 3');
-      this.getTabBar().setData({
-        selected: 3
-      });
-      console.log('profile.js: tabBar selected 已设置为 3');
-    } else {
-      console.log('profile.js: getTabBar() 不存在或为空');
+      this.getTabBar().setData({ selected: 3 });
     }
     
-    const shouldRefresh = wx.getStorageSync('shouldRefreshProfile');
-    if (shouldRefresh) {
-      wx.removeStorageSync('shouldRefreshProfile');
+    // 每次进入页面时主动刷新数据（但避免首次加载时重复调用）
+    if (this.data._hasFirstShow) {
+      console.log('【profile】onShow触发，开始刷新数据');
+      this.refreshProfileData();
+    } else {
+      console.log('【profile】首次显示，标记已显示');
+      this.setData({ _hasFirstShow: true });
+    }
+  },
+
+  getProfileData: function () {
+    // 获取用户信息和帖子数据
+    this.checkLoginAndFetchData();
+  },
+
+  // 新增：刷新个人资料数据的方法（使用与下拉刷新相同的逻辑）
+  refreshProfileData: function() {
+    console.log('【profile】开始刷新个人资料数据，当前标签:', this.data.currentTab);
+    
+    // 检查是否需要刷新首页数据
+    const shouldRefreshIndex = wx.getStorageSync('shouldRefreshIndex');
+    if (shouldRefreshIndex) {
+      console.log('【profile】检测到首页需要刷新标记，清除缓存');
+      wx.removeStorageSync('shouldRefreshIndex');
+    }
+    
+    // 刷新用户信息（只在有用户信息时刷新，避免重复调用）
+    if (this.data.userInfo && this.data.userInfo._openid) {
       this.fetchUserProfile();
+    }
+    
+    // 使用与下拉刷新完全相同的逻辑
+    if (this.data.currentTab === 'posts') {
       this.setData({
         myPosts: [],
         page: 0,
         hasMore: true,
         swiperHeights: {},
         imageClampHeights: {},
-      }, () => {
-        this.loadMyPosts();
       });
-      return;
+      this.loadMyPosts(() => {
+        console.log('【profile】onShow刷新帖子数据完成');
+      });
+    } else if (this.data.currentTab === 'favorites') {
+      this.setData({
+        favoriteList: [],
+        favoritePage: 0,
+        favoriteHasMore: true,
+        swiperHeights: {},
+        imageClampHeights: {},
+      });
+      this.loadFavorites(() => {
+        console.log('【profile】onShow刷新收藏数据完成');
+      });
     }
-
-    this.fetchUserProfile();
-    this.checkUnreadMessages(); // 检查未读消息
-
-    if (this.data.myPosts.length === 0) {
-      this.loadMyPosts();
-    }
+    
+    // 检查未读消息数量
+    this.checkUnreadMessages();
   },
 
   onPullDownRefresh: function () {
@@ -133,8 +163,10 @@ Page({
     console.log('存储的用户信息:', storedUserInfo);
     
     if (storedUserInfo && storedUserInfo._openid) {
-      console.log('用户已登录，开始获取个人资料');
+      console.log('用户已登录，开始获取个人资料和帖子数据');
       this.fetchUserProfile();
+      // 首次加载时也要加载帖子数据
+      this.loadMyPosts();
     } else {
       console.log('用户未登录，存储的用户信息:', storedUserInfo);
       this.setData({ isLoading: false });
@@ -157,7 +189,10 @@ Page({
             user.age = '';
           }
           // 只更新 userInfo，不更新 myPosts
-          this.setData({ userInfo: user });
+          this.setData({ 
+            userInfo: user,
+            isLoading: false // 关键：数据返回，关闭骨架屏
+          });
         } else {
           wx.showToast({ title: '个人资料数据异常', icon: 'none', duration: 3000 });
           console.error('个人资料数据异常', res);
@@ -166,7 +201,10 @@ Page({
             if (storedUserInfo.birthday) {
               storedUserInfo.age = this.calculateAge(storedUserInfo.birthday);
             }
-            this.setData({ userInfo: storedUserInfo });
+            this.setData({ 
+              userInfo: storedUserInfo,
+              isLoading: false // 关键：数据返回，关闭骨架屏
+            });
           }
         }
       },
@@ -178,14 +216,18 @@ Page({
           if (storedUserInfo.birthday) {
             storedUserInfo.age = this.calculateAge(storedUserInfo.birthday);
           }
-          this.setData({ userInfo: storedUserInfo });
+          this.setData({ 
+            userInfo: storedUserInfo,
+            isLoading: false // 关键：数据返回，关闭骨架屏
+          });
         }
       }
     });
   },
 
   loadMyPosts: function (cb) {
-    if (this.data.isLoading) return;
+    // 移除阻止重复调用的条件判断，允许在onShow时刷新数据
+    // if (this.data.isLoading) return;
     const { page, PAGE_SIZE } = this.data;
     console.log('【profile】请求分页参数', { page, PAGE_SIZE, skip: page * PAGE_SIZE, limit: PAGE_SIZE });
     this.setData({ isLoading: true });
@@ -499,7 +541,8 @@ Page({
 
   // 新增：加载收藏列表
   loadFavorites: function(cb) {
-    if (this.data.favoriteLoading) return;
+    // 移除阻止重复调用的条件判断，允许在onShow时刷新数据
+    // if (this.data.favoriteLoading) return;
     
     const { favoritePage, PAGE_SIZE } = this.data;
     console.log('【profile】请求收藏分页参数', { favoritePage, PAGE_SIZE, skip: favoritePage * PAGE_SIZE, limit: PAGE_SIZE });

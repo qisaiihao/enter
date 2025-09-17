@@ -20,6 +20,8 @@ Page({
       preloadTasks.push(this.preloadTabIcons());
       // 任务2：预加载诗歌数据和相关图片
       preloadTasks.push(this.preloadPoemData());
+      // 任务3：预加载山页面数据和相关图片
+      preloadTasks.push(this.preloadMountainData());
     }
 
     // 等待所有预加载任务完成
@@ -66,6 +68,95 @@ Page({
         }
       });
     });
+  },
+
+  // 预加载山页面数据
+  preloadMountainData: function() {
+    return new Promise(async (resolve, reject) => {
+      wx.cloud.callFunction({
+        name: 'getPostList',
+        data: { skip: 0, limit: 5, isPoem: true, isOriginal: false }, // 非原创诗歌
+        success: async (res) => {
+          try {
+            if (res.result && res.result.success && res.result.posts) {
+              const app = getApp();
+              app.globalData.preloadedMountainData = res.result.posts;
+              
+              if (res.result.posts.length > 0) {
+                console.log('山页面数据获取成功，开始预加载相关图片...');
+                // 预加载第一张图片
+                await this.preloadFirstMountainImages(res.result.posts[0]); 
+                console.log('山页面相关图片预加载完成！');
+              }
+            }
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        },
+        fail: (err) => {
+          reject(err);
+        },
+        complete: () => {
+          console.log('山页面数据预加载流程结束');
+        }
+      });
+    });
+  },
+
+  // 预加载山页面第一张图片
+  preloadFirstMountainImages: function(post) {
+    const app = getApp();
+    if (!app.globalData.preloadedImages) {
+      app.globalData.preloadedImages = {};
+    }
+    
+    const imageDownloadTasks = [];
+
+    // 预加载背景图片
+    const bgImageUrl = post.poemBgImage || (post.imageUrls && post.imageUrls[0]);
+    if (bgImageUrl) {
+      imageDownloadTasks.push(new Promise(resolve => {
+        wx.downloadFile({
+          url: bgImageUrl,
+          success: (res) => {
+            if (res.statusCode === 200) {
+              console.log('山页面首张背景图预加载成功:', res.tempFilePath);
+              app.globalData.preloadedImages[bgImageUrl] = res.tempFilePath;
+            }
+          },
+          fail: (err) => {
+            console.error('山页面背景图预加载失败:', bgImageUrl, err);
+          },
+          complete: () => {
+            resolve();
+          }
+        });
+      }));
+    }
+    
+    // 预加载用户头像
+    if (post.authorAvatar) {
+      imageDownloadTasks.push(new Promise(resolve => {
+        wx.downloadFile({
+          url: post.authorAvatar,
+          success: (res) => {
+            if (res.statusCode === 200) {
+              console.log('山页面作者头像预加载成功');
+              app.globalData.preloadedImages[post.authorAvatar] = res.tempFilePath;
+            }
+          },
+          fail: (err) => {
+            console.error('山页面作者头像预加载失败:', post.authorAvatar, err);
+          },
+          complete: () => {
+            resolve();
+          }
+        });
+      }));
+    }
+    
+    return Promise.all(imageDownloadTasks);
   },
 
   preloadTabIcons: function() {
