@@ -191,34 +191,64 @@ Page({
   },
 
   onVote: function(event) {
+    // 注意：小程序中不需要手动stopPropagation，因为使用了catch:tap绑定
+    console.log('【点赞】onVote事件触发', event.currentTarget.dataset);
+    
     const postId = event.currentTarget.dataset.postid;
     const index = event.currentTarget.dataset.index;
-    if (this.data.votingInProgress[postId]) return;
+    
+    console.log('【点赞】postId:', postId, 'index:', index);
+    
+    if (this.data.votingInProgress[postId]) {
+      console.log('【点赞】正在投票中，跳过');
+      return;
+    }
+    
     this.setData({ [`votingInProgress.${postId}`]: true });
+    
     let postList = this.data.postList;
     const originalVotes = postList[index].votes;
     const originalIsVoted = postList[index].isVoted;
+    
+    console.log('【点赞】原始状态 - votes:', originalVotes, 'isVoted:', originalIsVoted);
+    
+    // 立即更新UI，提供即时反馈
     postList[index].votes = originalIsVoted ? originalVotes - 1 : originalVotes + 1;
     postList[index].isVoted = !originalIsVoted;
-    // 更新点赞图标
     postList[index].likeIcon = likeIcon.getLikeIcon(postList[index].votes, postList[index].isVoted);
+    
+    console.log('【点赞】更新后状态 - votes:', postList[index].votes, 'isVoted:', postList[index].isVoted);
+    console.log('【点赞】新的likeIcon:', postList[index].likeIcon);
+    
     this.setData({ postList: postList });
+    
+    // 调用云函数同步数据
+    console.log('【点赞】调用云函数vote，postId:', postId);
     wx.cloud.callFunction({
       name: 'vote',
       data: { postId: postId },
       success: res => {
+        console.log('【点赞】云函数返回结果:', res);
         if (!res.result.success) {
+          console.log('【点赞】云函数返回失败，回滚UI');
+          // 如果服务器失败，回滚UI
           postList[index].votes = originalVotes;
           postList[index].isVoted = originalIsVoted;
           postList[index].likeIcon = likeIcon.getLikeIcon(originalVotes, originalIsVoted);
           this.setData({ postList: postList });
         } else if (postList[index].votes !== res.result.votes) {
+          console.log('【点赞】服务器票数不同，更新为服务器数据');
+          // 如果服务器返回的票数不同，更新为服务器数据
           postList[index].votes = res.result.votes;
           postList[index].likeIcon = likeIcon.getLikeIcon(postList[index].votes, postList[index].isVoted);
           this.setData({ postList: postList });
+        } else {
+          console.log('【点赞】云函数调用成功，数据已同步');
         }
       },
-      fail: () => {
+      fail: (err) => {
+        console.error('【点赞】云函数调用失败:', err);
+        // 网络失败，回滚UI
         postList[index].votes = originalVotes;
         postList[index].isVoted = originalIsVoted;
         postList[index].likeIcon = likeIcon.getLikeIcon(originalVotes, originalIsVoted);
@@ -226,6 +256,7 @@ Page({
         wx.showToast({ title: '操作失败', icon: 'none' });
       },
       complete: () => {
+        console.log('【点赞】云函数调用完成');
         this.setData({ [`votingInProgress.${postId}`]: false });
       }
     });
@@ -246,6 +277,9 @@ Page({
   onAvatarLoad: function(e) { 
     // 头像加载成功，不需要特殊处理
     console.log('头像加载成功', e.detail);
+  },
+  onLikeIconError: function(e) {
+    console.error('点赞图标加载失败', e.detail, '图标路径:', e.currentTarget.dataset.src);
   },
 
   // 图片预加载
@@ -396,9 +430,4 @@ Page({
   },
 
   // 模式切换现在通过底部tabBar实现，不再需要手动切换
-
-  // 阻止事件冒泡，防止点赞区域触发卡片点击
-  preventBubble: function() {
-    // 空函数，仅用于阻止事件冒泡
-  }
 });

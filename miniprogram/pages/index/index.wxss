@@ -66,6 +66,45 @@
   display: block;
 }
 
+/* 新增：帖子项包装器样式 */
+.post-item-wrapper {
+  background: #fff;
+  border-radius: 16rpx;
+  margin-bottom: 20rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+/* 新增：内容导航器样式 */
+.post-content-navigator {
+  display: block;
+  background: transparent;
+}
+
+/* 新增：导航器点击效果 */
+.navigator-hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* 新增：点赞按钮容器样式 */
+.like-icon-container {
+  padding: 10rpx;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+/* 新增：点赞按钮点击效果 */
+.like-icon-container:active {
+  transform: scale(0.9);
+  background-color: rgba(255, 107, 107, 0.1);
+}
+
+/* 新增：点赞图标样式 */
+.like-icon {
+  width: 40rpx;
+  height: 40rpx;
+  transition: all 0.2s ease;
+}
 
 .author-info {
   display: flex;
