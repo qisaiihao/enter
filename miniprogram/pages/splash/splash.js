@@ -76,7 +76,7 @@ Page({
     const nextChar = text[charIndex]; // 下一个字符
     
     // 基础延迟时间
-    let baseDelay = 150;
+    let baseDelay = 100;
     
     // 根据字符类型调整延迟
     if (char === ' ') {
@@ -109,44 +109,43 @@ Page({
     // 添加按钮点击反馈
     wx.vibrateShort();
     
-    // 检查预加载是否完成
-    if (!this.data.preloadCompleted) {
-      wx.showToast({
-        title: '正在加载中...',
-        icon: 'loading',
-        duration: 1000
-      });
-      return;
-    }
-    
-    // 隐藏按钮，显示换行后的光标
+    // 隐藏按钮和原有光标，显示换行后的光标
     this.setData({
       showEnterButton: false,
       showNewLineCursor: true
     });
     
-    // 闪烁两下后跳转
+    // 开始光标闪烁和跳转逻辑
     this.blinkNewLineCursorAndNavigate();
   },
 
   /**
-   * 换行光标闪烁两下后跳转
+   * 换行光标闪烁后跳转（根据预加载状态决定闪烁次数）
    */
   blinkNewLineCursorAndNavigate: function() {
     let blinkCount = 0;
-    const maxBlinks = 2;
+    let isBlinking = true;
     
     const blinkInterval = setInterval(() => {
-      blinkCount++;
+      if (!isBlinking) return;
       
-      if (blinkCount >= maxBlinks) {
+      blinkCount++;
+      console.log(`第${blinkCount}次闪烁，预加载状态: ${this.data.preloadCompleted ? '完成' : '未完成'}`);
+      
+      // 如果预加载已完成，在下一次闪烁后跳转
+      if (this.data.preloadCompleted) {
+        isBlinking = false;
         clearInterval(blinkInterval);
-        // 闪烁完成后跳转
+        // 给用户一个视觉反馈，然后跳转
         setTimeout(() => {
           this.navigateToTarget();
-        }, 500); // 延迟0.5秒后跳转
+        }, 300);
       }
+      // 如果预加载未完成，继续闪烁等待
     }, 600); // 每0.6秒闪烁一次
+    
+    // 保存清理函数，避免内存泄漏
+    this.currentBlinkInterval = blinkInterval;
   },
 
   // 加载云端开屏图
@@ -439,6 +438,12 @@ Page({
   },
 
   navigateToTarget: function() {
+    // 清理闪烁定时器
+    if (this.currentBlinkInterval) {
+      clearInterval(this.currentBlinkInterval);
+      this.currentBlinkInterval = null;
+    }
+    
     // 开始淡出动画
     this.startFadeOut();
     
@@ -466,5 +471,15 @@ Page({
       fadeOut: true,
       zoomOut: true
     });
+  },
+
+  /**
+   * 页面卸载时清理定时器
+   */
+  onUnload: function() {
+    if (this.currentBlinkInterval) {
+      clearInterval(this.currentBlinkInterval);
+      this.currentBlinkInterval = null;
+    }
   }
 });
