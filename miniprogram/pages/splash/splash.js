@@ -2,14 +2,151 @@ const { imageManager } = require('../../utils/imageManager.js')
 
 Page({
   data: {
+    // ---- 新增的状态控制 ----
+    currentPhase: 'typing', // 'typing', 'imageDisplay', 'done'
+    showEnterButton: false, // 控制进入按钮的显示
+    showNewLineCursor: false, // 控制换行后光标的显示
+    textMoveUp: false, // 控制文字上移动画
+    preloadCompleted: false, // 预加载是否完成
+
+    // ---- 打字机动画所需数据 ----
+    fullText: 'poementer',
+    typedText: '',
+
+    // ---- 预加载的开屏图数据 ----
+    preloadedImagePath: '', // 存储预加载成功的图片本地路径
+    
+    // ---- 原有数据 ----
     preloadProgress: 0,
     isPreloading: false,
     splashImageUrl: '/images/splash.png' // 默认本地开屏图
   },
 
   onLoad: function () {
-    // 加载云端开屏图
-    this.loadSplashImage()
+    // 1. 启动打字机动画
+    this.executeTypingAnimation();
+
+    // 2. 并行执行图片预加载和原有的数据预加载
+    this.loadSplashImage();
+  },
+
+  /**
+   * 函数：执行打字机动画
+   */
+  executeTypingAnimation: function () {
+    const textToType = this.data.fullText; // 获取要完整显示的文本
+    let charIndex = 0; // 定义一个索引，用于追踪当前应该显示哪个字符
+
+    // 递归函数，模拟人打字的节奏
+    const typeNextChar = () => {
+      if (charIndex < textToType.length) {
+        // 1. 更新 typedText：将当前已显示的文本加上下一个要显示的字符
+        this.setData({
+          typedText: this.data.typedText + textToType[charIndex]
+        });
+        
+        // 2. 索引递增，准备显示下一个字符
+        charIndex++;
+        
+        // 3. 根据字符位置和内容决定下一个字符的延迟时间
+        let delay = this.getTypingDelay(charIndex, textToType);
+        
+        // 4. 递归调用，继续下一个字符
+        setTimeout(typeNextChar, delay);
+      } else {
+        // 所有字符都已显示完毕，延迟后显示"进入"按钮
+        setTimeout(() => {
+          this.setData({
+            showEnterButton: true,
+            textMoveUp: true // 触发文字上移动画
+          });
+        }, 500);
+      }
+    };
+
+    // 开始打字动画
+    typeNextChar();
+  },
+
+  /**
+   * 获取打字延迟时间，模拟人打字的节奏
+   */
+  getTypingDelay: function(charIndex, text) {
+    const char = text[charIndex - 1]; // 当前字符
+    const nextChar = text[charIndex]; // 下一个字符
+    
+    // 基础延迟时间
+    let baseDelay = 150;
+    
+    // 根据字符类型调整延迟
+    if (char === ' ') {
+      // 空格后稍微停顿
+      baseDelay = 200;
+    } else if (char === 'e' && nextChar === 'n') {
+      // "poem"后的"enter"开始前，停顿更长时间
+      baseDelay = 800;
+    } else if (char === 'm' && nextChar === 'e') {
+      // "poem"结束后，停顿
+      baseDelay = 600;
+    } else if (char === 't' && nextChar === 'e') {
+      // "enter"中的"te"之间
+      baseDelay = 180;
+    } else if (char === 'e' && nextChar === 'r') {
+      // "enter"中的"er"之间
+      baseDelay = 160;
+    } else {
+      // 其他字符的随机延迟，模拟人打字的自然节奏
+      baseDelay = 120 + Math.random() * 100; // 120-220ms的随机延迟
+    }
+    
+    return baseDelay;
+  },
+
+  /**
+   * 响应：用户点击"进入"按钮
+   */
+  handleEnterButtonClick: function() {
+    // 添加按钮点击反馈
+    wx.vibrateShort();
+    
+    // 检查预加载是否完成
+    if (!this.data.preloadCompleted) {
+      wx.showToast({
+        title: '正在加载中...',
+        icon: 'loading',
+        duration: 1000
+      });
+      return;
+    }
+    
+    // 隐藏按钮，显示换行后的光标
+    this.setData({
+      showEnterButton: false,
+      showNewLineCursor: true
+    });
+    
+    // 闪烁两下后跳转
+    this.blinkNewLineCursorAndNavigate();
+  },
+
+  /**
+   * 换行光标闪烁两下后跳转
+   */
+  blinkNewLineCursorAndNavigate: function() {
+    let blinkCount = 0;
+    const maxBlinks = 2;
+    
+    const blinkInterval = setInterval(() => {
+      blinkCount++;
+      
+      if (blinkCount >= maxBlinks) {
+        clearInterval(blinkInterval);
+        // 闪烁完成后跳转
+        setTimeout(() => {
+          this.navigateToTarget();
+        }, 500); // 延迟0.5秒后跳转
+      }
+    }, 600); // 每0.6秒闪烁一次
   },
 
   // 加载云端开屏图
@@ -21,10 +158,14 @@ Page({
       if (splashUrl && splashUrl !== '/images/splash.png') {
         console.log('成功获取云端开屏图URL:', splashUrl)
         this.setData({
-          splashImageUrl: splashUrl
+          splashImageUrl: splashUrl,
+          preloadedImagePath: splashUrl
         })
       } else {
         console.log('使用默认本地开屏图')
+        this.setData({
+          preloadedImagePath: '/images/splash.png'
+        })
       }
     } catch (error) {
       console.error('加载云端开屏图失败:', error)
@@ -32,10 +173,13 @@ Page({
     }
     
     // 无论云端加载是否成功，都开始预加载流程
-    this.startPreloadAndNavigate()
+    this.executeOriginalPreloadTasks()
   },
 
-  async startPreloadAndNavigate() {
+  /**
+   * 函数：执行原有的其它预加载任务
+   */
+  async executeOriginalPreloadTasks() {
     const app = getApp();
     
     // 创建一个数组来存放所有的预加载任务 (Promise)
@@ -53,8 +197,13 @@ Page({
     // 等待所有预加载任务完成
     await Promise.all(preloadTasks);
 
-    // 所有任务完成后，立即跳转
-    this.navigateToTarget();
+    // 预加载完成后，设置标志位，但不自动跳转
+    // 跳转将由用户点击"进入"按钮触发
+    this.setData({
+      preloadCompleted: true
+    });
+    
+    console.log('预加载任务完成，等待用户点击进入按钮');
   },
 
   // 使用 async/await 语法来更清晰地处理异步流程

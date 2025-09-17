@@ -1,5 +1,32 @@
-<view class="splash-container {{fadeOut ? 'fade-out' : ''}}" id="splashContainer">
-  <image class="splash-image {{zoomOut ? 'zoom-out' : ''}}" id="splashImage" src="{{splashImageUrl}}" mode="aspectFill"></image>
+<view class="container">
+  <!-- 阶段一：打字机动画 -->
+  <view wx:if="{{currentPhase === 'typing'}}" class="typing-phase-container">
+    <!-- 文字层：固定高度，预留光标空间 -->
+    <view class="text-layer">
+      <view class="typewriter-effect">
+        <text>{{typedText}}</text>
+        <view class="blinking-cursor {{showNewLineCursor ? 'hidden' : ''}}"></view>
+      </view>
+      
+      <!-- 换行后的光标（点击按钮后显示） -->
+      <view wx:if="{{showNewLineCursor}}" class="new-line-cursor-container">
+        <view class="new-line-cursor"></view>
+      </view>
+    </view>
+    
+    <!-- 按钮层：独立定位，不影响文字 -->
+    <button wx:if="{{showEnterButton}}" class="enter-btn {{preloadCompleted ? '' : 'loading'}}" bindtap="handleEnterButtonClick">
+      <view class="enter-key-icon">↵</view>
+      <text class="enter-text">{{preloadCompleted ? 'enter' : 'loading...'}}</text>
+    </button>
+  </view>
+
+  <!-- 阶段二：显示开屏图（暂时注释掉） -->
+  <!-- <view wx:if="{{currentPhase === 'imageDisplay'}}" class="image-phase-container">
+    <image class="splash-image" src="{{preloadedImagePath}}" mode="aspectFill" />
+  </view> -->
+
+  <!-- 原有的加载指示器（保留作为备用） -->
   <view class="loading-indicator" wx:if="{{isPreloading}}">
     正在加载内容...
   </view>
