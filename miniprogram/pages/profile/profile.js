@@ -23,6 +23,10 @@ Page({
     favoriteHasMore: true, // 收藏是否有更多
     favoriteLoading: false, // 收藏加载状态
     
+    // 新增：权限控制
+    currentUserOpenid: '', // 当前用户openid
+    isAdmin: false, // 是否为管理员（只有你能看到图片管理入口）
+    
   },
 
   onLoad: function (options) {
@@ -177,50 +181,118 @@ Page({
   },
 
   fetchUserProfile: function() {
+    // 首先获取当前用户的openid
     wx.cloud.callFunction({
-      name: 'getMyProfileData',
-      success: res => {
-        console.log('getMyProfileData 返回：', res);
-        if (res.result && res.result.success && res.result.userInfo) {
-          const user = res.result.userInfo;
-          if (user.birthday) {
-            user.age = this.calculateAge(user.birthday);
-          } else {
-            user.age = '';
-          }
-          // 只更新 userInfo，不更新 myPosts
-          this.setData({ 
-            userInfo: user,
-            isLoading: false // 关键：数据返回，关闭骨架屏
+      name: 'getOpenId',
+      success: openIdRes => {
+        if (openIdRes.result && openIdRes.result.openid) {
+          const currentOpenid = openIdRes.result.openid;
+          const isAdmin = currentOpenid === 'ojYBd1_A3uCbQ1LGcHxWxOAeA5SE'; // 你的openid
+          
+          console.log('当前用户openid:', currentOpenid);
+          console.log('是否为管理员:', isAdmin);
+          
+          this.setData({
+            currentUserOpenid: currentOpenid,
+            isAdmin: isAdmin
           });
-        } else {
-          wx.showToast({ title: '个人资料数据异常', icon: 'none', duration: 3000 });
-          console.error('个人资料数据异常', res);
-          const storedUserInfo = wx.getStorageSync('userInfo');
-          if(storedUserInfo) {
-            if (storedUserInfo.birthday) {
-              storedUserInfo.age = this.calculateAge(storedUserInfo.birthday);
-            }
-            this.setData({ 
-              userInfo: storedUserInfo,
-              isLoading: false // 关键：数据返回，关闭骨架屏
-            });
-          }
         }
+        
+        // 继续获取用户资料（无论openid获取是否成功）
+        wx.cloud.callFunction({
+          name: 'getMyProfileData',
+          success: res => {
+            console.log('getMyProfileData 返回：', res);
+            if (res.result && res.result.success && res.result.userInfo) {
+              const user = res.result.userInfo;
+              if (user.birthday) {
+                user.age = this.calculateAge(user.birthday);
+              } else {
+                user.age = '';
+              }
+              // 只更新 userInfo，不更新 myPosts
+              this.setData({ 
+                userInfo: user,
+                isLoading: false // 关键：数据返回，关闭骨架屏
+              });
+            } else {
+              wx.showToast({ title: '个人资料数据异常', icon: 'none', duration: 3000 });
+              console.error('个人资料数据异常', res);
+              const storedUserInfo = wx.getStorageSync('userInfo');
+              if(storedUserInfo) {
+                if (storedUserInfo.birthday) {
+                  storedUserInfo.age = this.calculateAge(storedUserInfo.birthday);
+                }
+                this.setData({ 
+                  userInfo: storedUserInfo,
+                  isLoading: false // 关键：数据返回，关闭骨架屏
+                });
+              }
+            }
+          },
+          fail: err => {
+            wx.showToast({ title: 'getMyProfileData 云函数失败', icon: 'none', duration: 3000 });
+            console.error('getMyProfileData 云函数失败', err);
+            const storedUserInfo = wx.getStorageSync('userInfo');
+            if(storedUserInfo) {
+              if (storedUserInfo.birthday) {
+                storedUserInfo.age = this.calculateAge(storedUserInfo.birthday);
+              }
+              this.setData({ 
+                userInfo: storedUserInfo,
+                isLoading: false // 关键：数据返回，关闭骨架屏
+              });
+            }
+          }
+        });
       },
       fail: err => {
-        wx.showToast({ title: 'getMyProfileData 云函数失败', icon: 'none', duration: 3000 });
-        console.error('getMyProfileData 云函数失败', err);
-        const storedUserInfo = wx.getStorageSync('userInfo');
-        if(storedUserInfo) {
-          if (storedUserInfo.birthday) {
-            storedUserInfo.age = this.calculateAge(storedUserInfo.birthday);
+        console.error('获取openid失败:', err);
+        // 即使openid获取失败，也要继续获取用户资料
+        wx.cloud.callFunction({
+          name: 'getMyProfileData',
+          success: res => {
+            console.log('getMyProfileData 返回：', res);
+            if (res.result && res.result.success && res.result.userInfo) {
+              const user = res.result.userInfo;
+              if (user.birthday) {
+                user.age = this.calculateAge(user.birthday);
+              } else {
+                user.age = '';
+              }
+              this.setData({ 
+                userInfo: user,
+                isLoading: false
+              });
+            } else {
+              wx.showToast({ title: '个人资料数据异常', icon: 'none', duration: 3000 });
+              const storedUserInfo = wx.getStorageSync('userInfo');
+              if(storedUserInfo) {
+                if (storedUserInfo.birthday) {
+                  storedUserInfo.age = this.calculateAge(storedUserInfo.birthday);
+                }
+                this.setData({ 
+                  userInfo: storedUserInfo,
+                  isLoading: false
+                });
+              }
+            }
+          },
+          fail: err => {
+            wx.showToast({ title: '获取数据失败', icon: 'none' });
+            console.error('获取数据失败', err);
+            const storedUserInfo = wx.getStorageSync('userInfo');
+            if(storedUserInfo) {
+              if (storedUserInfo.birthday) {
+                storedUserInfo.age = this.calculateAge(storedUserInfo.birthday);
+              }
+              this.setData({ 
+                userInfo: storedUserInfo,
+                isLoading: false
+              });
+            }
           }
-          this.setData({ 
-            userInfo: storedUserInfo,
-            isLoading: false // 关键：数据返回，关闭骨架屏
-          });
-        }
+        });
       }
     });
   },
@@ -643,5 +715,12 @@ Page({
   // 新增：返回上一页
   navigateBack: function() {
     wx.navigateBack();
+  },
+
+  // 新增：跳转到图片管理页面
+  navigateToImageManager: function() {
+    wx.navigateTo({
+      url: '/pages/image-manager/image-manager'
+    });
   }
 });

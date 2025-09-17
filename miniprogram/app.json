@@ -13,7 +13,8 @@
     "pages/add/add",
     "pages/favorite-folders/favorite-folders",
     "pages/favorite-content/favorite-content",
-    "pages/messages/messages"
+    "pages/messages/messages",
+    "pages/image-manager/image-manager"
   ],
   "window": {
     "backgroundColor": "#F6F6F6",

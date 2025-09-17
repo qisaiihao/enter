@@ -1,12 +1,38 @@
+const { imageManager } = require('../../utils/imageManager.js')
+
 Page({
   data: {
     preloadProgress: 0,
-    isPreloading: false
+    isPreloading: false,
+    splashImageUrl: '/images/splash.png' // 默认本地开屏图
   },
 
   onLoad: function () {
-    // 开始预加载
-    this.startPreloadAndNavigate();
+    // 加载云端开屏图
+    this.loadSplashImage()
+  },
+
+  // 加载云端开屏图
+  async loadSplashImage() {
+    try {
+      console.log('开始加载云端开屏图...')
+      const splashUrl = await imageManager.getSplashImageUrl()
+      
+      if (splashUrl && splashUrl !== '/images/splash.png') {
+        console.log('成功获取云端开屏图URL:', splashUrl)
+        this.setData({
+          splashImageUrl: splashUrl
+        })
+      } else {
+        console.log('使用默认本地开屏图')
+      }
+    } catch (error) {
+      console.error('加载云端开屏图失败:', error)
+      // 出错时使用默认本地图片
+    }
+    
+    // 无论云端加载是否成功，都开始预加载流程
+    this.startPreloadAndNavigate()
   },
 
   async startPreloadAndNavigate() {

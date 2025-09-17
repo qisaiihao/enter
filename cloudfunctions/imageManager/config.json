@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "openapi": [
+      "storage.uploadFile",
+      "storage.deleteFile",
+      "storage.getTempFileURL"
+    ]
+  }
+}

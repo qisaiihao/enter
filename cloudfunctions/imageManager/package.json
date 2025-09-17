@@ -1,0 +1,14 @@
+{
+  "name": "imageManager",
+  "version": "1.0.0",
+  "description": "图片管理云函数，支持上传、获取URL、删除等功能",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

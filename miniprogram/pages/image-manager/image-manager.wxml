@@ -1,0 +1,56 @@
+<!-- 图片上传管理页面 -->
+<view class="container">
+  <view class="header">
+    <text class="title">图片管理</text>
+    <text class="subtitle">上传和管理小程序图片</text>
+  </view>
+
+  <!-- 开屏图管理 -->
+  <view class="section">
+    <view class="section-title">开屏图管理</view>
+    <view class="upload-area" bindtap="chooseSplashImage">
+      <view class="upload-content">
+        <text class="upload-icon">📷</text>
+        <text class="upload-text">点击选择开屏图</text>
+        <text class="upload-hint">建议选择 750x1334 或类似比例的图片</text>
+      </view>
+    </view>
+    
+    <view class="preview-area" wx:if="{{splashPreview}}">
+      <text class="preview-title">预览</text>
+      <image class="preview-image" src="{{splashPreview}}" mode="aspectFit"></image>
+      <view class="button-group">
+        <button class="btn btn-primary" bindtap="uploadSplashImage" loading="{{uploading}}">
+          {{uploading ? '上传中...' : '确认上传'}}
+        </button>
+        <button class="btn btn-secondary" bindtap="clearSplashPreview">取消</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 上传历史 -->
+  <view class="section" wx:if="{{imageHistory.length > 0}}">
+    <view class="section-title">最近上传</view>
+    <view class="history-list">
+      <view class="history-item" wx:for="{{imageHistory}}" wx:key="_id">
+        <image class="history-thumb" src="{{item.tempUrl}}" mode="aspectFill"></image>
+        <view class="history-info">
+          <text class="history-name">{{item.metadata.name || '未命名'}}</text>
+          <text class="history-time">{{formatTime(item.uploadTime)}}</text>
+          <text class="history-category">{{item.category}}</text>
+        </view>
+        <view class="history-actions">
+          <button class="btn-small" size="mini" bindtap="copyUrl" data-url="{{item.tempUrl}}">复制链接</button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作提示 -->
+  <view class="tips">
+    <text class="tips-title">使用说明：</text>
+    <text class="tips-item">1. 开屏图会自动应用到启动页面</text>
+    <text class="tips-item">2. 上传后URL会自动复制到剪贴板</text>
+    <text class="tips-item">3. 云端图片有缓存，修改后可能需要重新编译小程序</text>
+  </view>
+</view>

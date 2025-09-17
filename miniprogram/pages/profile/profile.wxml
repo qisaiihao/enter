@@ -20,6 +20,9 @@
         <view class="sidebar-item" bindtap="navigateToEditProfile">
           <text>修改资料</text>
         </view>
+        <view class="sidebar-item" wx:if="{{isAdmin}}" bindtap="navigateToImageManager">
+          <text>图片管理</text>
+        </view>
         <view class="sidebar-item" bindtap="navigateToMessages">
           <text>消息通知</text>
           <view wx:if="{{unreadCount > 0}}" class="unread-badge">{{unreadCount}}</view>
