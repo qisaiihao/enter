@@ -1,5 +1,6 @@
 // pages/post-detail/post-detail.js
 const app = getApp();
+const likeIcon = require('../../utils/likeIcon');
 
 Page({
   data: {
@@ -39,6 +40,8 @@ Page({
         if (res.result && res.result.post) {
           let post = res.result.post;
           post.formattedCreateTime = this.formatTime(post.createTime);
+          // 添加点赞图标信息
+          post.likeIcon = likeIcon.getLikeIcon(post.votes || 0, post.isVoted || false);
           console.log('loadPostDetail完整返回数据:', res.result);
           console.log('loadPostDetail获取到的commentCount:', res.result.commentCount, '类型:', typeof res.result.commentCount);
           console.log('loadPostDetail获取到的post.commentCount:', post.commentCount, '类型:', typeof post.commentCount);
@@ -75,9 +78,13 @@ Page({
         if (res.result && res.result.comments) {
           const comments = res.result.comments.map(comment => {
             comment.formattedCreateTime = this.formatTime(comment.createTime);
+            // 添加评论的动态点赞图标
+            comment.likeIcon = likeIcon.getLikeIcon(comment.likes || 0, comment.liked || false);
             if (comment.replies) {
               comment.replies.forEach(reply => {
                 reply.formattedCreateTime = this.formatTime(reply.createTime);
+                // 添加回复的动态点赞图标
+                reply.likeIcon = likeIcon.getLikeIcon(reply.likes || 0, reply.liked || false);
               });
             }
             return comment;
@@ -115,27 +122,43 @@ Page({
     const originalVotes = post.votes;
     const originalIsVoted = post.isVoted;
     
-    post.votes = originalIsVoted ? originalVotes - 1 : originalVotes + 1;
-    post.isVoted = !originalIsVoted;
-    this.setData({ post: post });
+    const newVotes = originalIsVoted ? originalVotes - 1 : originalVotes + 1;
+    const newIsVoted = !originalIsVoted;
+    const newLikeIcon = likeIcon.getLikeIcon(newVotes, newIsVoted);
+    
+    // 只更新必要的字段，避免整个post对象重新渲染
+    this.setData({ 
+      'post.votes': newVotes,
+      'post.isVoted': newIsVoted,
+      'post.likeIcon': newLikeIcon
+    });
     
     wx.cloud.callFunction({
       name: 'vote',
       data: { postId: postId },
       success: res => {
         if (!res.result.success) {
-          post.votes = originalVotes;
-          post.isVoted = originalIsVoted;
-          this.setData({ post: post });
-        } else if (post.votes !== res.result.votes) {
-          post.votes = res.result.votes;
-          this.setData({ post: post });
+          // 恢复原始状态
+          this.setData({ 
+            'post.votes': originalVotes,
+            'post.isVoted': originalIsVoted,
+            'post.likeIcon': likeIcon.getLikeIcon(originalVotes, originalIsVoted)
+          });
+        } else if (newVotes !== res.result.votes) {
+          // 使用服务器返回的实际数据
+          this.setData({ 
+            'post.votes': res.result.votes,
+            'post.likeIcon': likeIcon.getLikeIcon(res.result.votes, newIsVoted)
+          });
         }
       },
       fail: () => {
-        post.votes = originalVotes;
-        post.isVoted = originalIsVoted;
-        this.setData({ post: post });
+        // 恢复原始状态
+        this.setData({ 
+          'post.votes': originalVotes,
+          'post.isVoted': originalIsVoted,
+          'post.likeIcon': likeIcon.getLikeIcon(originalVotes, originalIsVoted)
+        });
         wx.showToast({ title: '操作失败，请检查网络', icon: 'none' });
       },
       complete: () => {
@@ -349,6 +372,8 @@ Page({
     const oldLikes = comment.likes || 0;
     comment.liked = newLikeState;
     comment.likes = oldLikes + (newLikeState ? 1 : -1);
+    // 更新动态点赞图标
+    comment.likeIcon = likeIcon.getLikeIcon(comment.likes, comment.liked);
 
     this.setData({ comments: comments });
 
@@ -387,6 +412,8 @@ Page({
     if (comment) {
       comment.liked = newLikeState;
       comment.likes = finalLikes;
+      // 更新动态点赞图标
+      comment.likeIcon = likeIcon.getLikeIcon(comment.likes, comment.liked);
       this.setData({ comments: comments });
     }
   },
@@ -458,5 +485,10 @@ Page({
         });
       }
     }
+  },
+
+  // 阻止事件冒泡，防止点赞区域触发卡片点击
+  preventBubble: function() {
+    // 空函数，仅用于阻止事件冒泡
   }
 });

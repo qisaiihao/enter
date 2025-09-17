@@ -14,75 +14,84 @@
     </view>
     <!-- 给你的帖子列表循环的父容器添加一个ID -->
     <view id="post-list-container">
-      <view wx:for="{{postList}}" wx:key="_id" class="post-item-wrapper">
-      <!-- 作者信息放在navigator外面，避免事件冲突 -->
-      <view class="author-info-outside">
-        <image wx:if="{{item.authorAvatar}}" class="author-avatar" src="{{item.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindload="onAvatarLoad" data-postindex="{{index}}" bindtap="navigateToUserProfile" data-user-id="{{item._openid}}"></image>
-        <text class="author-name">{{item.authorName}}</text>
-      </view>
       <navigator 
-        class="post-item"
+        wx:for="{{postList}}" 
+        wx:key="_id" 
+        wx:for-index="index"
+        class="post-item-wrapper"
         url="/pages/post-detail/post-detail?id={{item._id}}"
-        hover-class="post-item-active"
+        hover-class="post-card-active"
       >
-      
-        <view class="post-title">{{item.title}}</view>
-        
-        <!-- 图片显示逻辑 (已优化，使用 imageStyle 占位) -->
-        <view wx:if="{{(item.imageUrls && item.imageUrls.length > 0)}}" 
-              class="image-container-wrapper" 
-              style="{{item.imageStyle}}" 
-              catch:tap="handlePreview" 
-              data-src="{{item.imageUrls[0]}}"
-              data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}">
-
-          <!-- 单张图片 -->
-          <block wx:if="{{item.imageUrls.length === 1}}">
-            <image
-              class="post-image"
-              src="{{item.imageUrls[0]}}"
-              mode="aspectFill"
-              lazy-load="{{true}}"
-              binderror="onImageError"
-            />
-          </block>
-
-          <!-- 多张图片 -->
-          <block wx:elif="{{item.imageUrls.length > 1}}">
-            <swiper class="image-swiper" indicator-dots="true" circular="true">
-              <block wx:for="{{item.imageUrls}}" wx:for-item="img" wx:key="*this">
-                <swiper-item>
-                  <image
-                    class="post-image"
-                    src="{{img}}"
-                    mode="aspectFill"
-                    lazy-load="{{true}}"
-                    binderror="onImageError"
-                    catch:tap="handlePreview"
-                    data-src="{{img}}"
-                    data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}"
-                  />
-                </swiper-item>
-              </block>
-            </swiper>
-          </block>
+        <!-- 作者信息 -->
+        <view class="author-info-outside">
+          <image wx:if="{{item.authorAvatar}}" class="author-avatar" src="{{item.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindload="onAvatarLoad" data-postindex="{{index}}" catch:tap="navigateToUserProfile" data-user-id="{{item._openid}}"></image>
+          <text class="author-name">{{item.authorName}}</text>
         </view>
+        
+        <view class="post-item">
+          <view class="post-title">{{item.title}}</view>
           
-        <view class="post-content" wx:if="{{item.content}}" style="white-space: pre-wrap;">{{item.content}}</view>
+          <!-- 图片显示逻辑 (已优化，使用 imageStyle 占位) -->
+          <view wx:if="{{(item.imageUrls && item.imageUrls.length > 0)}}" 
+                class="image-container-wrapper" 
+                style="{{item.imageStyle}}" 
+                catch:tap="handlePreview" 
+                data-src="{{item.imageUrls[0]}}"
+                data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}">
 
-        <view class="vote-section">
-          <view class="actions-left">
-            <view class="vote-count {{item.isVoted ? 'voted' : ''}}">👍 {{item.votes || 0}}</view>
-            <view class="comment-count">💬 {{item.commentCount || 0}}</view>
+            <!-- 单张图片 -->
+            <block wx:if="{{item.imageUrls.length === 1}}">
+              <image
+                class="post-image"
+                src="{{item.imageUrls[0]}}"
+                mode="aspectFill"
+                lazy-load="{{true}}"
+                binderror="onImageError"
+              />
+            </block>
+
+            <!-- 多张图片 -->
+            <block wx:elif="{{item.imageUrls.length > 1}}">
+              <swiper class="image-swiper" indicator-dots="true" circular="true">
+                <block wx:for="{{item.imageUrls}}" wx:for-item="img" wx:key="*this">
+                  <swiper-item>
+                    <image
+                      class="post-image"
+                      src="{{img}}"
+                      mode="aspectFill"
+                      lazy-load="{{true}}"
+                      binderror="onImageError"
+                      catch:tap="handlePreview"
+                      data-src="{{img}}"
+                      data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}"
+                    />
+                  </swiper-item>
+                </block>
+              </swiper>
+            </block>
           </view>
-          <view class="button-group">
-            <button class="vote-button {{item.isVoted ? 'voted' : ''}}" size="mini" catch:tap="onVote" data-postid="{{item._id}}" data-index="{{index}}">
-              {{item.isVoted ? '已点赞' : '点赞'}}
-            </button>
+            
+          <view class="post-content" wx:if="{{item.content}}" style="white-space: pre-wrap;">{{item.content}}</view>
+
+          <view class="vote-section" catch:tap="preventBubble">
+            <view class="actions-left">
+              <view class="vote-count {{item.isVoted ? 'voted' : ''}}">
+                <text class="action-emoji">👍</text>
+                <text class="action-text">{{item.votes || 0}}</text>
+              </view>
+              <view class="comment-count">
+                <text class="action-emoji">💬</text>
+                <text class="action-text">{{item.commentCount || 0}}</text>
+              </view>
+            </view>
+            <view class="button-group">
+              <view class="like-icon-container" catch:tap="onVote" data-postid="{{item._id}}" data-index="{{index}}">
+                <image class="like-icon" src="{{item.likeIcon}}" mode="aspectFit"></image>
+              </view>
+            </view>
           </view>
         </view>
       </navigator>
-      </view>
     </view>
     
     <!-- 在容器外部，页面的最底部添加加载提示 -->

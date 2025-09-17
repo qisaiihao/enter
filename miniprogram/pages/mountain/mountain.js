@@ -9,6 +9,8 @@ Page({
     currentPostIndex: 0,
     touchStartX: 0,
     touchEndX: 0,
+    touchStartY: 0,
+    touchEndY: 0,
     hasMore: true,
     page: 0,
     backgroundImage: '', // 这个变量可以废弃了，或者只用来做逻辑判断
@@ -180,15 +182,25 @@ Page({
   },
 
   touchStart: function(e) {
-    this.setData({ touchStartX: e.touches[0].clientX });
+    this.setData({ 
+      touchStartX: e.touches[0].clientX,
+      touchStartY: e.touches[0].clientY
+    });
   },
 
   touchEnd: function(e) {
     const touchEndX = e.changedTouches[0].clientX;
-    const diff = this.data.touchStartX - touchEndX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const diffX = this.data.touchStartX - touchEndX;
+    const diffY = this.data.touchStartY - touchEndY;
     
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) {
+    // 计算滑动距离和角度
+    const distance = Math.sqrt(diffX * diffX + diffY * diffY);
+    const angle = Math.abs(Math.atan2(diffY, diffX) * 180 / Math.PI);
+    
+    // 只有当水平滑动距离足够大，且滑动角度接近水平（小于30度）时才翻页
+    if (distance > 80 && Math.abs(diffX) > 50 && angle < 30) {
+      if (diffX > 0) {
         this.nextPost();
       } else {
         this.prevPost();

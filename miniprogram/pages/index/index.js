@@ -5,6 +5,7 @@ const PAGE_SIZE = 5;
 const dataCache = require('../../utils/dataCache');
 const imageOptimizer = require('../../utils/imageOptimizer');
 const performanceMonitor = require('../../utils/performanceMonitor');
+const likeIcon = require('../../utils/likeIcon');
 
 Page({
   data: {
@@ -199,6 +200,8 @@ Page({
     const originalIsVoted = postList[index].isVoted;
     postList[index].votes = originalIsVoted ? originalVotes - 1 : originalVotes + 1;
     postList[index].isVoted = !originalIsVoted;
+    // 更新点赞图标
+    postList[index].likeIcon = likeIcon.getLikeIcon(postList[index].votes, postList[index].isVoted);
     this.setData({ postList: postList });
     wx.cloud.callFunction({
       name: 'vote',
@@ -207,15 +210,18 @@ Page({
         if (!res.result.success) {
           postList[index].votes = originalVotes;
           postList[index].isVoted = originalIsVoted;
+          postList[index].likeIcon = likeIcon.getLikeIcon(originalVotes, originalIsVoted);
           this.setData({ postList: postList });
         } else if (postList[index].votes !== res.result.votes) {
           postList[index].votes = res.result.votes;
+          postList[index].likeIcon = likeIcon.getLikeIcon(postList[index].votes, postList[index].isVoted);
           this.setData({ postList: postList });
         }
       },
       fail: () => {
         postList[index].votes = originalVotes;
         postList[index].isVoted = originalIsVoted;
+        postList[index].likeIcon = likeIcon.getLikeIcon(originalVotes, originalIsVoted);
         this.setData({ postList: postList });
         wx.showToast({ title: '操作失败', icon: 'none' });
       },
@@ -344,6 +350,10 @@ Page({
             if (post.imageUrls.length > 0) {
                 post.imageStyle = `height: 0; padding-bottom: 75%;`; // 4:3 宽高比占位
             }
+            
+            // 添加点赞图标信息
+            post.likeIcon = likeIcon.getLikeIcon(post.votes || 0, post.isVoted || false);
+            
             return post;
           });
 
@@ -386,4 +396,9 @@ Page({
   },
 
   // 模式切换现在通过底部tabBar实现，不再需要手动切换
+
+  // 阻止事件冒泡，防止点赞区域触发卡片点击
+  preventBubble: function() {
+    // 空函数，仅用于阻止事件冒泡
+  }
 });

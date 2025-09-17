@@ -66,18 +66,24 @@
       <view class="post-meta">
         <text class="post-time">{{post.formattedCreateTime}}</text>
       </view>
-      <view class="vote-section">
+      <view class="vote-section" catch:tap="preventBubble">
         <view class="actions-left">
-          <view class="vote-count {{post.isVoted ? 'voted' : ''}}">👍 {{post.votes || 0}}</view>
-          <view class="comment-count">💬 {{commentCount}}</view>
+          <view class="vote-count {{post.isVoted ? 'voted' : ''}}">
+            <text class="action-emoji">👍</text>
+            <text class="action-text">{{post.votes || 0}}</text>
+          </view>
+          <view class="comment-count">
+            <text class="action-emoji">💬</text>
+            <text class="action-text">{{commentCount}}</text>
+          </view>
         </view>
-                <view class="button-group">
+        <view class="button-group">
           <button class="favorite-button" size="mini" catch:tap="onFavorite">
             收藏
           </button>
-          <button class="vote-button {{post.isVoted ? 'voted' : ''}}" size="mini" catch:tap="onVote" data-postid="{{post._id}}">
-            {{post.isVoted ? '已点赞' : '点赞'}}
-          </button>
+          <view class="like-icon-container" catch:tap="onVote" data-postid="{{post._id}}">
+            <image class="like-icon" src="{{post.likeIcon}}" mode="aspectFit"></image>
+          </view>
         </view>
       </view>
     </view>
@@ -96,7 +102,7 @@
                 <view class="comment-time">{{item.formattedCreateTime}}</view>
                 <view class="comment-actions">
                   <view class="like-section" bindtap="toggleLikeComment" data-comment-id="{{item._id}}" data-liked="{{item.liked}}">
-                    <image class="like-icon" src="{{item.liked ? '../../images/liked.png' : '../../images/like.png'}}"></image>
+                    <image class="like-icon" src="{{item.likeIcon}}"></image>
                     <text class="like-count">{{item.likes || 0}}</text>
                   </view>
                   <view class="reply-btn" bindtap="showReplyInput" data-comment-id="{{item._id}}" data-author-name="{{item.authorName}}">
@@ -119,7 +125,7 @@
                       <view class="reply-time">{{reply.formattedCreateTime}}</view>
                       <view class="reply-actions">
                         <view class="like-section" bindtap="toggleLikeComment" data-comment-id="{{reply._id}}" data-liked="{{reply.liked}}">
-                          <image class="like-icon" src="{{reply.liked ? '../../images/liked.png' : '../../images/like.png'}}"></image>
+                          <image class="like-icon" src="{{reply.likeIcon}}"></image>
                           <text class="like-count">{{reply.likes || 0}}</text>
                         </view>
                         <view class="reply-btn" bindtap="showReplyInput" data-comment-id="{{item._id}}" data-author-name="{{reply.authorName}}">

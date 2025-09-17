@@ -162,10 +162,36 @@
 }
 
 .vote-count, .comment-count {
+  display: flex;
+  align-items: center;
   font-size: 28rpx;
   color: #999;
   margin-right: 30rpx;
   transition: color 0.2s ease;
+}
+
+.action-emoji {
+  font-size: 28rpx;
+  margin-right: 8rpx;
+}
+
+.action-text {
+  font-size: 28rpx;
+  color: inherit;
+}
+
+.like-icon-container {
+  margin-left: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8rpx;
+  border-radius: 8rpx;
+  transition: all 0.2s ease;
+}
+
+.like-icon-container:active {
+  transform: scale(0.95);
 }
 
 .vote-count.voted {
@@ -197,32 +223,9 @@
   border: none;
 }
 
-.vote-button {
-  margin: 0;
-  background-color: #07c160;
-  color: white;
-  border: none;
-  border-radius: 8rpx;
-  font-size: 24rpx;
-  padding: 8rpx 16rpx;
-  line-height: 1.2;
-  transition: background-color 0.2s ease;
-}
-
-.vote-button.voted {
-  background-color: #ff4757;
-}
-
-.vote-button:active {
-  background-color: #06ad56;
-}
-
-.vote-button.voted:active {
-  background-color: #e63946;
-}
-
-.vote-button::after {
-  border: none;
+.like-icon {
+  width: 48rpx;
+  height: 48rpx;
 }
 
 .comment-section {
@@ -312,18 +315,19 @@
   align-items: center;
   padding: 8rpx 12rpx;
   margin-right: 15rpx;
-  transition: opacity 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .like-section:active {
-  opacity: 0.7;
+  transform: scale(0.95);
 }
 
-.like-icon {
+.like-section .like-icon {
   width: 32rpx;
   height: 32rpx;
   margin-right: 8rpx;
 }
+
 
 .like-count {
   font-size: 26rpx;
