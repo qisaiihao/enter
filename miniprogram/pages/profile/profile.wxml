@@ -239,3 +239,6 @@
     </view>
   </view>
 </view>
+
+<!-- 自定义tabBar -->
+<custom-tabbar />

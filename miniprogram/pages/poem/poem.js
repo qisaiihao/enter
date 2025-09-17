@@ -56,26 +56,39 @@ Page({
 
   onShow: function () {
     console.log('Poem 页面 onShow');
+    console.log('poem.js onShow is setting selected to 1'); // 添加这行日志
     
-    // 检查是否是首次加载
-    if (this.isFirstLoad) {
-      // 如果是，那么 onLoad 已经处理好了一切，
-      // 我们只需要把标志位重置，然后什么都不做。
-      this.isFirstLoad = false;
-      return; 
+    // 1. 无条件更新 TabBar 状态
+    // 这一步必须是 onShow 的第一件事，且没有任何条件判断
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      console.log('poem.js: getTabBar() 存在，正在设置 selected: 1');
+      this.getTabBar().setData({
+        selected: 1 // 1 是 "路" 的索引
+      });
+      console.log('poem.js: tabBar selected 已设置为 1');
+    } else {
+      console.log('poem.js: getTabBar() 不存在或为空');
     }
-
-    // 如果不是首次加载（例如从详情页返回），才执行强制刷新逻辑
-    console.log('从其他页面返回，执行刷新');
-    this.setData({
-      postList: [],
-      currentPostIndex: 0,
-      page: 0,
-      hasMore: true,
-      backgroundImage: ''
-    }, () => {
-      this.getPostList();
-    });
+    
+    // 2. 处理页面数据刷新逻辑
+    // 这里的 isFirstLoad 逻辑可以保留，因为它只和页面内容有关，不影响 TabBar
+    if (this.isFirstLoad) {
+      this.isFirstLoad = false; // 重置标志位
+      // 第一次加载时，onLoad 已经获取了数据，所以这里不需要再做什么
+      console.log('首次显示 Poem 页面，数据已由 onLoad 加载');
+    } else {
+      // 如果是从其他页面返回，执行你的刷新逻辑
+      console.log('从其他页面返回 Poem 页面，执行刷新');
+      this.setData({
+        postList: [],
+        currentPostIndex: 0,
+        page: 0,
+        hasMore: true,
+        backgroundImage: ''
+      }, () => {
+        this.getPostList();
+      });
+    }
   },
 
   getPostList: function (cb) {

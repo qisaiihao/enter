@@ -2,6 +2,7 @@
   "navigationBarTitleText": "回车键",
   "enablePullDownRefresh": true,
   "usingComponents": {
-    "skeleton": "/components/skeleton/skeleton"
+    "skeleton": "/components/skeleton/skeleton",
+    "custom-tabbar": "/components/custom-tabbar/custom-tabbar"
   }
 }

@@ -29,6 +29,19 @@ Page({
   },
 
   onShow: function () {
+    console.log('index.js onShow is setting selected to 0'); // 添加这行日志
+    
+    // 更新tabBar选中状态
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      console.log('index.js: getTabBar() 存在，正在设置 selected: 0');
+      this.getTabBar().setData({
+        selected: 0
+      });
+      console.log('index.js: tabBar selected 已设置为 0');
+    } else {
+      console.log('index.js: getTabBar() 不存在或为空');
+    }
+    
     try {
       const shouldRefresh = wx.getStorageSync('shouldRefreshIndex');
       if (shouldRefresh) {

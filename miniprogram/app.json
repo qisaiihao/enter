@@ -23,6 +23,7 @@
     "navigationBarTextStyle": "black"
   },
   "tabBar": {
+    "custom": true,
     "color": "#999999",
     "selectedColor": "#07c160",
     "backgroundColor": "#ffffff",
@@ -43,8 +44,8 @@
       {
         "pagePath": "pages/mountain/mountain",
         "text": "山",
-        "iconPath": "images/mountainplus.png",
-        "selectedIconPath": "images/mountain.png"
+        "iconPath": "images/mountain.png",
+        "selectedIconPath": "images/mountainplus.png"
       },
       {
         "pagePath": "pages/profile/profile",

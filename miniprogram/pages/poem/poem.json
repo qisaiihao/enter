@@ -1,7 +1,8 @@
 {
   "usingComponents": {
     "skeleton": "/components/skeleton/skeleton",
-    "folder-selector": "/components/folder-selector/folder-selector"
+    "folder-selector": "/components/folder-selector/folder-selector",
+    "custom-tabbar": "/components/custom-tabbar/custom-tabbar"
   },
   "navigationBarTitleText": "路"
 }

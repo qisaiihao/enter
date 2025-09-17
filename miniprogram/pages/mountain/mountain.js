@@ -35,26 +35,36 @@ Page({
 
   onShow: function () {
     console.log('Mountain 页面 onShow');
+    console.log('mountain.js onShow is setting selected to 2'); // 添加这行日志
     
-    // 检查是否是首次加载
-    if (this.isFirstLoad) {
-      // 如果是，那么 onLoad 已经处理好了一切，
-      // 我们只需要把标志位重置，然后什么都不做。
-      this.isFirstLoad = false;
-      return; 
+    // 1. 无条件更新 TabBar 状态
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      console.log('mountain.js: getTabBar() 存在，正在设置 selected: 2');
+      this.getTabBar().setData({
+        selected: 2 // 2 是 "山" 的索引
+      });
+      console.log('mountain.js: tabBar selected 已设置为 2');
+    } else {
+      console.log('mountain.js: getTabBar() 不存在或为空');
     }
-
-    // 如果不是首次加载（例如从详情页返回），才执行强制刷新逻辑
-    console.log('从其他页面返回，执行刷新');
-    this.setData({
-      postList: [],
-      currentPostIndex: 0,
-      page: 0,
-      hasMore: true,
-      backgroundImage: ''
-    }, () => {
-      this.getPostList();
-    });
+    
+    // 2. 处理页面数据刷新逻辑
+    if (this.isFirstLoad) {
+      this.isFirstLoad = false; // 重置标志位
+      console.log('首次显示 Mountain 页面，数据已由 onLoad 加载');
+    } else {
+      console.log('从其他页面返回 Mountain 页面，执行刷新');
+      // 如果不是首次加载（例如从详情页返回），才执行强制刷新逻辑
+      this.setData({
+        postList: [],
+        currentPostIndex: 0,
+        page: 0,
+        hasMore: true,
+        backgroundImage: ''
+      }, () => {
+        this.getPostList();
+      });
+    }
   },
 
   getPostList: function (cb) {

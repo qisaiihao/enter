@@ -34,6 +34,19 @@ Page({
   },
 
   onShow: function () {
+    console.log('profile.js onShow is setting selected to 3'); // 添加这行日志
+    
+    // 更新tabBar选中状态
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      console.log('profile.js: getTabBar() 存在，正在设置 selected: 3');
+      this.getTabBar().setData({
+        selected: 3
+      });
+      console.log('profile.js: tabBar selected 已设置为 3');
+    } else {
+      console.log('profile.js: getTabBar() 不存在或为空');
+    }
+    
     const shouldRefresh = wx.getStorageSync('shouldRefreshProfile');
     if (shouldRefresh) {
       wx.removeStorageSync('shouldRefreshProfile');
