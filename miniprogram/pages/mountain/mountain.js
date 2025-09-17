@@ -196,10 +196,11 @@ Page({
     
     // 计算滑动距离和角度
     const distance = Math.sqrt(diffX * diffX + diffY * diffY);
-    const angle = Math.abs(Math.atan2(diffY, diffX) * 180 / Math.PI);
+    // 修复角度计算：使用绝对值确保角度正确
+    const angle = Math.abs(Math.atan2(Math.abs(diffY), Math.abs(diffX)) * 180 / Math.PI);
     
-    // 只有当水平滑动距离足够大，且滑动角度接近水平（小于30度）时才翻页
-    if (distance > 80 && Math.abs(diffX) > 50 && angle < 30) {
+    // 只有当水平滑动距离足够大，且滑动角度接近水平（小于45度）时才翻页
+    if (distance > 80 && Math.abs(diffX) > 50 && angle < 45) {
       if (diffX > 0) {
         this.nextPost();
       } else {
