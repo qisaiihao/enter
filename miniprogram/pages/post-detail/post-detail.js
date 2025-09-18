@@ -19,6 +19,9 @@ Page({
     swiperHeights: {}, // 多图swiper高度
     imageClampHeights: {}, // 单图瘦高图钳制高度
     showFavoriteModal: false, // 控制收藏弹窗
+    isInputExpanded: false, // 控制输入框展开/收起状态
+    keyboardHeight: 0,      // 新增：用于存储键盘高度
+    isFocus: false          // 新增：控制 textarea 的 focus 状态
   },
 
   onLoad: function (options) {
@@ -296,10 +299,11 @@ Page({
           this.setData({
             newComment: '',
             isSubmitDisabled: true,
-            replyToComment: null,
-            replyToAuthor: '',
-            commentCount: newCommentCount
+            commentCount: newCommentCount,
           });
+
+          // ★★★ 提交成功后，调用收起函数 ★★★
+          this.collapseInput();
 
           this.getComments(postId);
 
@@ -342,6 +346,9 @@ Page({
       replyToComment: this.data.replyToComment,
       replyToAuthor: this.data.replyToAuthor
     });
+    
+    // ★★★ 设置完回复对象后，立即展开输入框 ★★★
+    this.expandInput();
   },
 
   cancelReply: function() {
@@ -490,5 +497,56 @@ Page({
   // 阻止事件冒泡，防止点赞区域触发卡片点击
   preventBubble: function() {
     // 空函数，仅用于阻止事件冒泡
+  },
+
+  // 展开输入框
+  expandInput: function() {
+    this.setData({
+      isInputExpanded: true,
+      isFocus: true // 让 textarea 自动获取焦点
+    });
+  },
+
+  // 输入框获得焦点时，获取键盘高度
+  onInputFocus: function(e) {
+    console.log('键盘弹起，高度为：', e.detail.height);
+    this.setData({
+      keyboardHeight: e.detail.height
+    });
+  },
+  
+  // 输入框失去焦点时，收起键盘和输入框
+  onInputBlur: function() {
+    // 延迟收起，避免点击发送按钮时，输入框提前消失
+    setTimeout(() => {
+      this.setData({
+        isFocus: false,
+        keyboardHeight: 0
+      });
+    }, 100);
+  },
+
+  // 点击遮罩层或手动收起输入框
+  collapseInput: function() {
+    this.setData({
+      isInputExpanded: false,
+      isFocus: false,
+      keyboardHeight: 0,
+      // 清理回复状态
+      replyToComment: null,
+      replyToAuthor: ''
+    });
+  },
+
+  // 页面返回时收起输入框
+  onUnload: function() {
+    // 页面卸载时的处理
+  },
+
+  // 页面隐藏时收起输入框
+  onHide: function() {
+    if (this.data.isInputExpanded) {
+      this.collapseInput();
+    }
   }
 });

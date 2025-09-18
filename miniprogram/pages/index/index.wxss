@@ -10,8 +10,8 @@
 /* 消息图标容器 */
 .message-icon-container {
   position: fixed;
-  top: 40rpx;
   right: 40rpx;
+  bottom: 280rpx; /* 移到发布按钮上面 */
   width: 80rpx;
   height: 80rpx;
   background: rgba(255, 255, 255, 0.9);
@@ -340,9 +340,9 @@
   position: fixed;
   right: 40rpx;
   bottom: 160rpx;
-  width: 100rpx;
-  height: 100rpx;
-  background: rgba(7, 193, 96, 0.8);
+  width: 80rpx; /* 从100rpx调整为80rpx */
+  height: 80rpx; /* 从100rpx调整为80rpx */
+  background: rgba(135, 206, 235, 0.8); /* 改为淡蓝色 */
   backdrop-filter: blur(20rpx);
   -webkit-backdrop-filter: blur(20rpx);
   border-radius: 50%;
@@ -350,7 +350,7 @@
   justify-content: center;
   align-items: center;
   color: white;
-  font-size: 60rpx;
+  font-size: 48rpx; /* 相应调整字体大小 */
   box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
   border: 1rpx solid rgba(255, 255, 255, 0.2);
   z-index: 100;

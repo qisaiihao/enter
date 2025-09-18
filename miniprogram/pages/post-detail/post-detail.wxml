@@ -164,25 +164,59 @@
   </block>
 </view>
 
-<!-- Comment Input Box (已恢复完整内容) -->
-<view class="comment-input-area">
-  <view wx:if="{{replyToComment}}" class="reply-prompt">
-    <text class="reply-prompt-text">回复@{{replyToAuthor}}：</text>
-    <view class="cancel-reply" bindtap="cancelReply">
-      <text class="cancel-text">取消</text>
-    </view>
+<!-- ★★★ 核心修改：重构评论输入区域 ★★★ -->
+
+<!-- 遮罩层：当输入框展开时显示 -->
+<view 
+  class="input-overlay {{isInputExpanded ? 'show' : ''}}" 
+  bindtap="collapseInput"
+></view>
+
+<!-- 输入框容器：整体会根据键盘高度上移 -->
+<view 
+  class="comment-input-area" 
+  style="bottom: {{keyboardHeight}}px;"
+>
+  <!-- 收起状态：一个假的输入框，点击后展开 -->
+  <view wx:if="{{!isInputExpanded}}" class="collapsed-bar" bindtap="expandInput">
+    <view class="collapsed-input-placeholder">留下你的精彩评论...</view>
   </view>
-  <view class="input-row">
-    <input 
-      class="comment-input" 
-      placeholder="{{replyToComment ? '' : '留下你的精彩评论...'}}" 
+
+  <!-- 展开状态：真正的输入区域 -->
+  <view wx:if="{{isInputExpanded}}" class="expanded-container">
+    <!-- 如果是回复，显示提示 -->
+    <view wx:if="{{replyToComment}}" class="reply-prompt">
+      <text class="reply-prompt-text">回复 {{replyToAuthor}}：</text>
+      <view class="cancel-reply" bindtap="cancelReply">
+        <text class="cancel-text">取消</text>
+      </view>
+    </view>
+    
+    <!-- 多行文本输入框 -->
+    <textarea
+      class="expanded-textarea"
+      placeholder="留下你的精彩评论..."
       value="{{newComment}}"
       bindinput="onCommentInput"
-      confirm-hold
-      adjust-position
-      maxlength="200"
-    />
-    <button class="submit-button" bindtap="onSubmitComment" disabled="{{isSubmitDisabled}}">发送</button>
+      bindfocus="onInputFocus"
+      bindblur="onInputBlur"
+      focus="{{isFocus}}"
+      auto-height
+      maxlength="500"
+      show-confirm-bar="{{false}}"
+      adjust-position="{{false}}"
+    ></textarea>
+    
+    <!-- 底部操作栏，包含发送按钮 -->
+    <view class="expanded-actions">
+      <button 
+        class="submit-button" 
+        bindtap="onSubmitComment" 
+        disabled="{{isSubmitDisabled}}"
+      >
+        发送
+      </button>
+    </view>
   </view>
 </view>
 

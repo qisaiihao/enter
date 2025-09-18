@@ -453,109 +453,123 @@
   color: #999;
 }
 
-/* 评论输入区域 */
-.comment-input-area {
+/* ★★★ 核心修改：重构评论输入区域样式 ★★★ */
+
+/* 遮罩层样式 */
+.input-overlay {
   position: fixed;
-  bottom: 0;
+  top: 0;
   left: 0;
-  right: 0;
-  background-color: #fff;
-  border-top: 1rpx solid #f0f0f0;
-  padding: 20rpx;
-  z-index: 100;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 99;
+  opacity: 0;
+  pointer-events: none; /* 隐藏时不可点击 */
+  transition: opacity 0.3s ease;
+}
+.input-overlay.show {
+  opacity: 1;
+  pointer-events: auto; /* 显示时可点击 */
 }
 
+/* 评论输入区总容器 */
+.comment-input-area {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0; /* 初始在底部 */
+  background-color: #ffffff;
+  z-index: 100;
+  transition: bottom 0.2s ease-out; /* 关键：让上移动画流畅 */
+  padding-bottom: constant(safe-area-inset-bottom); /* 适配 iPhone X 等底部安全区 */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* --- 收起状态 --- */
+.collapsed-bar {
+  padding: 16rpx 30rpx;
+  display: flex;
+  align-items: center;
+  border-top: 1rpx solid #f0f0f0;
+}
+.collapsed-input-placeholder {
+  flex: 1;
+  height: 68rpx;
+  line-height: 68rpx;
+  padding: 0 24rpx;
+  background-color: #f7f8fa;
+  border-radius: 34rpx;
+  font-size: 28rpx;
+  color: #999;
+}
+
+
+/* --- 展开状态 --- */
+.expanded-container {
+  padding: 20rpx 30rpx;
+  display: flex;
+  flex-direction: column;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.expanded-textarea {
+  width: 100%;
+  min-height: 180rpx; /* 进一步增加到180rpx，让输入框更大 */
+  max-height: 350rpx; /* 增加最大高度到350rpx */
+  padding: 20rpx 24rpx; /* 增加内边距，让输入框更舒适 */
+  background-color: #ffffff; /* 改为白色背景 */
+  border-radius: 0; /* 移除圆角，显示为纯白矩形 */
+  font-size: 30rpx;
+  line-height: 1.6;
+  box-sizing: border-box;
+  border: none; /* 移除边框，显示为纯白 */
+}
+
+.expanded-actions {
+  display: flex;
+  justify-content: flex-end; /* 改为靠右对齐 */
+  align-items: center;
+  margin-top: 20rpx;
+}
+
+/* 回复提示 */
 .reply-prompt {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10rpx 0;
-  margin-bottom: 10rpx;
-  background-color: #f8f9fa;
-  border-radius: 8rpx;
-  padding: 10rpx 15rpx;
+  margin-bottom: 15rpx;
+  padding: 0 10rpx;
 }
-
 .reply-prompt-text {
   font-size: 26rpx;
+  color: #666;
+}
+.cancel-reply .cancel-text {
+  font-size: 26rpx;
   color: #07c160;
-  font-weight: bold;
 }
 
-.cancel-reply {
-  padding: 5rpx 10rpx;
-  transition: opacity 0.2s ease;
-}
-
-.cancel-reply:active {
-  opacity: 0.7;
-}
-
-.cancel-text {
-  font-size: 24rpx;
-  color: #999;
-}
-
-.input-row {
-  display: flex;
-  align-items: center;
-  gap: 15rpx;
-}
-
-.comment-input {
-  flex: 1;
-  height: 70rpx;
-  padding: 0 20rpx;
-  border: 1rpx solid #e0e0e0;
-  border-radius: 35rpx;
-  font-size: 28rpx;
-  background-color: #f8f9fa;
-}
-
+/* 发送按钮 */
 .submit-button {
-  width: 120rpx;
-  height: 70rpx;
+  width: 140rpx !important;
+  height: 64rpx !important;
+  line-height: 64rpx !important;
   background-color: #07c160;
   color: white;
-  border: none;
-  border-radius: 35rpx;
+  border-radius: 32rpx;
   font-size: 28rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s ease;
   padding: 0;
   margin: 0;
-  line-height: 1;
-  text-align: center;
-  vertical-align: middle;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
 }
-
-.submit-button:active {
-  background-color: #06ad56;
-}
-
 .submit-button[disabled] {
-  background-color: #ccc;
-  color: #999;
+  background-color: #b3e6c9;
+  color: #ffffff;
 }
-
 .submit-button::after {
   border: none;
-}
-
-/* 强制按钮文字居中 - 针对微信小程序button组件 */
-.submit-button {
-  box-sizing: border-box;
-}
-
-.submit-button .wx-button-text {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  line-height: 1;
 }
 
 
