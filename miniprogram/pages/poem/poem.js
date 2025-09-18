@@ -313,6 +313,7 @@ Page({
       return;
     }
 
+    console.log(`开始预加载第${nextIndex + 1}张图片`);
     this.loadImageForIndex(nextIndex);
   },
 
@@ -326,49 +327,116 @@ Page({
     const post = this.data.postList[index];
     if (!post) return;
 
-    // 1. 更新卡片内容
+    // 1. 立即更新卡片内容（文字先切换）
     this.setData({
       currentPost: post,
       currentPostIndex: index
     });
 
-    // 2. 准备切换背景
+    // 2. 延迟切换背景图，让文字先显示
     const imageUrl = post.poemBgImage || (post.imageUrls && post.imageUrls[0]) || '';
+    
     // 优先使用预加载好的本地缓存路径
-    const finalImageUrl = this.data.preloadedImages[imageUrl] || imageUrl;
-    this.switchBackgroundImage(finalImageUrl);
-
-    // 3. 预加载下一张
-    this.preloadNextBackgroundImage(index);
+    let finalImageUrl = this.data.preloadedImages[imageUrl];
+    
+    // 如果本地缓存没有，检查全局预加载缓存
+    if (!finalImageUrl) {
+      const app = getApp();
+      if (app.globalData.preloadedImages && app.globalData.preloadedImages[imageUrl]) {
+        finalImageUrl = app.globalData.preloadedImages[imageUrl];
+        // 同步到本地缓存
+        this.setData({
+          [`preloadedImages.${imageUrl}`]: finalImageUrl
+        });
+      } else {
+        finalImageUrl = imageUrl;
+      }
+    }
+    
+    // 检查是否是首次显示（双图层都为空）
+    const isFirstDisplay = this.data.bgLayers[0].url === '' && this.data.bgLayers[1].url === '';
+    
+    if (isFirstDisplay) {
+      // 首次显示：直接设置第一个图层，不进行切换动画
+      console.log('首次显示背景图，直接设置第一个图层');
+      this.setData({
+        'bgLayers[0].url': finalImageUrl,
+        'bgLayers[0].visible': true,
+        'bgLayers[1].visible': false,
+        activeLayerIndex: 0
+      });
+      
+      // 首次显示时立即预加载第二张图片，确保切换时不会卡顿
+      console.log('首次显示完成，立即预加载第二张图片');
+      this.preloadNextBackgroundImage(index);
+    } else {
+      // 后续切换：延迟切换背景图，让文字先显示
+      setTimeout(() => {
+        this.switchBackgroundImage(finalImageUrl);
+      }, 100); // 100ms延迟，让文字先切换
+      
+      // 预加载下一张
+      this.preloadNextBackgroundImage(index);
+    }
   },
 
-  // 双图层切换函数
+  // 双图层切换函数 - 轻量级版本
   switchBackgroundImage: function(newImageUrl) {
     if (!newImageUrl) return;
+
+    // 优先使用预加载的本地路径
+    const preloadedUrl = this.data.preloadedImages[newImageUrl];
+    const finalImageUrl = preloadedUrl || newImageUrl;
+    
+    console.log('切换背景图:', {
+      originalUrl: newImageUrl,
+      preloadedUrl: preloadedUrl,
+      finalUrl: finalImageUrl,
+      hasPreloaded: !!preloadedUrl
+    });
 
     const currentActiveIndex = this.data.activeLayerIndex;
     const nextActiveIndex = (currentActiveIndex + 1) % 2; // 0 -> 1, 1 -> 0
 
+    // 先设置下一层的图片URL
     this.setData({
-      [`bgLayers[${nextActiveIndex}].url`]: newImageUrl,
-      [`bgLayers[${currentActiveIndex}].visible`]: false, // 当前层淡出
-      [`bgLayers[${nextActiveIndex}].visible`]: true,   // 下一层淡入
-      activeLayerIndex: nextActiveIndex
+      [`bgLayers[${nextActiveIndex}].url`]: finalImageUrl
     });
+
+    // 使用较短的延迟，平衡性能和体验
+    setTimeout(() => {
+      this.setData({
+        [`bgLayers[${currentActiveIndex}].visible`]: false, // 当前层淡出
+        [`bgLayers[${nextActiveIndex}].visible`]: true,   // 下一层淡入
+        activeLayerIndex: nextActiveIndex
+      });
+    }, preloadedUrl ? 50 : 150); // 预加载图片用50ms，网络图片用150ms
+  },
+
+  // 背景图片加载完成事件（保留用于调试）
+  onBackgroundImageLoad: function(e) {
+    const layerIndex = e.currentTarget.dataset.layerIndex;
+    console.log(`图层${layerIndex}图片加载完成`);
   },
 
   // 为指定索引加载图片
   loadImageForIndex: function(index, callback) {
     const post = this.data.postList[index];
-    if (!post) return;
+    if (!post) {
+      console.log(`第${index + 1}张图片：帖子数据不存在`);
+      return;
+    }
 
     const imageUrl = post.poemBgImage || (post.imageUrls && post.imageUrls[0]) || '';
-    if (!imageUrl) return;
+    if (!imageUrl) {
+      console.log(`第${index + 1}张图片：没有图片URL`);
+      return;
+    }
 
     // 检查全局预加载缓存
     const app = getApp();
     if (app.globalData.preloadedImages && app.globalData.preloadedImages[imageUrl]) {
-      console.log('使用全局预加载缓存:', imageUrl);
+      console.log(`第${index + 1}张图片：使用全局预加载缓存`);
       this.setData({
         [`preloadedImages.${imageUrl}`]: app.globalData.preloadedImages[imageUrl]
       });
@@ -380,17 +448,18 @@ Page({
 
     // 检查本地预加载缓存
     if (this.data.preloadedImages[imageUrl]) {
+      console.log(`第${index + 1}张图片：已存在本地缓存`);
       return;
     }
 
-    console.log('开始预加载图片:', imageUrl);
+    console.log(`第${index + 1}张图片：开始下载预加载`);
 
     // 使用微信图片API预加载
     wx.downloadFile({
       url: imageUrl,
       success: (res) => {
         if (res.statusCode === 200) {
-          console.log('图片预加载成功:', imageUrl);
+          console.log(`第${index + 1}张图片：预加载成功`);
           this.setData({
             [`preloadedImages.${imageUrl}`]: res.tempFilePath
           });
@@ -398,10 +467,12 @@ Page({
           if (typeof callback === 'function') {
             callback(res.tempFilePath);
           }
+        } else {
+          console.error(`第${index + 1}张图片：下载失败，状态码:`, res.statusCode);
         }
       },
       fail: (err) => {
-        console.error('图片预加载失败:', imageUrl, err);
+        console.error(`第${index + 1}张图片：预加载失败:`, err);
       }
     });
   },

@@ -68,21 +68,20 @@
       </view>
       <view class="vote-section" catch:tap="preventBubble">
         <view class="actions-left">
-          <view class="vote-count {{post.isVoted ? 'voted' : ''}}">
-            <text class="action-emoji">👍</text>
-            <text class="action-text">{{post.votes || 0}}</text>
-          </view>
+          <button class="favorite-button" size="mini" catch:tap="onFavorite">
+            收藏
+          </button>
+        </view>
+        <view class="button-group">
           <view class="comment-count">
             <text class="action-emoji">💬</text>
             <text class="action-text">{{commentCount}}</text>
           </view>
-        </view>
-        <view class="button-group">
-          <button class="favorite-button" size="mini" catch:tap="onFavorite">
-            收藏
-          </button>
           <view class="like-icon-container" catch:tap="onVote" data-postid="{{post._id}}">
             <image class="like-icon" src="{{post.likeIcon}}" mode="aspectFit"></image>
+          </view>
+          <view class="vote-count {{post.isVoted ? 'voted' : ''}}">
+            <text class="action-text">{{post.votes || 0}}</text>
           </view>
         </view>
       </view>

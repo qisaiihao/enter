@@ -166,8 +166,12 @@
   align-items: center;
   font-size: 28rpx;
   color: #999;
-  margin-right: 30rpx;
+  margin-left: 20rpx;
   transition: color 0.2s ease;
+}
+
+.vote-count {
+  margin-left: 0rpx;
 }
 
 .action-emoji {
@@ -204,7 +208,6 @@
 }
 
 .favorite-button {
-  margin-right: 20rpx;
   background-color: #ffc300;
   color: white;
   border: none;

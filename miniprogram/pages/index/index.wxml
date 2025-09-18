@@ -1,5 +1,11 @@
 <!-- index.wxml -->
 <view class="container">
+  <!-- 消息图标按钮 -->
+  <view class="message-icon-container" bindtap="navigateToMessages">
+    <view class="message-icon">✉️</view>
+    <view wx:if="{{unreadMessageCount > 0}}" class="unread-dot"></view>
+  </view>
+
   <!-- 骨架屏：当 isLoading 为 true 时显示 -->
   <view wx:if="{{isLoading}}">
     <skeleton />
@@ -82,18 +88,18 @@
         <!-- 独立的互动区域 - 不触发详情页跳转 -->
         <view class="vote-section">
           <view class="actions-left">
-            <view class="vote-count {{item.isVoted ? 'voted' : ''}}">
-              <text class="action-emoji">👍</text>
-              <text class="action-text">{{item.votes || 0}}</text>
-            </view>
+            <!-- 左侧留空，保持布局平衡 -->
+          </view>
+          <view class="button-group">
             <view class="comment-count">
               <text class="action-emoji">💬</text>
               <text class="action-text">{{item.commentCount || 0}}</text>
             </view>
-          </view>
-          <view class="button-group">
             <view class="like-icon-container" catch:tap="onVote" data-postid="{{item._id}}" data-index="{{index}}">
               <image class="like-icon" src="{{item.likeIcon || '/images/seed.png'}}" mode="aspectFit" binderror="onLikeIconError"></image>
+            </view>
+            <view class="vote-count {{item.isVoted ? 'voted' : ''}}">
+              <text class="action-text">{{item.votes || 0}}</text>
             </view>
           </view>
         </view>

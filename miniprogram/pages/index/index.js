@@ -19,7 +19,8 @@ Page({
     imageClampHeights: {}, // 新增：单图瘦高图钳制高度
     displayMode: 'square', // 首页只负责广场模式
     imageCache: {}, // 图片缓存
-    visiblePosts: new Set() // 可见的帖子ID集合
+    visiblePosts: new Set(), // 可见的帖子ID集合
+    unreadMessageCount: 0 // 未读消息数量
   },
 
   onLoad: function (options) {
@@ -36,6 +37,9 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 0 });
     }
+    
+    // 检查未读消息数量
+    this.checkUnreadMessageCount();
   },
 
   getIndexData: function () {
@@ -430,4 +434,38 @@ Page({
   },
 
   // 模式切换现在通过底部tabBar实现，不再需要手动切换
+
+  // 检查未读消息数量
+  checkUnreadMessageCount: function() {
+    wx.cloud.callFunction({
+      name: 'getUnreadMessageCount',
+      success: res => {
+        if (res.result && res.result.success) {
+          this.setData({
+            unreadMessageCount: res.result.count || 0
+          });
+        }
+      },
+      fail: err => {
+        console.error('获取未读消息数量失败:', err);
+      }
+    });
+  },
+
+  // 跳转到消息页面
+  navigateToMessages: function() {
+    wx.navigateTo({
+      url: '/pages/messages/messages',
+      success: () => {
+        console.log('跳转到消息页面成功');
+      },
+      fail: err => {
+        console.error('跳转到消息页面失败:', err);
+        wx.showToast({
+          title: '跳转失败',
+          icon: 'none'
+        });
+      }
+    });
+  }
 });

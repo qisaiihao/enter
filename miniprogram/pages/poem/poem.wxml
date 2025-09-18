@@ -8,6 +8,8 @@
       class="bg-image {{item.visible ? 'visible' : ''}}" 
       src="{{item.url}}"
       mode="aspectFill"
+      bindload="onBackgroundImageLoad"
+      data-layer-index="{{index}}"
     ></image>
   </view>
   <!-- 双图层模糊背景 -->
@@ -18,6 +20,8 @@
       class="bg-image blur-image {{item.visible ? 'visible' : ''}}" 
       src="{{item.url}}"
       mode="aspectFill"
+      bindload="onBackgroundImageLoad"
+      data-layer-index="{{index}}"
     ></image>
   </view>
 

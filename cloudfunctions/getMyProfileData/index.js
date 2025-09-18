@@ -338,8 +338,29 @@ async function removeFromFavorite(openid, favoriteId) {
       };
     }
 
+    // 首先获取收藏项信息，以便更新收藏夹计数
+    const favorite = await db.collection('favorites').doc(favoriteId).get();
+    if (!favorite.data) {
+      return {
+        success: false,
+        message: '收藏项不存在'
+      };
+    }
+
+    const folderId = favorite.data.folderId;
+
     // 删除收藏项
     await db.collection('favorites').doc(favoriteId).remove();
+
+    // 更新收藏夹的项目数量
+    if (folderId) {
+      await db.collection('favorite_folders').doc(folderId).update({
+        data: {
+          itemCount: db.command.inc(-1),
+          updateTime: new Date()
+        }
+      });
+    }
 
     return {
       success: true,
@@ -358,13 +379,131 @@ async function removeFromFavorite(openid, favoriteId) {
 async function getAllFavorites(openid, skip, limit) {
   try {
     // 获取用户的所有收藏项，按收藏时间降序排列
-    const result = await db.collection('favorites').where({
+    const favoritesResult = await db.collection('favorites').where({
       _openid: openid
     }).orderBy('createTime', 'desc').skip(skip).limit(limit).get();
 
+    const favorites = favoritesResult.data;
+    
+    if (favorites.length === 0) {
+      return {
+        success: true,
+        favorites: []
+      };
+    }
+
+    // 获取所有相关的帖子ID
+    const postIds = favorites.map(fav => fav.postId);
+    
+    // 获取帖子详细信息
+    const postsResult = await db.collection('posts').where({
+      _id: db.command.in(postIds)
+    }).get();
+    
+    const postsMap = new Map();
+    postsResult.data.forEach(post => {
+      postsMap.set(post._id, post);
+    });
+
+    // 获取用户信息
+    const userIds = [...new Set(postsResult.data.map(post => post._openid))];
+    const usersResult = await db.collection('users').where({
+      _openid: db.command.in(userIds)
+    }).get();
+    
+    const usersMap = new Map();
+    usersResult.data.forEach(user => {
+      usersMap.set(user._openid, user);
+    });
+
+    // 获取评论数量
+    const commentsCountResult = await db.collection('comments').aggregate()
+      .match({ postId: db.command.in(postIds) })
+      .group({ _id: '$postId', count: $.sum(1) })
+      .end();
+
+    const commentsCountMap = new Map();
+    commentsCountResult.list.forEach(item => {
+      commentsCountMap.set(item._id, item.count);
+    });
+
+    // 构建完整的收藏数据
+    const completeFavorites = favorites.map(favorite => {
+      const post = postsMap.get(favorite.postId);
+      if (!post) return null;
+      
+      const user = usersMap.get(post._openid);
+      const commentCount = commentsCountMap.get(post._id) || 0;
+      
+      // 确保图片URLs是数组
+      if (!Array.isArray(post.imageUrls)) {
+        post.imageUrls = post.imageUrls ? [post.imageUrls] : [];
+      }
+      if (!Array.isArray(post.originalImageUrls)) {
+        post.originalImageUrls = post.originalImageUrls ? [post.originalImageUrls] : [];
+      }
+      
+      return {
+        ...favorite,
+        _id: post._id,
+        title: post.title,
+        content: post.content,
+        imageUrls: post.imageUrls,
+        originalImageUrls: post.originalImageUrls,
+        createTime: post.createTime,
+        votes: post.votes || 0,
+        commentCount: commentCount,
+        authorName: user ? user.nickName : '未知用户',
+        authorAvatar: user ? user.avatarUrl : '',
+        favoriteTime: favorite.createTime,
+        favoriteId: favorite._id
+      };
+    }).filter(item => item !== null);
+
+    // 处理图片URL转换
+    const fileIDSet = new Set();
+    completeFavorites.forEach(favorite => {
+      if (favorite.imageUrls && Array.isArray(favorite.imageUrls)) {
+        favorite.imageUrls.forEach(url => {
+          if (url && url.startsWith('cloud://')) {
+            fileIDSet.add(url);
+          }
+        });
+      }
+      if (favorite.authorAvatar && favorite.authorAvatar.startsWith('cloud://')) {
+        fileIDSet.add(favorite.authorAvatar);
+      }
+    });
+
+    const fileIDs = Array.from(fileIDSet);
+    if (fileIDs.length > 0) {
+      try {
+        const fileListResult = await cloud.getTempFileURL({ fileList: fileIDs });
+        const urlMap = new Map();
+        fileListResult.fileList.forEach(item => {
+          if (item.status === 0) {
+            urlMap.set(item.fileID, item.tempFileURL);
+          }
+        });
+
+        completeFavorites.forEach(favorite => {
+          if (favorite.imageUrls && Array.isArray(favorite.imageUrls)) {
+            favorite.imageUrls = favorite.imageUrls.map(url => {
+              return urlMap.has(url) ? urlMap.get(url) : url;
+            });
+          }
+          if (favorite.authorAvatar && urlMap.has(favorite.authorAvatar)) {
+            favorite.authorAvatar = urlMap.get(favorite.authorAvatar);
+          }
+        });
+      } catch (fileError) {
+        console.error('文件URL转换失败:', fileError);
+      }
+    }
+
     return {
       success: true,
-      favorites: result.data
+      favorites: completeFavorites
     };
   } catch (error) {
     console.error('获取所有收藏失败:', error);
