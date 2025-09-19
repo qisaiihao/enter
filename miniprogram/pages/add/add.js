@@ -9,7 +9,16 @@ Page({
     maxImageCount: 9, // 最大图片数量
     publishMode: 'normal', // 'normal' | 'poem' 普通模式 | 诗歌模式
     isOriginal: false, // 是否原创
-    poemBgImage: '' // 诗歌背景图
+    poemBgImage: '', // 诗歌背景图
+    selectedTags: [], // 选中的标签
+    customTag: '', // 自定义标签输入
+    showTagSelector: false, // 是否显示标签选择器
+    // 预设标签
+    presetTags: [
+      '情感', '生活', '思考', '自然', '爱情', '友情', '亲情',
+      '梦想', '成长', '回忆', '未来', '孤独', '快乐', '悲伤',
+      '诗歌', '散文', '随笔', '感悟', '哲理', '青春', '时光'
+    ]
   },
 
   onTitleInput: function(event) { 
@@ -236,7 +245,9 @@ Page({
       votes: 0,
       // 新增诗歌相关字段
       isPoem: this.data.publishMode === 'poem',
-      isOriginal: this.data.isOriginal
+      isOriginal: this.data.isOriginal,
+      // 新增标签字段
+      tags: this.data.selectedTags || []
     };
     
     if (imageUrls.length > 0) {
@@ -287,5 +298,67 @@ Page({
   onImageError: function(e) {
     wx.showToast({ title: '图片加载失败', icon: 'none' });
     console.error('图片加载失败', e);
+  },
+
+  // 标签相关功能
+  toggleTagSelector: function() {
+    this.setData({
+      showTagSelector: !this.data.showTagSelector
+    });
+  },
+
+  selectTag: function(e) {
+    const tag = e.currentTarget.dataset.tag;
+    const selectedTags = this.data.selectedTags;
+    
+    if (selectedTags.includes(tag)) {
+      // 如果已选中，则取消选择
+      const index = selectedTags.indexOf(tag);
+      selectedTags.splice(index, 1);
+    } else {
+      // 如果未选中且未超过限制，则添加
+      if (selectedTags.length < 5) {
+        selectedTags.push(tag);
+      } else {
+        wx.showToast({ title: '最多选择5个标签', icon: 'none' });
+        return;
+      }
+    }
+    
+    this.setData({ selectedTags: selectedTags });
+  },
+
+  onCustomTagInput: function(e) {
+    this.setData({ customTag: e.detail.value });
+  },
+
+  addCustomTag: function() {
+    const customTag = this.data.customTag.trim();
+    if (!customTag) {
+      wx.showToast({ title: '请输入标签', icon: 'none' });
+      return;
+    }
+    
+    if (this.data.selectedTags.includes(customTag)) {
+      wx.showToast({ title: '标签已存在', icon: 'none' });
+      return;
+    }
+    
+    if (this.data.selectedTags.length >= 5) {
+      wx.showToast({ title: '最多选择5个标签', icon: 'none' });
+      return;
+    }
+    
+    const selectedTags = [...this.data.selectedTags, customTag];
+    this.setData({ 
+      selectedTags: selectedTags,
+      customTag: ''
+    });
+  },
+
+  removeTag: function(e) {
+    const tag = e.currentTarget.dataset.tag;
+    const selectedTags = this.data.selectedTags.filter(t => t !== tag);
+    this.setData({ selectedTags: selectedTags });
   }
 })

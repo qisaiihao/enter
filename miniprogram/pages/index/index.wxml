@@ -82,6 +82,14 @@
             </view>
               
             <view class="post-content" wx:if="{{item.content}}" style="white-space: pre-wrap;">{{item.content}}</view>
+            
+            <!-- 标签显示 -->
+            <view wx:if="{{item.tags && item.tags.length > 0}}" class="post-tags">
+              <text wx:for="{{item.tags}}" wx:key="index" 
+                    class="post-tag" 
+                    bindtap="onTagClick" 
+                    data-tag="{{item}}">#{{item}}</text>
+            </view>
           </view>
         </navigator>
 

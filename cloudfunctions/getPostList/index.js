@@ -90,6 +90,7 @@ exports.main = async (event, context) => {
         isPoem: '$isPoem',
         isOriginal: '$isOriginal',
         poemBgImage: '$poemBgImage',
+        tags: '$tags', // 新增标签字段
         authorName: $.ifNull([$.arrayElemAt(['$authorInfo.nickName', 0]), '匿名用户']),
         authorAvatar: $.ifNull([$.arrayElemAt(['$authorInfo.avatarUrl', 0]), '']),
         commentCount: $.size('$comments'),

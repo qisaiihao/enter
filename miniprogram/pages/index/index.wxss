@@ -499,3 +499,22 @@
   transform: scale(0.9);
 }
 
+/* 标签样式 */
+.post-tags {
+  margin-top: 30rpx;
+  margin-bottom: 10rpx;
+  line-height: 1.5;
+}
+
+.post-tag {
+  color: #666;
+  font-size: 26rpx;
+  margin-right: 10rpx;
+  transition: all 0.2s ease;
+}
+
+.post-tag:active {
+  color: #333;
+  opacity: 0.7;
+}
+

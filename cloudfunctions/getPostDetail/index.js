@@ -61,7 +61,8 @@ exports.main = async (event, context) => {
       authorName: author.nickName,
       authorAvatar: author.avatarUrl,
       isAuthor: post._openid === wxContext.OPENID,
-      isVoted: voteRes.data.length > 0
+      isVoted: voteRes.data.length > 0,
+      tags: post.tags || [] // 确保标签字段存在
     };
     // 保证 imageUrls、originalImageUrls 一定为数组
     if (!Array.isArray(resultPost.imageUrls)) resultPost.imageUrls = resultPost.imageUrls ? [resultPost.imageUrls] : [];

@@ -62,7 +62,45 @@
   </view>
 </view>
 
-<!-- 4. 页面底部的"确认发布"按钮 -->
+<!-- 4. 标签选择区域 -->
+<view class="tag-section">
+  <view class="tag-header" bindtap="toggleTagSelector">
+    <text class="tag-title">添加标签</text>
+    <text class="tag-count">{{selectedTags.length}}/5</text>
+    <text class="tag-toggle">{{showTagSelector ? '收起' : '展开'}}</text>
+  </view>
+  
+  <!-- 已选标签显示 -->
+  <view wx:if="{{selectedTags.length > 0}}" class="selected-tags">
+    <view wx:for="{{selectedTags}}" wx:key="index" class="selected-tag">
+      <text>{{item}}</text>
+      <text class="remove-tag" bindtap="removeTag" data-tag="{{item}}">×</text>
+    </view>
+  </view>
+  
+  <!-- 标签选择器 -->
+  <view wx:if="{{showTagSelector}}" class="tag-selector">
+    <!-- 预设标签 -->
+    <view class="preset-tags">
+      <view wx:for="{{presetTags}}" wx:key="index" 
+            class="preset-tag {{selectedTags.includes(item) ? 'selected' : ''}}"
+            bindtap="selectTag" data-tag="{{item}}">
+        {{item}}
+      </view>
+    </view>
+    
+    <!-- 自定义标签输入 -->
+    <view class="custom-tag-input">
+      <input placeholder="输入自定义标签" 
+             value="{{customTag}}" 
+             bindinput="onCustomTagInput"
+             maxlength="10" />
+      <button size="mini" bindtap="addCustomTag">添加</button>
+    </view>
+  </view>
+</view>
+
+<!-- 5. 页面底部的"确认发布"按钮 -->
 <button 
   type="primary" 
   class="submit-button" 

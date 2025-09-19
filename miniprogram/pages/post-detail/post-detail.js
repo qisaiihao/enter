@@ -548,5 +548,23 @@ Page({
     if (this.data.isInputExpanded) {
       this.collapseInput();
     }
+  },
+
+  // 标签点击处理
+  onTagClick: function(e) {
+    const tag = e.currentTarget.dataset.tag;
+    console.log('点击标签:', tag);
+    
+    // 显示标签点击提示
+    wx.showToast({
+      title: `点击了标签: ${tag}`,
+      icon: 'none',
+      duration: 2000
+    });
+    
+    // 可以在这里添加跳转到标签筛选页面的逻辑
+    // wx.navigateTo({
+    //   url: `/pages/tag-filter/tag-filter?tag=${encodeURIComponent(tag)}`
+    // });
   }
 });

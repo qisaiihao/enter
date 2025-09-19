@@ -16,6 +16,14 @@
       <view class="post-title">{{post.title}}</view>
       <view class="post-content" wx:if="{{post.content}}">{{post.content}}</view>
       
+      <!-- 标签显示 -->
+      <view wx:if="{{post.tags && post.tags.length > 0}}" class="post-tags">
+        <text wx:for="{{post.tags}}" wx:key="index" 
+              class="post-tag" 
+              bindtap="onTagClick" 
+              data-tag="{{item}}">#{{item}}</text>
+      </view>
+      
       <!-- 图片显示逻辑 (已修正) -->
       <view wx:if="{{(post.imageUrl || (post.imageUrls && post.imageUrls.length > 0))}}" class="image-container" id="detail-image-container">
         <!-- 单张图片 -->
