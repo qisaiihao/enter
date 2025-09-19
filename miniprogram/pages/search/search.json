@@ -1,0 +1,9 @@
+{
+  "usingComponents": {
+    "skeleton": "/components/skeleton/skeleton"
+  },
+  "navigationBarTitleText": "搜索",
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#f7f8fa"
+}

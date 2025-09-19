@@ -488,5 +488,44 @@ Page({
         });
       }
     });
+  },
+
+  // 评论点击处理
+  onCommentClick: function(e) {
+    const postId = e.currentTarget.dataset.postid;
+    console.log('点击评论，跳转到详情页:', postId);
+    
+    wx.navigateTo({
+      url: `/pages/post-detail/post-detail?id=${postId}`,
+      success: () => {
+        console.log('跳转到详情页成功');
+      },
+      fail: (err) => {
+        console.error('跳转到详情页失败:', err);
+        wx.showToast({
+          title: '跳转失败',
+          icon: 'none'
+        });
+      }
+    });
+  },
+
+  // 搜索框点击处理
+  navigateToSearch: function() {
+    console.log('点击搜索框，跳转到搜索页面');
+    
+    wx.navigateTo({
+      url: '/pages/search/search',
+      success: () => {
+        console.log('跳转到搜索页面成功');
+      },
+      fail: (err) => {
+        console.error('跳转到搜索页面失败:', err);
+        wx.showToast({
+          title: '跳转失败',
+          icon: 'none'
+        });
+      }
+    });
   }
 });

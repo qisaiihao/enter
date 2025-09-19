@@ -20,7 +20,7 @@
       <view wx:if="{{post.tags && post.tags.length > 0}}" class="post-tags">
         <text wx:for="{{post.tags}}" wx:key="index" 
               class="post-tag" 
-              bindtap="onTagClick" 
+              catchtap="onTagClick" 
               data-tag="{{item}}">#{{item}}</text>
       </view>
       

@@ -1,23 +1,32 @@
-<!-- pages/tag-filter/tag-filter.wxml -->
+<!-- pages/search/search.wxml -->
 <view class="container">
-  <!-- 骨架屏 -->
-  <view wx:if="{{isLoading}}">
-    <skeleton />
+  <!-- 搜索框 -->
+  <view class="search-header">
+    <view class="search-input-container">
+      <view class="search-icon">🔍</view>
+      <input 
+        class="search-input" 
+        placeholder="搜索帖子..." 
+        value="{{searchKeyword}}"
+        bindinput="onSearchInput"
+        bindconfirm="onSearchConfirm"
+        focus="{{true}}"
+        confirm-type="search"
+      />
+      <view wx:if="{{searchKeyword}}" class="clear-btn" bindtap="clearSearch">×</view>
+    </view>
+    <view class="cancel-btn" bindtap="goBack">取消</view>
   </view>
 
-  <!-- 内容区域 -->
-  <view wx:else>
-    <!-- 空状态 -->
-    <view wx:if="{{postList.length === 0 && !isLoading}}" class="empty-state">
-      <view class="empty-icon">🏷️</view>
-      <view class="empty-text">还没有 #{{tag}} 标签的文章</view>
-      <view class="empty-subtext">快去发布相关内容吧！</view>
+  <!-- 搜索结果 -->
+  <view wx:if="{{searchKeyword && !isSearching && searchResults.length > 0}}" class="search-results">
+    <view class="results-header">
+      <text class="results-count">找到 {{searchResults.length}} 个结果</text>
     </view>
-
-    <!-- 文章列表 -->
-    <view wx:if="{{postList.length > 0}}" class="post-list">
+    
+    <view class="post-list">
       <view 
-        wx:for="{{postList}}" 
+        wx:for="{{searchResults}}" 
         wx:key="_id" 
         wx:for-index="index"
         class="post-item-wrapper"
@@ -109,14 +118,54 @@
         </view>
       </view>
     </view>
+  </view>
 
-    <!-- 加载更多 -->
-    <view wx:if="{{isLoadingMore}}" class="loading-more">
-      <text class="loading-text">加载中...</text>
+  <!-- 空状态 -->
+  <view wx:if="{{searchKeyword && !isSearching && searchResults.length === 0}}" class="empty-state">
+    <view class="empty-icon">🔍</view>
+    <view class="empty-text">没有找到相关帖子</view>
+    <view class="empty-subtext">试试其他关键词吧</view>
+  </view>
+
+  <!-- 搜索建议 -->
+  <view wx:if="{{!searchKeyword && !isSearching && searchHistory.length > 0}}" class="search-suggestions">
+    <view class="suggestions-header">
+      <text class="suggestions-title">搜索历史</text>
+      <text class="clear-history" bindtap="clearHistory">清空</text>
     </view>
-    
-    <view wx:if="{{!hasMore && postList.length > 0}}" class="loading-more">
-      <text class="loading-text">没有更多了</text>
+    <view class="suggestions-list">
+      <view 
+        wx:for="{{searchHistory}}" 
+        wx:key="index" 
+        class="suggestion-item"
+        bindtap="selectHistoryKeyword"
+        data-keyword="{{item}}"
+      >
+        <text class="suggestion-text">{{item}}</text>
+      </view>
     </view>
+  </view>
+
+  <!-- 热门搜索 -->
+  <view wx:if="{{!searchKeyword && !isSearching && searchHistory.length === 0}}" class="hot-searches">
+    <view class="hot-header">
+      <text class="hot-title">热门搜索</text>
+    </view>
+    <view class="hot-list">
+      <view 
+        wx:for="{{hotSearches}}" 
+        wx:key="index" 
+        class="hot-item"
+        bindtap="selectHotKeyword"
+        data-keyword="{{item}}"
+      >
+        <text class="hot-text">{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{isSearching}}" class="loading-state">
+    <view class="loading-text">搜索中...</view>
   </view>
 </view>

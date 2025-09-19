@@ -6,6 +6,14 @@
     <view wx:if="{{unreadMessageCount > 0}}" class="unread-dot"></view>
   </view>
 
+  <!-- 搜索框组件 -->
+  <view class="search-box-container">
+    <view class="search-box" bindtap="navigateToSearch">
+      <view class="search-icon">🔍</view>
+      <view class="search-placeholder">搜索帖子...</view>
+    </view>
+  </view>
+
   <!-- 骨架屏：当 isLoading 为 true 时显示 -->
   <view wx:if="{{isLoading}}">
     <skeleton />
@@ -87,7 +95,7 @@
             <view wx:if="{{item.tags && item.tags.length > 0}}" class="post-tags">
               <text wx:for="{{item.tags}}" wx:key="index" 
                     class="post-tag" 
-                    bindtap="onTagClick" 
+                    catchtap="onTagClick" 
                     data-tag="{{item}}">#{{item}}</text>
             </view>
           </view>
@@ -99,7 +107,7 @@
             <!-- 左侧留空，保持布局平衡 -->
           </view>
           <view class="button-group">
-            <view class="comment-count">
+            <view class="comment-count" catch:tap="onCommentClick" data-postid="{{item._id}}">
               <text class="action-emoji">💬</text>
               <text class="action-text">{{item.commentCount || 0}}</text>
             </view>

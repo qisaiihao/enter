@@ -15,7 +15,8 @@
     "pages/favorite-content/favorite-content",
     "pages/messages/messages",
     "pages/image-manager/image-manager",
-    "pages/tag-filter/tag-filter"
+    "pages/tag-filter/tag-filter",
+    "pages/search/search"
   ],
   "window": {
     "backgroundColor": "#F6F6F6",
