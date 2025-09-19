@@ -24,6 +24,12 @@ exports.main = async (event, context) => {
     const allPosts = [];
     const usedPostIds = new Set(excludePostIds);
 
+    console.log(`推荐算法开始执行，用户: ${openId}, 总限制: ${totalLimit}, 个性化: ${personalizedLimit}, 热门: ${hotLimit}, 排除ID: ${excludePostIds.length}个`);
+
+    // 先检查数据库中是否有帖子数据
+    const totalPostsCount = await db.collection('posts').where({ isOriginal: true }).count();
+    console.log(`数据库中原创帖子总数: ${totalPostsCount.total}`);
+
     // 1. 获取个性化推荐（基于用户互动记录）
     console.log('开始获取个性化推荐...');
     const personalizedPosts = await getPersonalizedPosts(openId, personalizedLimit, usedPostIds);
@@ -35,11 +41,15 @@ exports.main = async (event, context) => {
         usedPostIds.add(post._id);
       });
       allPosts.push(...personalizedPosts);
+      console.log(`个性化推荐获取到${personalizedPosts.length}个帖子`);
+    } else {
+      console.log('个性化推荐为空，将用热门帖子填充');
     }
 
-    // 2. 获取热门推荐
-    console.log('开始获取热门推荐...');
-    const hotPosts = await getHotPosts(hotLimit, Array.from(usedPostIds));
+    // 2. 获取热门推荐（如果个性化推荐为空，增加热门推荐数量）
+    const actualHotLimit = personalizedPosts.length === 0 ? hotLimit + personalizedLimit : hotLimit;
+    console.log(`开始获取热门推荐，限制: ${actualHotLimit} (原始: ${hotLimit}, 个性化为空: ${personalizedPosts.length === 0})`);
+    const hotPosts = await getHotPosts(actualHotLimit, Array.from(usedPostIds), openId);
     
     if (hotPosts.length > 0) {
       hotPosts.forEach(post => {
@@ -48,21 +58,42 @@ exports.main = async (event, context) => {
         usedPostIds.add(post._id);
       });
       allPosts.push(...hotPosts);
+      console.log(`热门推荐获取到${hotPosts.length}个帖子`);
     }
 
-    // 3. 如果推荐不足，用最新帖子补充
+    // 3. 如果推荐不足，优先用热门帖子补充，再用最新帖子补充
     if (allPosts.length < totalLimit) {
       const needMore = totalLimit - allPosts.length;
-      console.log(`推荐不足，用最新帖子补充${needMore}个`);
+      console.log(`推荐不足，需要补充${needMore}个帖子`);
       
-      const latestPosts = await getLatestPosts(needMore, Array.from(usedPostIds));
+      // 优先用热门帖子补充
+      const additionalHotPosts = await getHotPosts(needMore, Array.from(usedPostIds), openId);
       
-      if (latestPosts.length > 0) {
-        latestPosts.forEach(post => {
-          post.recommendationType = 'latest';
-          post.recommendationReason = '最新内容';
+      if (additionalHotPosts.length > 0) {
+        additionalHotPosts.forEach(post => {
+          post.recommendationType = 'hot';
+          post.recommendationReason = '热门内容';
+          usedPostIds.add(post._id);
         });
-        allPosts.push(...latestPosts);
+        allPosts.push(...additionalHotPosts);
+        console.log(`用热门帖子补充了${additionalHotPosts.length}个`);
+      }
+      
+      // 如果还不够，用最新帖子补充
+      if (allPosts.length < totalLimit) {
+        const stillNeedMore = totalLimit - allPosts.length;
+        console.log(`热门帖子补充后仍不足，用最新帖子补充${stillNeedMore}个`);
+        
+        const latestPosts = await getLatestPosts(stillNeedMore, Array.from(usedPostIds), openId);
+        
+        if (latestPosts.length > 0) {
+          latestPosts.forEach(post => {
+            post.recommendationType = 'latest';
+            post.recommendationReason = '最新内容';
+          });
+          allPosts.push(...latestPosts);
+          console.log(`用最新帖子补充了${latestPosts.length}个`);
+        }
       }
     }
 
@@ -125,11 +156,15 @@ async function getPersonalizedPosts(openId, limit, usedPostIds) {
       ...viewRes.data.map(item => ({ ...item, interactionType: 'view' }))
     ].sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
 
+    console.log(`用户互动记录总数: ${allInteractions.length}`);
+    
     if (allInteractions.length === 0) {
+      console.log('用户没有互动记录，跳过个性化推荐');
       return [];
     }
 
     const interactedPostIds = allInteractions.map(item => item.postId);
+    console.log(`用户互动过的帖子ID: ${interactedPostIds.slice(0, 5)}...`);
 
     // 获取用户互动过的帖子信息
     const postsRes = await db.collection('posts')
@@ -142,6 +177,8 @@ async function getPersonalizedPosts(openId, limit, usedPostIds) {
       })
       .limit(20) // 限制查询数量
       .get();
+
+    console.log(`找到用户互动过的帖子: ${postsRes.data.length}个`);
 
     const interestedAuthorIds = new Set();
     const interestedTags = new Set();
@@ -159,6 +196,8 @@ async function getPersonalizedPosts(openId, limit, usedPostIds) {
       isOriginal: true
     };
 
+    console.log(`感兴趣的作者数量: ${interestedAuthorIds.size}, 感兴趣的标签数量: ${interestedTags.size}`);
+
     if (interestedAuthorIds.size > 0 || interestedTags.size > 0) {
       const orConditions = [];
       
@@ -174,6 +213,8 @@ async function getPersonalizedPosts(openId, limit, usedPostIds) {
         matchConditions.$or = orConditions;
       }
     }
+
+    console.log('个性化推荐查询条件:', JSON.stringify(matchConditions, null, 2));
 
     const personalizedResult = await db.collection('posts').aggregate()
       .match(matchConditions)
@@ -239,8 +280,10 @@ async function getPersonalizedPosts(openId, limit, usedPostIds) {
 }
 
 // 获取热门推荐帖子
-async function getHotPosts(limit, excludePostIds) {
+async function getHotPosts(limit, excludePostIds, openId) {
   try {
+    console.log(`获取热门推荐，限制: ${limit}, 排除ID: ${excludePostIds.length}个`);
+    
     const matchConditions = {
       isOriginal: true
     };
@@ -248,6 +291,8 @@ async function getHotPosts(limit, excludePostIds) {
     if (excludePostIds.length > 0) {
       matchConditions._id = _.nin(excludePostIds);
     }
+
+    console.log('热门推荐查询条件:', matchConditions);
 
     const hotResult = await db.collection('posts').aggregate()
       .match(matchConditions)
@@ -313,6 +358,7 @@ async function getHotPosts(limit, excludePostIds) {
       })
       .end();
 
+    console.log(`热门推荐查询结果: ${hotResult.list ? hotResult.list.length : 0}个帖子`);
     return await processPostsData(hotResult.list || [], openId);
 
   } catch (error) {
@@ -322,8 +368,10 @@ async function getHotPosts(limit, excludePostIds) {
 }
 
 // 获取最新帖子
-async function getLatestPosts(limit, excludePostIds) {
+async function getLatestPosts(limit, excludePostIds, openId) {
   try {
+    console.log(`获取最新帖子，限制: ${limit}, 排除ID: ${excludePostIds.length}个`);
+    
     const matchConditions = {
       isOriginal: true
     };
@@ -332,12 +380,15 @@ async function getLatestPosts(limit, excludePostIds) {
       matchConditions._id = _.nin(excludePostIds);
     }
 
+    console.log('最新帖子查询条件:', matchConditions);
+
     const latestResult = await db.collection('posts')
       .where(matchConditions)
       .orderBy('createTime', 'desc')
       .limit(limit)
       .get();
 
+    console.log(`最新帖子查询结果: ${latestResult.data ? latestResult.data.length : 0}个帖子`);
     return await processPostsData(latestResult.data || [], openId);
 
   } catch (error) {

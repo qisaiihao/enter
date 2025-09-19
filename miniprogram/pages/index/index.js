@@ -569,51 +569,18 @@ Page({
     
     // 计算滑动距离和角度
     const distance = Math.sqrt(diffX * diffX + diffY * diffY);
+    // 修复角度计算：使用绝对值确保角度正确
     const angle = Math.abs(Math.atan2(Math.abs(diffY), Math.abs(diffX)) * 180 / Math.PI);
     
-    // 调试信息
-    console.log('触摸调试信息:', {
-      touchStartX: this.data.touchStartX,
-      touchEndX: touchEndX,
-      diffX: diffX,
-      distance: distance,
-      angle: angle,
-      currentPage: this.data.currentPage
-    });
-    
-    // 只有当水平滑动距离足够大，且滑动角度接近水平（小于45度）时才处理
-    if (distance > 60 && Math.abs(diffX) > 30 && angle < 45) {
-      // 检查是否在屏幕边缘滑动（用于页面切换）
-      const screenWidth = wx.getWindowInfo().windowWidth;
-      const touchStartX = this.data.touchStartX;
-      
-      console.log('边缘检测:', {
-        screenWidth: screenWidth,
-        touchStartX: touchStartX,
-        leftEdge: screenWidth * 0.2,
-        rightEdge: screenWidth * 0.8,
-        isLeftEdge: touchStartX < screenWidth * 0.2,
-        isRightEdge: touchStartX > screenWidth * 0.8
-      });
-      
-      // 左滑：从屏幕左边缘开始，切换到发现页
-      if (diffX > 0 && touchStartX < screenWidth * 0.2) {
-        console.log('触发左滑切换到发现页');
+    // 只有当水平滑动距离足够大，且滑动角度接近水平（小于45度）时才翻页
+    if (distance > 80 && Math.abs(diffX) > 50 && angle < 45) {
+      if (diffX > 0) {
+        // 左滑：切换到发现页
+        console.log('左滑切换到发现页');
         this.switchToDiscover();
-      }
-      // 右滑：从屏幕右边缘开始，切换回主页
-      else if (diffX < 0 && touchStartX > screenWidth * 0.8) {
-        console.log('触发右滑切换回主页');
-        this.switchToHome();
-      }
-      // 从左边缘向右滑动，也切换到发现页（更直观的操作）
-      else if (diffX < 0 && touchStartX < screenWidth * 0.2) {
-        console.log('从左边缘向右滑动，切换到发现页');
-        this.switchToDiscover();
-      }
-      // 从右边缘向左滑动，切换回主页（更直观的操作）
-      else if (diffX > 0 && touchStartX > screenWidth * 0.8) {
-        console.log('从右边缘向左滑动，切换回主页');
+      } else {
+        // 右滑：切换回主页
+        console.log('右滑切换回主页');
         this.switchToHome();
       }
     }
