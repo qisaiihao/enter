@@ -1,0 +1,117 @@
+<!-- pages/tag-filter/tag-filter.wxml -->
+<view class="container">
+  <!-- 骨架屏 -->
+  <view wx:if="{{isLoading}}">
+    <skeleton />
+  </view>
+
+  <!-- 内容区域 -->
+  <view wx:else>
+    <!-- 空状态 -->
+    <view wx:if="{{postList.length === 0 && !isLoading}}" class="empty-state">
+      <view class="empty-icon">🏷️</view>
+      <view class="empty-text">还没有 #{{tag}} 标签的文章</view>
+      <view class="empty-subtext">快去发布相关内容吧！</view>
+    </view>
+
+    <!-- 文章列表 -->
+    <view wx:if="{{postList.length > 0}}" class="post-list">
+      <view 
+        wx:for="{{postList}}" 
+        wx:key="_id" 
+        wx:for-index="index"
+        class="post-item-wrapper"
+      >
+        <!-- 作者信息 -->
+        <view class="author-info-outside">
+          <image wx:if="{{item.authorAvatar}}" 
+                 class="author-avatar" 
+                 src="{{item.authorAvatar}}" 
+                 mode="aspectFill" 
+                 binderror="onAvatarError" 
+                 catch:tap="navigateToUserProfile" 
+                 data-user-id="{{item._openid}}"></image>
+          <text class="author-name">{{item.authorName}}</text>
+        </view>
+        
+        <!-- 帖子内容 -->
+        <view class="post-item" bindtap="onPostTap" data-postid="{{item._id}}">
+          <view class="post-title">{{item.title}}</view>
+          
+          <!-- 图片显示 -->
+          <view wx:if="{{(item.imageUrls && item.imageUrls.length > 0)}}" 
+                class="image-container-wrapper" 
+                catch:tap="handlePreview" 
+                data-src="{{item.imageUrls[0]}}"
+                data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}">
+            
+            <!-- 单张图片 -->
+            <block wx:if="{{item.imageUrls.length === 1}}">
+              <image
+                class="post-image"
+                src="{{item.imageUrls[0]}}"
+                mode="aspectFill"
+                lazy-load="{{true}}"
+                binderror="onImageError"
+              />
+            </block>
+
+            <!-- 多张图片 -->
+            <block wx:elif="{{item.imageUrls.length > 1}}">
+              <swiper class="image-swiper" indicator-dots="true" circular="true">
+                <block wx:for="{{item.imageUrls}}" wx:for-item="img" wx:key="*this">
+                  <swiper-item>
+                    <image
+                      class="post-image"
+                      src="{{img}}"
+                      mode="aspectFill"
+                      lazy-load="{{true}}"
+                      binderror="onImageError"
+                      catch:tap="handlePreview"
+                      data-src="{{img}}"
+                      data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}"
+                    />
+                  </swiper-item>
+                </block>
+              </swiper>
+            </block>
+          </view>
+            
+          <view class="post-content" wx:if="{{item.content}}" style="white-space: pre-wrap;">{{item.content}}</view>
+          
+          <!-- 标签显示 -->
+          <view wx:if="{{item.tags && item.tags.length > 0}}" class="post-tags">
+            <text wx:for="{{item.tags}}" wx:key="index" 
+                  class="post-tag" 
+                  bindtap="onTagClick" 
+                  data-tag="{{item}}">#{{item}}</text>
+          </view>
+        </view>
+
+        <!-- 互动区域 -->
+        <view class="vote-section">
+          <view class="actions-left">
+            <!-- 左侧留空，保持布局平衡 -->
+          </view>
+          <view class="actions-right">
+            <view class="action-item">
+              <text class="action-text">{{item.commentCount || 0}}</text>
+            </view>
+            <view class="action-item">
+              <text class="action-text">{{item.votes || 0}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view wx:if="{{isLoadingMore}}" class="loading-more">
+      <text class="loading-text">加载中...</text>
+    </view>
+    
+    <view wx:if="{{!hasMore && postList.length > 0}}" class="loading-more">
+      <text class="loading-text">没有更多了</text>
+    </view>
+  </view>
+</view>

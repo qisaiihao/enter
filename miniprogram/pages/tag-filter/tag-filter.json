@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "skeleton": "/components/skeleton/skeleton"
+  },
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 50
+}

@@ -80,9 +80,23 @@
   
   <!-- 标签选择器 -->
   <view wx:if="{{showTagSelector}}" class="tag-selector">
-    <!-- 预设标签 -->
-    <view class="preset-tags">
-      <view wx:for="{{presetTags}}" wx:key="index" 
+    <!-- 分类选择器 -->
+    <view class="category-selector">
+      <scroll-view class="category-scroll" scroll-x="true" show-scrollbar="false">
+        <view class="category-list">
+          <view wx:for="{{tagCategories}}" wx:key="index" 
+                class="category-item {{currentCategoryIndex === index ? 'active' : ''}}"
+                bindtap="switchCategory" data-index="{{index}}">
+            <text class="category-icon">{{item.icon}}</text>
+            <text class="category-name">{{item.name}}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+    
+    <!-- 当前分类的标签 -->
+    <view class="current-category-tags">
+      <view wx:for="{{tagCategories[currentCategoryIndex].tags}}" wx:key="index" 
             class="preset-tag {{selectedTags.includes(item) ? 'selected' : ''}}"
             bindtap="selectTag" data-tag="{{item}}">
         {{item}}
@@ -96,6 +110,19 @@
              bindinput="onCustomTagInput"
              maxlength="10" />
       <button size="mini" bindtap="addCustomTag">添加</button>
+    </view>
+    
+    <!-- 匹配的标签推荐 -->
+    <view wx:if="{{showMatchedTags && matchedTags.length > 0}}" class="matched-tags">
+      <view class="matched-tags-title">推荐标签：</view>
+      <view class="matched-tags-list">
+        <view wx:for="{{matchedTags}}" wx:key="index" 
+              class="matched-tag" 
+              bindtap="selectMatchedTag" 
+              data-tag="{{item}}">
+          {{item}}
+        </view>
+      </view>
     </view>
   </view>
 </view>

@@ -474,17 +474,19 @@ Page({
     const tag = e.currentTarget.dataset.tag;
     console.log('点击标签:', tag);
     
-    // 这里可以实现标签筛选功能
-    // 暂时显示一个提示，后续可以扩展为筛选功能
-    wx.showToast({
-      title: `点击了标签: ${tag}`,
-      icon: 'none',
-      duration: 2000
+    // 跳转到标签筛选页面
+    wx.navigateTo({
+      url: `/pages/tag-filter/tag-filter?tag=${encodeURIComponent(tag)}`,
+      success: () => {
+        console.log('跳转到标签筛选页面成功');
+      },
+      fail: (err) => {
+        console.error('跳转到标签筛选页面失败:', err);
+        wx.showToast({
+          title: '跳转失败',
+          icon: 'none'
+        });
+      }
     });
-    
-    // 可以在这里添加跳转到标签筛选页面的逻辑
-    // wx.navigateTo({
-    //   url: `/pages/tag-filter/tag-filter?tag=${encodeURIComponent(tag)}`
-    // });
   }
 });

@@ -13,12 +13,49 @@ Page({
     selectedTags: [], // 选中的标签
     customTag: '', // 自定义标签输入
     showTagSelector: false, // 是否显示标签选择器
-    // 预设标签
-    presetTags: [
-      '情感', '生活', '思考', '自然', '爱情', '友情', '亲情',
-      '梦想', '成长', '回忆', '未来', '孤独', '快乐', '悲伤',
-      '诗歌', '散文', '随笔', '感悟', '哲理', '青春', '时光'
+    currentCategoryIndex: 0, // 当前选中的分类索引
+    allExistingTags: [], // 所有已有标签
+    matchedTags: [], // 匹配的标签
+    showMatchedTags: false, // 是否显示匹配的标签
+    
+    // 标签分类数据
+    tagCategories: [
+      {
+        name: '内容主题',
+        icon: '📝',
+        tags: ['爱情', '亲情', '友情', '乡愁', '思念', '孤独', '咏物', '山水', '田园', '季节', '春天', '夏日', '秋风', '冬雪', '人生', '理想', '哲理', '时间', '青春', '成长', '生死', '怀古', '咏史', '边塞', '战争', '爱国', '城市', '乡村', '生活', '旅行', '饮食', '劳动']
+      },
+      {
+        name: '情感基调',
+        icon: '💭',
+        tags: ['治愈', '温暖', '浪漫', '唯美', '悲伤', '伤感', '惆怅', '寂寞', '豪放', '豁达', '激昂', '热血', '婉约', '细腻', '清新', '宁静', '励志', '鼓舞', '坚定', '充满希望', '讽刺', '批判', '深沉', '引人深思']
+      },
+      {
+        name: '形式体裁',
+        icon: '📖',
+        tags: ['古体诗', '近体诗', '五言', '七言', '绝句', '律诗', '词', '曲', '乐府', '骚体', '现代诗', '自由诗', '散文诗', '十四行诗', '叙事诗', '俳句', '短歌', '史诗', '长诗', '短诗', '微型诗', '三行诗']
+      },
+      {
+        name: '意象元素',
+        icon: '🌙',
+        tags: ['月亮', '星星', '太阳', '宇宙', '银河', '风', '雨', '雪', '云', '雾', '河流', '大海', '山峰', '森林', '花', '草', '树', '麦田', '落叶', '梅', '兰', '竹', '菊', '鸟', '马', '蝉', '鱼', '蝴蝶', '酒', '剑', '琴', '灯', '船', '镜子', '红色', '白色', '蓝色', '金色']
+      },
+      {
+        name: '风格流派',
+        icon: '🎭',
+        tags: ['唐诗', '宋词', '元曲', '先秦', '两汉', '魏晋', '建安风骨', '朦胧诗', '新月派', '浪漫主义', '现实主义', '象征主义', '现代主义', '意象派', '垮掉的一代', '中文诗', '英文诗', '日文诗', '法文诗', '翻译诗', '中国', '英国', '美国', '日本', '俄罗斯']
+      },
+      {
+        name: '场景用途',
+        icon: '🎯',
+        tags: ['晚安诗', '早安问候', '节日祝福', '春节', '中秋', '情人节', '毕业季', '婚礼致辞', '旅行途中', '雨天读诗', '写给孩子', '致敬母亲', '送给朋友', '适合摘抄', '可以用作签名']
+      }
     ]
+  },
+
+  onLoad: function () {
+    // 页面加载时获取所有已有标签
+    this.loadAllExistingTags();
   },
 
   onTitleInput: function(event) { 
@@ -329,7 +366,19 @@ Page({
   },
 
   onCustomTagInput: function(e) {
-    this.setData({ customTag: e.detail.value });
+    const inputValue = e.detail.value;
+    console.log('【标签输入】用户输入:', inputValue);
+    this.setData({ customTag: inputValue });
+    
+    // 防抖处理，避免频繁搜索
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+    
+    this.searchTimer = setTimeout(() => {
+      console.log('【标签搜索】开始搜索匹配标签:', inputValue);
+      this.searchMatchingTags(inputValue);
+    }, 300); // 300ms防抖
   },
 
   addCustomTag: function() {
@@ -360,5 +409,99 @@ Page({
     const tag = e.currentTarget.dataset.tag;
     const selectedTags = this.data.selectedTags.filter(t => t !== tag);
     this.setData({ selectedTags: selectedTags });
+  },
+
+  // 分类切换功能
+  switchCategory: function(e) {
+    const index = e.currentTarget.dataset.index;
+    this.setData({ currentCategoryIndex: index });
+  },
+
+  // 获取当前分类的标签
+  getCurrentCategoryTags: function() {
+    return this.data.tagCategories[this.data.currentCategoryIndex].tags;
+  },
+
+  // 加载所有已有标签
+  loadAllExistingTags: function() {
+    console.log('【标签加载】开始加载所有已有标签...');
+    wx.cloud.callFunction({
+      name: 'getAllTags',
+      success: res => {
+        console.log('【标签加载】云函数返回结果:', res);
+        if (res.result && res.result.success) {
+          this.setData({ allExistingTags: res.result.tags });
+          console.log('【标签加载】已加载所有标签:', res.result.tags.length, '个标签:', res.result.tags);
+        } else {
+          console.error('【标签加载】云函数返回失败:', res.result);
+        }
+      },
+      fail: err => {
+        console.error('【标签加载】获取标签失败:', err);
+      }
+    });
+  },
+
+  // 搜索匹配的标签
+  searchMatchingTags: function(inputValue) {
+    console.log('【标签搜索】搜索参数:', {
+      inputValue: inputValue,
+      inputLength: inputValue ? inputValue.length : 0,
+      allExistingTags: this.data.allExistingTags,
+      selectedTags: this.data.selectedTags
+    });
+
+    if (!inputValue || inputValue.length < 2) {
+      console.log('【标签搜索】输入长度不足，清空匹配结果');
+      this.setData({ 
+        matchedTags: [],
+        showMatchedTags: false
+      });
+      return;
+    }
+
+    const allTags = this.data.allExistingTags;
+    console.log('【标签搜索】开始匹配，总标签数:', allTags.length);
+    
+    const matched = allTags.filter(tag => {
+      const isMatch = tag.toLowerCase().includes(inputValue.toLowerCase());
+      const notSelected = !this.data.selectedTags.includes(tag);
+      console.log(`【标签搜索】检查标签"${tag}": 匹配=${isMatch}, 未选中=${notSelected}`);
+      return isMatch && notSelected;
+    }).slice(0, 5); // 最多显示5个匹配结果
+
+    console.log('【标签搜索】匹配结果:', matched);
+
+    this.setData({
+      matchedTags: matched,
+      showMatchedTags: matched.length > 0
+    });
+
+    console.log('【标签搜索】设置状态:', {
+      matchedTags: matched,
+      showMatchedTags: matched.length > 0
+    });
+  },
+
+  // 选择匹配的标签
+  selectMatchedTag: function(e) {
+    const tag = e.currentTarget.dataset.tag;
+    if (this.data.selectedTags.includes(tag)) {
+      wx.showToast({ title: '标签已存在', icon: 'none' });
+      return;
+    }
+    
+    if (this.data.selectedTags.length >= 5) {
+      wx.showToast({ title: '最多选择5个标签', icon: 'none' });
+      return;
+    }
+    
+    const selectedTags = [...this.data.selectedTags, tag];
+    this.setData({ 
+      selectedTags: selectedTags,
+      customTag: '',
+      showMatchedTags: false,
+      matchedTags: []
+    });
   }
 })

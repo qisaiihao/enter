@@ -12,7 +12,7 @@ const $ = _.aggregate;
 // 云函数入口函数
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext();
-  const { skip = 0, limit = 10, isPoem, isOriginal } = event; // 添加isPoem和isOriginal参数
+  const { skip = 0, limit = 10, isPoem, isOriginal, tag = '' } = event; // 添加isPoem、isOriginal和tag参数
 
   try {
     // 移除调试日志以提升性能
@@ -30,6 +30,12 @@ exports.main = async (event, context) => {
     // 如果指定了isOriginal参数，添加原创筛选条件
     if (isOriginal !== undefined) {
       matchConditions.isOriginal = isOriginal;
+    }
+
+    // 如果指定了tag参数，添加标签筛选条件
+    if (tag) {
+      matchConditions.tags = tag;  // 匹配包含该标签的文档
+      matchConditions['tags.0'] = { $exists: true };  // 确保tags数组至少有一个元素
     }
 
     // 如果有筛选条件，应用match
