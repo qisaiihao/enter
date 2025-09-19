@@ -20,7 +20,21 @@ Page({
     displayMode: 'square', // 首页只负责广场模式
     imageCache: {}, // 图片缓存
     visiblePosts: new Set(), // 可见的帖子ID集合
-    unreadMessageCount: 0 // 未读消息数量
+    unreadMessageCount: 0, // 未读消息数量
+    
+    // --- 页面切换相关 ---
+    currentPage: 'home', // 'home' 或 'discover'
+    showPageIndicator: false, // 是否显示页面切换提示
+    pageIndicatorText: '', // 切换提示文字
+    discoverPostList: [], // 发现页的帖子列表
+    discoverPage: 0, // 发现页的分页
+    discoverHasMore: true, // 发现页是否还有更多数据
+    discoverShownPostIds: [], // 发现页已显示的帖子ID，用于防重复
+    discoverRefreshTime: 0, // 发现页刷新时间戳
+    touchStartX: 0, // 触摸开始X坐标
+    touchStartY: 0, // 触摸开始Y坐标
+    touchEndX: 0, // 触摸结束X坐标
+    touchEndY: 0 // 触摸结束Y坐标
   },
 
   onLoad: function (options) {
@@ -82,16 +96,23 @@ Page({
     // 清除缓存
     dataCache.remove('index_postList_cache');
 
-    this.setData({
-      postList: [],
-      swiperHeights: {},
-      page: 0,
-      hasMore: true,
-    }, () => {
-      this.getPostList(() => {
-        wx.stopPullDownRefresh();
+    if (this.data.currentPage === 'home') {
+      // 主页刷新
+      this.setData({
+        postList: [],
+        swiperHeights: {},
+        page: 0,
+        hasMore: true,
+      }, () => {
+        this.getPostList(() => {
+          wx.stopPullDownRefresh();
+        });
       });
-    });
+    } else if (this.data.currentPage === 'discover') {
+      // 发现页刷新 - 重新获取推荐
+      this.refreshDiscoverPosts();
+      wx.stopPullDownRefresh();
+    }
   },
 
   // 移除或禁用 onReachBottom，避免与 onPageScroll 冲突
@@ -527,5 +548,255 @@ Page({
         });
       }
     });
+  },
+
+  // --- 页面切换相关函数 ---
+  
+  // 触摸开始事件
+  touchStart: function(e) {
+    this.setData({ 
+      touchStartX: e.touches[0].clientX,
+      touchStartY: e.touches[0].clientY
+    });
+  },
+
+  // 触摸结束事件
+  touchEnd: function(e) {
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const diffX = this.data.touchStartX - touchEndX;
+    const diffY = this.data.touchStartY - touchEndY;
+    
+    // 计算滑动距离和角度
+    const distance = Math.sqrt(diffX * diffX + diffY * diffY);
+    const angle = Math.abs(Math.atan2(Math.abs(diffY), Math.abs(diffX)) * 180 / Math.PI);
+    
+    // 调试信息
+    console.log('触摸调试信息:', {
+      touchStartX: this.data.touchStartX,
+      touchEndX: touchEndX,
+      diffX: diffX,
+      distance: distance,
+      angle: angle,
+      currentPage: this.data.currentPage
+    });
+    
+    // 只有当水平滑动距离足够大，且滑动角度接近水平（小于45度）时才处理
+    if (distance > 60 && Math.abs(diffX) > 30 && angle < 45) {
+      // 检查是否在屏幕边缘滑动（用于页面切换）
+      const screenWidth = wx.getWindowInfo().windowWidth;
+      const touchStartX = this.data.touchStartX;
+      
+      console.log('边缘检测:', {
+        screenWidth: screenWidth,
+        touchStartX: touchStartX,
+        leftEdge: screenWidth * 0.2,
+        rightEdge: screenWidth * 0.8,
+        isLeftEdge: touchStartX < screenWidth * 0.2,
+        isRightEdge: touchStartX > screenWidth * 0.8
+      });
+      
+      // 左滑：从屏幕左边缘开始，切换到发现页
+      if (diffX > 0 && touchStartX < screenWidth * 0.2) {
+        console.log('触发左滑切换到发现页');
+        this.switchToDiscover();
+      }
+      // 右滑：从屏幕右边缘开始，切换回主页
+      else if (diffX < 0 && touchStartX > screenWidth * 0.8) {
+        console.log('触发右滑切换回主页');
+        this.switchToHome();
+      }
+      // 从左边缘向右滑动，也切换到发现页（更直观的操作）
+      else if (diffX < 0 && touchStartX < screenWidth * 0.2) {
+        console.log('从左边缘向右滑动，切换到发现页');
+        this.switchToDiscover();
+      }
+      // 从右边缘向左滑动，切换回主页（更直观的操作）
+      else if (diffX > 0 && touchStartX > screenWidth * 0.8) {
+        console.log('从右边缘向左滑动，切换回主页');
+        this.switchToHome();
+      }
+    }
+  },
+  
+  // 切换到发现页
+  switchToDiscover: function() {
+    if (this.data.currentPage === 'discover') {
+      console.log('已经在发现页，无需切换');
+      return;
+    }
+    
+    console.log('切换到发现页');
+    this.setData({
+      currentPage: 'discover',
+      showPageIndicator: true,
+      pageIndicatorText: '发现页'
+    });
+    
+    // 加载发现页数据（如果还没有）
+    if (this.data.discoverPostList.length === 0) {
+      console.log('开始加载发现页数据');
+      this.loadDiscoverPosts();
+    } else {
+      console.log('发现页已有数据，直接切换');
+    }
+    
+    // 3秒后隐藏提示
+    setTimeout(() => {
+      this.setData({ showPageIndicator: false });
+    }, 3000);
+  },
+  
+  // 切换回主页
+  switchToHome: function() {
+    if (this.data.currentPage === 'home') {
+      console.log('已经在主页，无需切换');
+      return;
+    }
+    
+    console.log('切换回主页');
+    this.setData({
+      currentPage: 'home',
+      showPageIndicator: true,
+      pageIndicatorText: '主页'
+    });
+    
+    // 3秒后隐藏提示
+    setTimeout(() => {
+      this.setData({ showPageIndicator: false });
+    }, 3000);
+  },
+  
+  // 加载发现页数据 - 使用推荐算法
+  loadDiscoverPosts: function() {
+    console.log('开始加载发现页推荐数据');
+    
+    // 如果是首次加载，使用推荐算法
+    if (this.data.discoverPage === 0) {
+      this.loadRecommendationPosts();
+    } else {
+      // 后续加载，使用传统分页
+      this.loadMoreDiscoverPosts();
+    }
+  },
+
+  // 加载推荐帖子（首次加载）
+  loadRecommendationPosts: function() {
+    console.log('使用推荐算法加载发现页数据');
+    
+    wx.cloud.callFunction({
+      name: 'getRecommendationFeed',
+      data: { 
+        personalizedLimit: 3, // 3个个性化推荐
+        hotLimit: 2, // 2个热门推荐
+        skip: 0,
+        excludePostIds: this.data.discoverShownPostIds
+      },
+      success: res => {
+        console.log('获取推荐数据结果:', res);
+        if (res.result && res.result.success) {
+          const posts = res.result.posts || [];
+          console.log(`获取到推荐帖子数量: ${posts.length} (个性化: ${res.result.personalizedCount}, 热门: ${res.result.hotCount}, 最新: ${res.result.latestCount})`);
+          
+          // 处理图片URL和样式
+          posts.forEach(post => {
+            if (!post.imageUrls || post.imageUrls.length === 0) {
+              post.imageUrls = post.imageUrl ? [post.imageUrl] : [];
+            }
+
+            // 设置图片占位样式
+            if (post.imageUrls.length > 0) {
+              post.imageStyle = `height: 0; padding-bottom: 75%;`; // 4:3 宽高比占位
+            }
+            
+            // 添加点赞图标信息
+            post.likeIcon = likeIcon.getLikeIcon(post.votes || 0, post.isVoted || false);
+          });
+
+          // 记录已显示的帖子ID
+          const newShownIds = posts.map(post => post._id);
+          const updatedShownIds = [...this.data.discoverShownPostIds, ...newShownIds];
+
+          this.setData({
+            discoverPostList: posts,
+            discoverPage: 1,
+            discoverHasMore: false, // 推荐算法只显示5个，没有更多
+            discoverShownPostIds: updatedShownIds,
+            discoverRefreshTime: Date.now()
+          });
+          
+          console.log('发现页推荐数据设置完成，帖子数量:', posts.length);
+        } else {
+          console.error('获取推荐数据失败:', res);
+          wx.showToast({ title: '推荐加载失败', icon: 'none' });
+        }
+      },
+      fail: (err) => {
+        console.error('推荐数据请求失败:', err);
+        wx.showToast({ title: '网络错误', icon: 'none' });
+      }
+    });
+  },
+
+  // 加载更多发现页帖子（传统分页，作为备用）
+  loadMoreDiscoverPosts: function() {
+    console.log('加载更多发现页数据');
+    
+    wx.cloud.callFunction({
+      name: 'getPostList',
+      data: { 
+        skip: this.data.discoverPage * PAGE_SIZE, 
+        limit: PAGE_SIZE, 
+        isPoem: false,
+        isOriginal: true
+      },
+      success: res => {
+        console.log('获取更多发现页数据结果:', res);
+        if (res.result && res.result.success) {
+          const posts = res.result.posts || [];
+          console.log('获取到更多发现页帖子数量:', posts.length);
+          
+          posts.forEach(post => {
+            if (!post.imageUrls || post.imageUrls.length === 0) {
+              post.imageUrls = post.imageUrl ? [post.imageUrl] : [];
+            }
+          });
+
+          const newDiscoverList = this.data.discoverPostList.concat(posts);
+
+          this.setData({
+            discoverPostList: newDiscoverList,
+            discoverPage: this.data.discoverPage + 1,
+            discoverHasMore: posts.length === PAGE_SIZE,
+          });
+          
+          console.log('发现页更多数据设置完成，帖子数量:', newDiscoverList.length);
+        } else {
+          console.error('获取更多发现页数据失败:', res);
+          wx.showToast({ title: '加载失败', icon: 'none' });
+        }
+      },
+      fail: (err) => {
+        console.error('更多发现页数据请求失败:', err);
+        wx.showToast({ title: '网络错误', icon: 'none' });
+      }
+    });
+  },
+
+  // 刷新发现页推荐
+  refreshDiscoverPosts: function() {
+    console.log('刷新发现页推荐');
+    
+    // 重置状态
+    this.setData({
+      discoverPostList: [],
+      discoverPage: 0,
+      discoverHasMore: true,
+      discoverShownPostIds: [],
+      discoverRefreshTime: 0
+    });
+    
+    // 重新加载推荐
+    this.loadRecommendationPosts();
   }
 });

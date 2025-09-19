@@ -1,0 +1,9 @@
+{
+  "name": "getRecommendationFeed",
+  "version": "1.0.0",
+  "description": "混合推荐云函数",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "^3.0.1"
+  }
+}

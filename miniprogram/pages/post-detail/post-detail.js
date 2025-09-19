@@ -21,17 +21,26 @@ Page({
     showFavoriteModal: false, // 控制收藏弹窗
     isInputExpanded: false, // 控制输入框展开/收起状态
     keyboardHeight: 0,      // 新增：用于存储键盘高度
-    isFocus: false          // 新增：控制 textarea 的 focus 状态
+    isFocus: false,         // 新增：控制 textarea 的 focus 状态
+    // --- 浏览记录相关 ---
+    viewStartTime: 0,       // 浏览开始时间
+    currentPostId: null     // 当前帖子ID
   },
 
   onLoad: function (options) {
     const postId = options.id;
     if (postId) {
+      this.setData({ currentPostId: postId });
       this.loadPostDetail(postId);
     } else {
       this.setData({ isLoading: false });
       wx.showToast({ title: '无效的帖子ID', icon: 'none' });
     }
+  },
+
+  onShow: function() {
+    // 记录浏览开始时间
+    this.setData({ viewStartTime: Date.now() });
   },
 
   loadPostDetail: function(postId) {
@@ -540,7 +549,8 @@ Page({
 
   // 页面返回时收起输入框
   onUnload: function() {
-    // 页面卸载时的处理
+    // 记录浏览行为
+    this.recordViewBehavior();
   },
 
   // 页面隐藏时收起输入框
@@ -548,6 +558,36 @@ Page({
     if (this.data.isInputExpanded) {
       this.collapseInput();
     }
+    // 记录浏览行为
+    this.recordViewBehavior();
+  },
+
+  // 记录浏览行为
+  recordViewBehavior: function() {
+    if (!this.data.currentPostId || !this.data.viewStartTime) {
+      return;
+    }
+
+    const viewDuration = Math.floor((Date.now() - this.data.viewStartTime) / 1000); // 转换为秒
+    
+    // 只有浏览时间超过3秒才记录
+    if (viewDuration < 3) {
+      return;
+    }
+
+    wx.cloud.callFunction({
+      name: 'recordView',
+      data: {
+        postId: this.data.currentPostId,
+        viewDuration: viewDuration
+      },
+      success: (res) => {
+        console.log('浏览记录已保存:', res);
+      },
+      fail: (err) => {
+        console.error('浏览记录保存失败:', err);
+      }
+    });
   },
 
   // 标签点击处理
