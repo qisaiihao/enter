@@ -57,6 +57,19 @@ Page({
       this.getTabBar().setData({ selected: 2 });
     }
     
+    // 检查是否需要刷新（发布帖子后）
+    try {
+      const shouldRefresh = wx.getStorageSync('shouldRefreshMountain');
+      if (shouldRefresh) {
+        console.log('【mountain】检测到发布标记，刷新数据');
+        wx.removeStorageSync('shouldRefreshMountain');
+        this.refreshMountainData();
+        return; // 刷新后直接返回，不执行后续逻辑
+      }
+    } catch (e) {
+      console.error('检查刷新标记失败:', e);
+    }
+    
     // 首次进入时刷新数据，之后保持之前的内容
     if (!this.data._hasFirstLoad) {
       console.log('【mountain】首次进入，刷新数据');
@@ -87,7 +100,7 @@ Page({
     // 你的云函数请求逻辑
     wx.cloud.callFunction({
       name: 'getPostList',
-      data: { category: 'mountain' },
+      data: { isPoem: true, isOriginal: false }, // 只获取非原创诗歌
       success: res => {
         console.log('Mountain数据获取成功:', res);
         this.setData({

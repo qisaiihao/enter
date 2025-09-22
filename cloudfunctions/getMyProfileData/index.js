@@ -182,6 +182,34 @@ async function getFavoriteFolders(openid) {
       _openid: openid
     }).orderBy('createTime', 'desc').get();
 
+    // 如果用户没有任何收藏夹，自动创建一个默认收藏夹
+    if (result.data.length === 0) {
+      console.log('用户没有收藏夹，创建默认收藏夹');
+      const defaultFolder = await db.collection('favorite_folders').add({
+        data: {
+          _openid: openid,
+          name: '我的收藏',
+          itemCount: 0,
+          createTime: new Date(),
+          updateTime: new Date(),
+          isDefault: true // 标记为默认收藏夹
+        }
+      });
+
+      return {
+        success: true,
+        folders: [{
+          _id: defaultFolder._id,
+          _openid: openid,
+          name: '我的收藏',
+          itemCount: 0,
+          createTime: new Date(),
+          updateTime: new Date(),
+          isDefault: true
+        }]
+      };
+    }
+
     return {
       success: true,
       folders: result.data
@@ -205,10 +233,20 @@ async function createFavoriteFolder(openid, folderName) {
       };
     }
 
+    const trimmedName = folderName.trim();
+    
+    // 检查是否与默认收藏夹名称冲突
+    if (trimmedName === '我的收藏') {
+      return {
+        success: false,
+        message: '该名称已被系统使用，请选择其他名称'
+      };
+    }
+
     // 检查用户是否已有同名收藏夹
     const existingFolder = await db.collection('favorite_folders').where({
       _openid: openid,
-      name: folderName.trim()
+      name: trimmedName
     }).get();
 
     if (existingFolder.data.length > 0) {
@@ -222,7 +260,7 @@ async function createFavoriteFolder(openid, folderName) {
     const result = await db.collection('favorite_folders').add({
       data: {
         _openid: openid,
-        name: folderName.trim(),
+        name: trimmedName,
         createTime: new Date(),
         updateTime: new Date(),
         itemCount: 0

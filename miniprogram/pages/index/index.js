@@ -52,6 +52,18 @@ Page({
       this.getTabBar().setData({ selected: 0 });
     }
     
+    // 检查是否需要刷新（发布帖子后）
+    try {
+      const shouldRefresh = wx.getStorageSync('shouldRefreshIndex');
+      if (shouldRefresh) {
+        console.log('【index】检测到发布标记，刷新数据');
+        wx.removeStorageSync('shouldRefreshIndex');
+        this.refreshIndexData();
+      }
+    } catch (e) {
+      console.error('检查刷新标记失败:', e);
+    }
+    
     // 检查未读消息数量
     this.checkUnreadMessageCount();
   },
@@ -721,5 +733,24 @@ Page({
     
     // 重新加载推荐
     this.loadRecommendationPosts();
+  },
+
+  // 刷新广场页数据（发布帖子后调用）
+  refreshIndexData: function() {
+    console.log('【index】开始刷新广场页数据');
+    
+    // 清除缓存
+    dataCache.clear('index_postList_cache');
+    
+    // 重置状态
+    this.setData({
+      postList: [],
+      page: 0,
+      hasMore: true,
+      isLoading: false
+    });
+    
+    // 重新加载数据
+    this.getIndexData();
   }
 });

@@ -4,6 +4,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  padding-bottom: 120rpx; /* 为底部工具栏留出空间，避免内容被遮挡 */
 }
 
 /* 发布按钮样式 */

@@ -18,6 +18,7 @@ Page({
     allExistingTags: [], // 所有已有标签
     matchedTags: [], // 匹配的标签
     showMatchedTags: false, // 是否显示匹配的标签
+    isPublished: false, // 是否已发布成功，用于避免发布后再次询问保存草稿
     
     // 标签分类数据
     tagCategories: [
@@ -62,13 +63,17 @@ Page({
   },
 
   onUnload: function () {
-    // 页面卸载时检查是否需要保存草稿
-    this.checkAndSaveDraft();
+    // 页面卸载时检查是否需要保存草稿（如果已发布成功则不检查）
+    if (!this.data.isPublished) {
+      this.checkAndSaveDraft();
+    }
   },
 
   onHide: function () {
-    // 页面隐藏时检查是否需要保存草稿
-    this.checkAndSaveDraft();
+    // 页面隐藏时检查是否需要保存草稿（如果已发布成功则不检查）
+    if (!this.data.isPublished) {
+      this.checkAndSaveDraft();
+    }
   },
 
   onTitleInput: function(event) { 
@@ -371,11 +376,15 @@ Page({
   publishSuccess: function(res) {
     wx.hideLoading();
     wx.showToast({ title: '发布成功！' });
-    // 新增：设置首页和我的主页需要刷新标记
+    // 新增：设置各页面需要刷新标记
     try {
       wx.setStorageSync('shouldRefreshIndex', true);
       wx.setStorageSync('shouldRefreshProfile', true);
+      wx.setStorageSync('shouldRefreshPoem', true);
+      wx.setStorageSync('shouldRefreshMountain', true);
     } catch (e) {}
+    // 设置发布成功标记，避免后续检查草稿
+    this.setData({ isPublished: true });
     // 发布成功后清除草稿
     this.clearDraft();
     wx.navigateBack({ delta: 1 });
