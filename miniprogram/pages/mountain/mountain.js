@@ -103,8 +103,10 @@ Page({
       data: { isPoem: true, isOriginal: false }, // 只获取非原创诗歌
       success: res => {
         console.log('Mountain数据获取成功:', res);
+        const posts = res.result.posts || [];
+        
         this.setData({
-          postList: res.result.posts || [],
+          postList: posts,
           isLoading: false, // 关键：数据返回，关闭骨架屏
           _hasFirstLoad: true // 标记首次加载完成
         });

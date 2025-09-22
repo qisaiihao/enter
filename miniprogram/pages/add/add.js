@@ -19,6 +19,7 @@ Page({
     matchedTags: [], // 匹配的标签
     showMatchedTags: false, // 是否显示匹配的标签
     isPublished: false, // 是否已发布成功，用于避免发布后再次询问保存草稿
+    author: '', // 作者信息
     
     // 标签分类数据
     tagCategories: [
@@ -86,13 +87,25 @@ Page({
     this.checkCanPublish();
   },
 
+  onAuthorInput: function(event) {
+    this.setData({ author: event.detail.value });
+    this.checkCanPublish();
+  },
+
   // 检查是否可以发布
   checkCanPublish: function() {
     const hasImages = this.data.imageList.length > 0;
     const hasTitle = this.data.title && this.data.title.trim();
     const hasContent = this.data.content && this.data.content.trim();
     
-    const canPublish = hasImages || (hasTitle && hasContent);
+    let canPublish = hasImages || (hasTitle && hasContent);
+    
+    // 如果是非原创诗歌，必须填写作者
+    if (this.data.publishMode === 'poem' && !this.data.isOriginal) {
+      const hasAuthor = this.data.author && this.data.author.trim();
+      canPublish = canPublish && hasAuthor;
+    }
+    
     this.setData({ canPublish: canPublish });
   },
 
@@ -257,14 +270,92 @@ Page({
       return;
     }
     
+    // 如果是非原创诗歌，必须填写作者
+    if (this.data.publishMode === 'poem' && !this.data.isOriginal) {
+      const hasAuthor = this.data.author && this.data.author.trim();
+      if (!hasAuthor) {
+        wx.showToast({ title: '非原创诗歌必须填写作者', icon: 'none' });
+        return;
+      }
+    }
+    
     console.log('提交帖子:', {
       imageList: this.data.imageList,
       title: this.data.title,
       content: this.data.content
     });
     
-    wx.showLoading({ title: '发布中...' });
+    // 如果是非原创诗歌，先检查重复
+    if (this.data.publishMode === 'poem' && !this.data.isOriginal) {
+      this.checkDuplicatePoem();
+    } else {
+      // 直接发布
+      wx.showLoading({ title: '发布中...' });
+      if (this.data.imageList.length > 0) {
+        this.uploadImagesAndSubmit();
+      } else {
+        this.submitTextOnly();
+      }
+    }
+  },
 
+  // 检查重复诗歌
+  checkDuplicatePoem: function() {
+    wx.showLoading({ title: '检查中...' });
+    
+    wx.cloud.callFunction({
+      name: 'checkDuplicatePoem',
+      data: {
+        title: this.data.title.trim(),
+        author: this.data.author.trim(),
+        isOriginal: this.data.isOriginal
+      },
+      success: res => {
+        wx.hideLoading();
+        console.log('重复检查结果:', res.result);
+        
+        if (res.result.success) {
+          if (res.result.isDuplicate) {
+            // 发现重复，显示确认对话框
+            this.showDuplicateConfirmDialog(res.result.duplicateCount);
+          } else {
+            // 没有重复，直接发布
+            this.proceedWithPublish();
+          }
+        } else {
+          wx.showToast({ title: '检查失败，请重试', icon: 'none' });
+        }
+      },
+      fail: err => {
+        wx.hideLoading();
+        console.error('检查重复失败:', err);
+        wx.showToast({ title: '网络错误，请重试', icon: 'none' });
+      }
+    });
+  },
+
+  // 显示重复确认对话框
+  showDuplicateConfirmDialog: function(duplicateCount) {
+    wx.showModal({
+      title: '发现重复诗歌',
+      content: `已有 ${duplicateCount} 篇相同的诗歌发布，是否继续发布？`,
+      confirmText: '继续发布',
+      cancelText: '取消发布',
+      success: res => {
+        if (res.confirm) {
+          // 用户选择继续发布
+          this.proceedWithPublish();
+        } else {
+          // 用户选择取消发布
+          console.log('用户取消发布重复诗歌');
+        }
+      }
+    });
+  },
+
+  // 继续发布流程
+  proceedWithPublish: function() {
+    wx.showLoading({ title: '发布中...' });
     if (this.data.imageList.length > 0) {
       this.uploadImagesAndSubmit();
     } else {
@@ -334,6 +425,20 @@ Page({
     const imageUrls = uploadResults.map(result => result.compressedUrl);
     const originalImageUrls = uploadResults.map(result => result.originalUrl);
     
+    // 确定作者信息
+    let authorName = '';
+    if (this.data.publishMode === 'poem') {
+      if (this.data.isOriginal) {
+        // 原创诗歌：如果填写了作者就用填写的，否则使用用户昵称
+        const userInfo = wx.getStorageSync('userInfo');
+        const userNickName = userInfo ? userInfo.nickName : '匿名用户';
+        authorName = this.data.author && this.data.author.trim() ? this.data.author.trim() : userNickName;
+      } else {
+        // 非原创诗歌：必须使用填写的作者
+        authorName = this.data.author && this.data.author.trim() ? this.data.author.trim() : '';
+      }
+    }
+
     const postData = {
       title: this.data.title,
       content: this.data.content,
@@ -342,6 +447,8 @@ Page({
       // 新增诗歌相关字段
       isPoem: this.data.publishMode === 'poem',
       isOriginal: this.data.isOriginal,
+      // 新增作者字段
+      author: authorName,
       // 新增标签字段
       tags: this.data.selectedTags || []
     };
@@ -609,6 +716,7 @@ Page({
       isOriginal: this.data.isOriginal,
       selectedTags: this.data.selectedTags,
       customTag: this.data.customTag,
+      author: this.data.author,
       saveTime: new Date().getTime()
     };
     
@@ -647,6 +755,7 @@ Page({
                   isOriginal: draftData.isOriginal || false,
                   selectedTags: draftData.selectedTags || [],
                   customTag: draftData.customTag || '',
+                  author: draftData.author || '',
                   maxImageCount: draftData.publishMode === 'poem' ? 1 : 9
                 });
                 this.checkCanPublish();

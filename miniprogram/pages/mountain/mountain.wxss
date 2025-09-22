@@ -161,6 +161,16 @@ page {
   text-shadow: 0 1rpx 2rpx rgba(255,255,255,0.8);
 }
 
+/* 诗歌作者样式 */
+.single-poem-author {
+  font-size: 32rpx;
+  color: #000;
+  text-align: center;
+  margin: 5rpx 0 15rpx 0;
+  text-shadow: 0 1rpx 2rpx rgba(255,255,255,0.8);
+  letter-spacing: 2rpx;
+}
+
 /* 内容文字 */
 .single-post-content-text {
   font-size: 32rpx;
@@ -170,7 +180,7 @@ page {
   padding: 30rpx 40rpx;
   background: transparent;
   border-radius: 0;
-  max-height: 60vh;
+  max-height: 62vh;
   overflow-y: auto;
   font-family: -apple-system-font, 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   letter-spacing: 1rpx;

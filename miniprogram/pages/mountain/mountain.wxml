@@ -49,6 +49,8 @@
         
         <!-- 标题 -->
         <view class="single-post-title" wx:if="{{currentPost.title}}">{{currentPost.title}}</view>
+        <!-- 诗歌作者信息 -->
+        <view wx:if="{{currentPost.isPoem && currentPost.author}}" class="single-poem-author">{{currentPost.author}}</view>
         
         <!-- 内容 -->
         <view class="single-post-content-text" wx:if="{{currentPost.content}}" style="white-space: pre-wrap;">{{currentPost.content}}</view>

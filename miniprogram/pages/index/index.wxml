@@ -55,6 +55,8 @@
         >
           <view class="post-item">
             <view class="post-title">{{item.title}}</view>
+            <!-- 诗歌作者信息 -->
+            <view wx:if="{{item.isPoem && item.author}}" class="poem-author">{{item.author}}</view>
             
             <!-- 图片显示逻辑 (已优化，使用 imageStyle 占位) -->
             <view wx:if="{{(item.imageUrls && item.imageUrls.length > 0)}}" 
@@ -156,6 +158,8 @@
         >
           <view class="post-item">
             <view class="post-title">{{item.title}}</view>
+            <!-- 诗歌作者信息 -->
+            <view wx:if="{{item.isPoem && item.author}}" class="poem-author">{{item.author}}</view>
             
             <!-- 图片显示逻辑 (已优化，使用 imageStyle 占位) -->
             <view wx:if="{{(item.imageUrls && item.imageUrls.length > 0)}}" 

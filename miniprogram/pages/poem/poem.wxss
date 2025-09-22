@@ -153,6 +153,16 @@ page {
   text-shadow: 0 1rpx 2rpx rgba(255,255,255,0.8); /* 添加文字阴影 */
 }
 
+/* 诗歌作者样式 */
+.single-poem-author {
+  font-size: 32rpx;
+  color: #000;
+  text-align: center;
+  margin: 5rpx 0 15rpx 0;
+  text-shadow: 0 1rpx 2rpx rgba(255,255,255,0.8);
+  letter-spacing: 2rpx;
+}
+
 /* 图片容器 */
 .single-image-container {
   flex: 1;
@@ -191,7 +201,7 @@ page {
   padding: 20rpx 30rpx 40rpx 30rpx; /* 增加底部内边距，确保最后一行不显示 */
   background: transparent; /* 完全透明背景 */
   border-radius: 0; /* 移除圆角 */
-  max-height: 65vh; /* 稍微减少高度，配合底部内边距 */
+  max-height: 62vh; /* 稍微减少高度，配合底部内边距 */
   overflow-y: auto;
   font-family: -apple-system-font, 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   letter-spacing: 1rpx;

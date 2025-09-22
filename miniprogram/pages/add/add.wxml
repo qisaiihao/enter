@@ -29,6 +29,17 @@
     />
   </view>
 
+  <!-- 作者输入区域（诗歌模式显示） -->
+  <view wx:if="{{publishMode === 'poem'}}" class="author-input-wrapper">
+    <input 
+      class="author-input" 
+      placeholder="{{isOriginal ? '作者（可选，不填默认使用您的昵称）' : '作者（必填）'}}" 
+      bindinput="onAuthorInput"
+      maxlength="20"
+      value="{{author}}"
+    />
+  </view>
+
   <!-- 正文输入区域 -->
   <view class="content-input-wrapper">
     <textarea 
