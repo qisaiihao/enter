@@ -9,7 +9,8 @@ Page({
     maxImageCount: 9, // 最大图片数量
     publishMode: 'normal', // 'normal' | 'poem' 普通模式 | 诗歌模式
     isOriginal: false, // 是否原创
-    poemBgImage: '', // 诗歌背景图
+    showPoemSubmenu: false, // 是否显示写诗子菜单
+    canPublish: false, // 是否可以发布
     selectedTags: [], // 选中的标签
     customTag: '', // 自定义标签输入
     showTagSelector: false, // 是否显示标签选择器
@@ -56,31 +57,83 @@ Page({
   onLoad: function () {
     // 页面加载时获取所有已有标签
     this.loadAllExistingTags();
+    // 加载草稿
+    this.loadDraft();
+  },
+
+  onUnload: function () {
+    // 页面卸载时检查是否需要保存草稿
+    this.checkAndSaveDraft();
+  },
+
+  onHide: function () {
+    // 页面隐藏时检查是否需要保存草稿
+    this.checkAndSaveDraft();
   },
 
   onTitleInput: function(event) { 
     this.setData({ title: event.detail.value }); 
+    this.checkCanPublish();
   },
   
   onContentInput: function(event) { 
     this.setData({ content: event.detail.value }); 
+    this.checkCanPublish();
+  },
+
+  // 检查是否可以发布
+  checkCanPublish: function() {
+    const hasImages = this.data.imageList.length > 0;
+    const hasTitle = this.data.title && this.data.title.trim();
+    const hasContent = this.data.content && this.data.content.trim();
+    
+    const canPublish = hasImages || (hasTitle && hasContent);
+    this.setData({ canPublish: canPublish });
   },
 
   // 切换发布模式
   switchMode: function() {
-    const newMode = this.data.publishMode === 'normal' ? 'poem' : 'normal';
-    this.setData({ 
-      publishMode: newMode,
-      // 切换到诗歌模式时重置图片
-      imageList: newMode === 'poem' && this.data.imageList.length > 1 ? [] : this.data.imageList,
-      maxImageCount: newMode === 'poem' ? 1 : 9
-    });
+    if (this.data.publishMode === 'normal') {
+      if (this.data.showPoemSubmenu) {
+        // 如果子菜单已显示，再次点击写诗按钮则收起子菜单
+        this.setData({ 
+          showPoemSubmenu: false
+        });
+      } else {
+        // 从普通模式切换到写诗模式，显示子菜单
+        this.setData({ 
+          showPoemSubmenu: true,
+          showTagSelector: false // 隐藏标签选择器
+        });
+      }
+    } else {
+      // 从写诗模式切换回普通模式
+      this.setData({ 
+        publishMode: 'normal',
+        isOriginal: false,
+        showPoemSubmenu: false,
+        // 切换到普通模式时重置图片限制
+        maxImageCount: 9
+      });
+      this.checkCanPublish();
+    }
   },
 
-  // 切换原创状态
-  toggleOriginal: function() {
-    this.setData({ isOriginal: !this.data.isOriginal });
+  // 选择写诗模式（原创/非原创）
+  selectPoemMode: function(e) {
+    const isOriginal = e.currentTarget.dataset.original === 'true';
+    this.setData({ 
+      publishMode: 'poem',
+      isOriginal: isOriginal,
+      showPoemSubmenu: false,
+      // 切换到诗歌模式时重置图片
+      imageList: this.data.imageList.length > 1 ? [] : this.data.imageList,
+      maxImageCount: 1
+    });
+    this.checkCanPublish();
   },
+
+
 
   handleChooseImage: function() {
     const that = this;
@@ -133,6 +186,7 @@ Page({
         Promise.all(imagePromises).then(newImages => {
           wx.hideLoading();
           that.updateImageList(newImages);
+          that.checkCanPublish();
         }).catch(err => {
           wx.hideLoading();
           wx.showToast({ title: '图片处理失败', icon: 'none' });
@@ -181,17 +235,17 @@ Page({
     this.setData({
       imageList: imageList
     });
+    this.checkCanPublish();
   },
   
   submitPost: function() {
-    const hasImages = this.data.imageList.length > 0;
-    const hasTitle = this.data.title && this.data.title.trim();
-    const hasContent = this.data.content && this.data.content.trim();
-    
-    if (!hasImages && !hasTitle && !hasContent) {
+    if (!this.data.canPublish) {
       wx.showToast({ title: '请至少上传图片或输入内容', icon: 'none' });
       return;
     }
+    
+    const hasTitle = this.data.title && this.data.title.trim();
+    const hasContent = this.data.content && this.data.content.trim();
     
     if (hasTitle && !hasContent) {
       wx.showToast({ title: '请输入正文内容', icon: 'none' });
@@ -322,6 +376,8 @@ Page({
       wx.setStorageSync('shouldRefreshIndex', true);
       wx.setStorageSync('shouldRefreshProfile', true);
     } catch (e) {}
+    // 发布成功后清除草稿
+    this.clearDraft();
     wx.navigateBack({ delta: 1 });
   },
 
@@ -503,5 +559,110 @@ Page({
       showMatchedTags: false,
       matchedTags: []
     });
+  },
+
+  // 检查是否有内容需要保存草稿
+  hasContent: function() {
+    const hasTitle = this.data.title && this.data.title.trim();
+    const hasContent = this.data.content && this.data.content.trim();
+    const hasImages = this.data.imageList.length > 0;
+    const hasTags = this.data.selectedTags.length > 0;
+    
+    return hasTitle || hasContent || hasImages || hasTags;
+  },
+
+  // 检查并保存草稿
+  checkAndSaveDraft: function() {
+    if (this.hasContent()) {
+      wx.showModal({
+        title: '保存草稿',
+        content: '检测到您有未完成的内容，是否保存为草稿？',
+        confirmText: '保存',
+        cancelText: '不保存',
+        success: (res) => {
+          if (res.confirm) {
+            this.saveDraft();
+          } else {
+            this.clearDraft();
+          }
+        }
+      });
+    }
+  },
+
+  // 保存草稿
+  saveDraft: function() {
+    const draftData = {
+      title: this.data.title,
+      content: this.data.content,
+      imageList: this.data.imageList,
+      publishMode: this.data.publishMode,
+      isOriginal: this.data.isOriginal,
+      selectedTags: this.data.selectedTags,
+      customTag: this.data.customTag,
+      saveTime: new Date().getTime()
+    };
+    
+    try {
+      wx.setStorageSync('publish_draft', draftData);
+      wx.showToast({ title: '草稿已保存', icon: 'success' });
+    } catch (e) {
+      console.error('保存草稿失败:', e);
+      wx.showToast({ title: '保存草稿失败', icon: 'none' });
+    }
+  },
+
+  // 加载草稿
+  loadDraft: function() {
+    try {
+      const draftData = wx.getStorageSync('publish_draft');
+      if (draftData && draftData.saveTime) {
+        // 检查草稿是否过期（7天）
+        const now = new Date().getTime();
+        const draftAge = now - draftData.saveTime;
+        const sevenDays = 7 * 24 * 60 * 60 * 1000;
+        
+        if (draftAge < sevenDays) {
+          wx.showModal({
+            title: '恢复草稿',
+            content: '检测到您有未完成的草稿，是否恢复？',
+            confirmText: '恢复',
+            cancelText: '重新开始',
+            success: (res) => {
+              if (res.confirm) {
+                this.setData({
+                  title: draftData.title || '',
+                  content: draftData.content || '',
+                  imageList: draftData.imageList || [],
+                  publishMode: draftData.publishMode || 'normal',
+                  isOriginal: draftData.isOriginal || false,
+                  selectedTags: draftData.selectedTags || [],
+                  customTag: draftData.customTag || '',
+                  maxImageCount: draftData.publishMode === 'poem' ? 1 : 9
+                });
+                this.checkCanPublish();
+                wx.showToast({ title: '草稿已恢复', icon: 'success' });
+              } else {
+                this.clearDraft();
+              }
+            }
+          });
+        } else {
+          // 草稿过期，自动清除
+          this.clearDraft();
+        }
+      }
+    } catch (e) {
+      console.error('加载草稿失败:', e);
+    }
+  },
+
+  // 清除草稿
+  clearDraft: function() {
+    try {
+      wx.removeStorageSync('publish_draft');
+    } catch (e) {
+      console.error('清除草稿失败:', e);
+    }
   }
 })

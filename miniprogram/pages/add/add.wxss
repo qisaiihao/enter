@@ -1,190 +1,249 @@
 /* pages/add/add.wxss */
 .container {
-    padding: 30rpx;
-  }
-  
-  /* 模式切换栏 */
-  .mode-switcher {
-    display: flex;
-    margin-bottom: 30rpx;
-    background: #f5f5f5;
-    border-radius: 50rpx;
-    padding: 6rpx;
-  }
-  
-  .mode-btn {
-    flex: 1;
-    padding: 20rpx;
-    border: none;
-    background: transparent;
-    border-radius: 44rpx;
-    font-size: 28rpx;
-    transition: all 0.3s ease;
-  }
-  
-  .mode-btn.active {
-    background: #07c160;
-    color: white;
-    box-shadow: 0 4rpx 16rpx rgba(7, 193, 96, 0.3);
-  }
-  
-  /* 原创勾选 */
-  .original-checkbox {
-    display: flex;
-    align-items: center;
-    margin-bottom: 30rpx;
-    padding: 20rpx;
-    background: #f8f9fa;
-    border-radius: 12rpx;
-  }
-  
-  .checkbox-icon {
-    font-size: 40rpx;
-    margin-right: 15rpx;
-    color: #999;
-  }
-  
-  .checkbox-icon.checked {
-    color: #07c160;
-  }
-  
-  .checkbox-text {
-    font-size: 30rpx;
-    color: #333;
-  }
-  
-  /* 图片上传信息 */
-  .uploader-info {
-    margin-bottom: 20rpx;
-    text-align: center;
-  }
-  
-  .poem-image-tip {
-    font-size: 26rpx;
-    color: #666;
-    background: #e8f5e9;
-    padding: 10rpx 20rpx;
-    border-radius: 8rpx;
-    display: inline-block;
-  }
-  
-  .image-count {
-    font-size: 28rpx;
-    color: #999;
-  }
-  
-  .input-title {
-    height: 100rpx;
-    border: 1px solid #eee;
-    border-radius: 10rpx;
-    margin-bottom: 30rpx;
-    padding: 0 20rpx;
-    font-size: 32rpx;
-  }
-  
-  .textarea-content {
-    width: 100%;
-    height: 600rpx;
-    border: 1px solid #eee;
-    border-radius: 10rpx;
-    padding: 20rpx;
-    box-sizing: border-box; /* 保证padding不会撑大宽度 */
-    font-size: 28rpx;
-  }
-
-  .char-count {
-    text-align: right;
-    font-size: 24rpx;
-    color: #999;
-    margin-top: 10rpx;
-    margin-bottom: 20rpx;
-  }
-  
-  .submit-button {
-    margin-top: 40rpx;
-  }
-  .uploader-container {
-    margin-top: 30rpx;
-  }
-  .uploader-button {
-    width: 200rpx;
-  }
-
-  /* 多张图片预览样式 */
-  .image-preview-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20rpx;
-    margin-top: 20rpx;
-  }
-
-  .image-preview-item {
-    position: relative;
-    width: 200rpx;
-    height: 200rpx;
-  }
-
-  .image-swiper {
-    width: 100%;
-    min-height: 200rpx;
-    height: auto;
-    background: transparent;
-  }
-  .swiper-item {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: auto;
-  }
-  .preview-image {
-    width: 100%;
-    height: auto;
-    border-radius: 10rpx;
-    object-fit: contain;
-  }
-
-  .image-remove-btn {
-    position: absolute;
-    top: -10rpx;
-    right: -10rpx;
-    width: 40rpx;
-    height: 40rpx;
-    background-color: #ff4444;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24rpx;
-    font-weight: bold;
-  }
-
-  .add-more-btn {
-    width: 200rpx;
-    height: 200rpx;
-    border: 2px dashed #ddd;
-    border-radius: 10rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #999;
-    font-size: 60rpx;
-  }
-.uploader-controls {
+  background: #fff;
+  min-height: 100vh;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
+  flex-direction: column;
 }
 
-.re-choose-btn {
-  margin-top: 20rpx;
-  color: #07c160;
+/* 发布按钮样式 */
+.publish-btn {
+  background: #e0e0e0;
+  color: #999;
+  padding: 16rpx 32rpx;
+  border-radius: 50rpx;
   font-size: 28rpx;
+  transition: all 0.3s ease;
+  margin-left: auto;
 }
 
-/* 标签相关样式 */
+.publish-btn.active {
+  background: #07c160;
+  color: #fff;
+}
+
+/* 图片预览区域 */
+.image-section {
+  padding: 30rpx;
+  background: #f8f9fa;
+}
+
+.image-preview-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.image-preview-container {
+  display: flex;
+  gap: 20rpx;
+  padding: 0 10rpx;
+}
+
+.image-preview-item {
+  position: relative;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 12rpx;
+}
+
+.image-remove-btn {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  width: 40rpx;
+  height: 40rpx;
+  background: #ff4444;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: bold;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2);
+}
+
+.add-image-btn {
+  width: 200rpx;
+  height: 200rpx;
+  border: 2rpx dashed #ddd;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.add-image-btn:active {
+  background: #f5f5f5;
+  border-color: #07c160;
+}
+
+.add-icon {
+  font-size: 60rpx;
+  color: #999;
+}
+
+
+/* 内容输入区域 */
+.content-section {
+  padding: 30rpx;
+  padding-bottom: 160rpx; /* 为底部工具栏和字数提示留出空间 */
+  background: #fff;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+
+.title-input-wrapper {
+  margin-bottom: 30rpx;
+}
+
+.title-input {
+  width: 100%;
+  height: 80rpx;
+  border: none;
+  border-bottom: 1rpx solid #f0f0f0;
+  font-size: 32rpx;
+  padding: 0;
+  background: transparent;
+}
+
+.title-input:focus {
+  border-bottom-color: #07c160;
+}
+
+.content-input-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 60rpx;
+}
+
+.content-textarea {
+  width: 100%;
+  flex: 1;
+  border: none;
+  font-size: 30rpx;
+  line-height: 1.6;
+  padding: 0;
+  background: transparent;
+  resize: none;
+}
+
+.char-count {
+  position: absolute;
+  bottom: -50rpx;
+  right: 0;
+  font-size: 24rpx;
+  color: #666;
+  background: #fff;
+  padding: 8rpx 12rpx;
+  border-radius: 6rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1);
+}
+
+/* 写诗子菜单 */
+.poem-submenu {
+  position: fixed;
+  bottom: 120rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  display: flex;
+  gap: 40rpx;
+  z-index: 99;
+  box-shadow: 0 -4rpx 20rpx rgba(0,0,0,0.1);
+  animation: slideUp 0.3s ease;
+  border: 1rpx solid #f0f0f0;
+  margin-left: -98rpx; /* 向左偏移，对齐写诗按钮 */
+}
+
+.submenu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10rpx;
+  transition: all 0.3s ease;
+}
+
+.submenu-item:active {
+  transform: scale(0.95);
+}
+
+.submenu-icon {
+  font-size: 40rpx;
+  margin-bottom: 8rpx;
+}
+
+.submenu-text {
+  font-size: 22rpx;
+  color: #666;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateX(-50%) translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 底部工具栏 */
+.toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1rpx solid #f0f0f0;
+  padding: 20rpx 30rpx;
+  display: flex;
+  align-items: center;
+  gap: 40rpx;
+  z-index: 100;
+}
+
+.toolbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10rpx;
+  transition: all 0.3s ease;
+}
+
+.toolbar-item:active {
+  transform: scale(0.95);
+}
+
+.toolbar-icon {
+  font-size: 40rpx;
+  margin-bottom: 8rpx;
+}
+
+.toolbar-text {
+  font-size: 22rpx;
+  color: #666;
+}
+
+/* 标签选择区域样式 */
 .tag-section {
   margin: 30rpx 0;
   background: #f8f9fa;

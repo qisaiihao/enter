@@ -1,73 +1,82 @@
 <!-- pages/add/add.wxml -->
 <view class="container">
 
-<!-- 模式切换栏 -->
-<view class="mode-switcher">
-  <button class="mode-btn {{publishMode === 'normal' ? 'active' : ''}}" bindtap="switchMode">普通发布</button>
-  <button class="mode-btn {{publishMode === 'poem' ? 'active' : ''}}" bindtap="switchMode">写诗</button>
-</view>
-
-<!-- 原创勾选(仅在诗歌模式显示) -->
-<view wx:if="{{publishMode === 'poem'}}" class="original-checkbox" bindtap="toggleOriginal">
-  <view class="checkbox-icon {{isOriginal ? 'checked' : ''}}">{{isOriginal ? '☑' : '☐'}}</view>
-  <view class="checkbox-text">原创诗歌</view>
-</view>
-
-<!-- 1. 标题输入框 -->
-<input 
-  class="input-title" 
-  placeholder="请在这里输入标题" 
-  bindinput="onTitleInput"
-  maxlength="50"
-/>
-
-<!-- 2. 内容输入区域 -->
-<textarea 
-  class="textarea-content" 
-  placeholder="请在这里尽情创作吧..." 
-  bindinput="onContentInput"
-  maxlength="1500"
-></textarea>
-<view class="char-count">{{content.length}}/1500</view>
-
-<!-- 3. 图片上传与预览区域 -->
-<view class="uploader-container">
-  <view class="uploader-info">
-    <text wx:if="{{publishMode === 'poem'}}" class="poem-image-tip">诗歌模式：上传1张图片作为读诗页背景</text>
-    <text wx:else class="image-count">{{imageList.length}}/{{maxImageCount}}</text>
-  </view>
-  <view class="uploader-controls">
-    <button wx:if="{{imageList.length === 0}}" class="uploader-button" bindtap="handleChooseImage">
-      {{publishMode === 'poem' ? '上传背景图' : '上传图片'}}
-    </button>
-  </view>
-  
-  <!-- 显示多张图片预览 -->
-  <view wx:if="{{imageList.length > 0}}" class="image-preview-container">
-    <swiper wx:if="{{imageList.length > 1 && publishMode === 'normal'}}" class="image-swiper" indicator-dots="{{true}}" indicator-color="rgba(255, 255, 255, 0.6)" indicator-active-color="#ffffff" autoplay="{{false}}" circular="{{true}}">
-      <swiper-item wx:for="{{imageList}}" wx:key="index" class="swiper-item">
-        <image class="preview-image" src="{{item.previewUrl}}" mode="widthFix" binderror="onImageError"></image>
+<!-- 图片预览区域 -->
+<view wx:if="{{imageList.length > 0}}" class="image-section">
+  <scroll-view class="image-preview-scroll" scroll-x="true" show-scrollbar="false">
+    <view class="image-preview-container">
+      <view wx:for="{{imageList}}" wx:key="index" class="image-preview-item">
+        <image class="preview-image" src="{{item.previewUrl}}" mode="aspectFill" binderror="onImageError"></image>
         <view class="image-remove-btn" bindtap="removeImage" data-index="{{index}}">×</view>
-      </swiper-item>
-    </swiper>
-    <block wx:else>
-      <view class="image-preview-item">
-        <image class="preview-image" src="{{imageList[0].previewUrl}}" mode="widthFix" binderror="onImageError"></image>
-        <view class="image-remove-btn" bindtap="removeImage" data-index="0">×</view>
       </view>
-    </block>
-    <view wx:if="{{imageList.length < maxImageCount && publishMode === 'normal'}}" class="add-more-btn" bindtap="handleChooseImage">
-      <text>+</text>
+      <view wx:if="{{imageList.length < maxImageCount}}" class="add-image-btn" bindtap="handleChooseImage">
+        <view class="add-icon">+</view>
+      </view>
     </view>
+  </scroll-view>
+</view>
+
+<!-- 内容输入区域 -->
+<view class="content-section">
+  <!-- 标题输入框 -->
+  <view class="title-input-wrapper">
+    <input 
+      class="title-input" 
+      placeholder="标题" 
+      bindinput="onTitleInput"
+      maxlength="50"
+      value="{{title}}"
+    />
+  </view>
+
+  <!-- 正文输入区域 -->
+  <view class="content-input-wrapper">
+    <textarea 
+      class="content-textarea" 
+      placeholder="此刻你想要分享..." 
+      bindinput="onContentInput"
+      maxlength="1500"
+      value="{{content}}"
+    ></textarea>
+    <view class="char-count">{{content.length}}/1500</view>
   </view>
 </view>
 
-<!-- 4. 标签选择区域 -->
-<view class="tag-section">
-  <view class="tag-header" bindtap="toggleTagSelector">
+<!-- 写诗子菜单 -->
+<view wx:if="{{showPoemSubmenu}}" class="poem-submenu">
+  <view class="submenu-item" bindtap="selectPoemMode" data-original="true">
+    <view class="submenu-icon">✨</view>
+    <view class="submenu-text">原创</view>
+  </view>
+  <view class="submenu-item" bindtap="selectPoemMode" data-original="false">
+    <view class="submenu-icon">📖</view>
+    <view class="submenu-text">非原创</view>
+  </view>
+</view>
+
+<!-- 底部工具栏 -->
+<view class="toolbar">
+  <view class="toolbar-item" bindtap="handleChooseImage">
+    <view class="toolbar-icon">📷</view>
+    <view class="toolbar-text">图片</view>
+  </view>
+  <view class="toolbar-item" bindtap="toggleTagSelector">
+    <view class="toolbar-icon">#</view>
+    <view class="toolbar-text">标签</view>
+  </view>
+  <view class="toolbar-item" bindtap="switchMode">
+    <view class="toolbar-icon">{{publishMode === 'normal' ? '📝' : '🎭'}}</view>
+    <view class="toolbar-text">{{publishMode === 'normal' ? '写诗' : '普通'}}</view>
+  </view>
+  <view class="publish-btn {{canPublish ? 'active' : ''}}" bindtap="submitPost">发布</view>
+</view>
+
+<!-- 标签选择区域 -->
+<view wx:if="{{showTagSelector}}" class="tag-section">
+  <view class="tag-header">
     <text class="tag-title">添加标签</text>
     <text class="tag-count">{{selectedTags.length}}/5</text>
-    <text class="tag-toggle">{{showTagSelector ? '收起' : '展开'}}</text>
+    <text class="tag-toggle" bindtap="toggleTagSelector">收起</text>
   </view>
   
   <!-- 已选标签显示 -->
@@ -127,13 +136,5 @@
   </view>
 </view>
 
-<!-- 5. 页面底部的"确认发布"按钮 -->
-<button 
-  type="primary" 
-  class="submit-button" 
-  bindtap="submitPost"
->
-  发布（可只上传图片）
-</button>
 
 </view> <!-- 这个 </view> 是用来闭合最外层的 <view class="container"> 的 -->
