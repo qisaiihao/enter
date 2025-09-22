@@ -133,6 +133,11 @@ Page({
     }
     
     this.scrollTimer = setTimeout(() => {
+      // 只在首页时处理预加载逻辑，发现页不需要预加载
+      if (this.data.currentPage !== 'home') {
+        return;
+      }
+      
       // 只有在非加载中且还有更多数据时才进行后续判断
       if (!this.data.hasMore || this.data.isLoading) {
         return;
@@ -638,13 +643,8 @@ Page({
   loadDiscoverPosts: function() {
     console.log('开始加载发现页推荐数据');
     
-    // 如果是首次加载，使用推荐算法
-    if (this.data.discoverPage === 0) {
-      this.loadRecommendationPosts();
-    } else {
-      // 后续加载，使用传统分页
-      this.loadMoreDiscoverPosts();
-    }
+    // 发现页只使用推荐算法，不再加载更多
+    this.loadRecommendationPosts();
   },
 
   // 加载推荐帖子（首次加载）
@@ -663,7 +663,7 @@ Page({
         console.log('获取推荐数据结果:', res);
         if (res.result && res.result.success) {
           const posts = res.result.posts || [];
-          console.log(`获取到推荐帖子数量: ${posts.length} (个性化: ${res.result.personalizedCount}, 热门: ${res.result.hotCount}, 最新: ${res.result.latestCount})`);
+          console.log(`获取到推荐帖子数量: ${posts.length} (个性化: ${res.result.personalizedCount}, 按标签: ${res.result.tagBasedCount}, 热门: ${res.result.hotCount}, 最新: ${res.result.latestCount})`);
           
           // 处理图片URL和样式
           posts.forEach(post => {
@@ -705,50 +705,6 @@ Page({
     });
   },
 
-  // 加载更多发现页帖子（传统分页，作为备用）
-  loadMoreDiscoverPosts: function() {
-    console.log('加载更多发现页数据');
-    
-    wx.cloud.callFunction({
-      name: 'getPostList',
-      data: { 
-        skip: this.data.discoverPage * PAGE_SIZE, 
-        limit: PAGE_SIZE, 
-        isPoem: false,
-        isOriginal: true
-      },
-      success: res => {
-        console.log('获取更多发现页数据结果:', res);
-        if (res.result && res.result.success) {
-          const posts = res.result.posts || [];
-          console.log('获取到更多发现页帖子数量:', posts.length);
-          
-          posts.forEach(post => {
-            if (!post.imageUrls || post.imageUrls.length === 0) {
-              post.imageUrls = post.imageUrl ? [post.imageUrl] : [];
-            }
-          });
-
-          const newDiscoverList = this.data.discoverPostList.concat(posts);
-
-          this.setData({
-            discoverPostList: newDiscoverList,
-            discoverPage: this.data.discoverPage + 1,
-            discoverHasMore: posts.length === PAGE_SIZE,
-          });
-          
-          console.log('发现页更多数据设置完成，帖子数量:', newDiscoverList.length);
-        } else {
-          console.error('获取更多发现页数据失败:', res);
-          wx.showToast({ title: '加载失败', icon: 'none' });
-        }
-      },
-      fail: (err) => {
-        console.error('更多发现页数据请求失败:', err);
-        wx.showToast({ title: '网络错误', icon: 'none' });
-      }
-    });
-  },
 
   // 刷新发现页推荐
   refreshDiscoverPosts: function() {
