@@ -19,6 +19,7 @@ Page({
     matchedTags: [], // 匹配的标签
     showMatchedTags: false, // 是否显示匹配的标签
     isPublished: false, // 是否已发布成功，用于避免发布后再次询问保存草稿
+    isTemporaryHide: false, // 是否临时隐藏（如选择图片），用于避免触发草稿保存
     author: '', // 作者信息
     
     // 标签分类数据
@@ -71,10 +72,12 @@ Page({
   },
 
   onHide: function () {
-    // 页面隐藏时检查是否需要保存草稿（如果已发布成功则不检查）
-    if (!this.data.isPublished) {
+    // 页面隐藏时检查是否需要保存草稿（如果已发布成功或临时隐藏则不检查）
+    if (!this.data.isPublished && !this.data.isTemporaryHide) {
       this.checkAndSaveDraft();
     }
+    // 重置临时隐藏标志
+    this.setData({ isTemporaryHide: false });
   },
 
   onTitleInput: function(event) { 
@@ -162,6 +165,9 @@ Page({
       return;
     }
     
+    // 设置临时隐藏标志，避免触发草稿保存
+    this.setData({ isTemporaryHide: true });
+    
     wx.chooseImage({
       count: remainingCount,
       // 关键修改1：强制使用原图，把压缩控制权完全交给自己的代码
@@ -213,6 +219,8 @@ Page({
       },
       fail: (err) => {
         console.log('选择图片取消或失败:', err);
+        // 重置临时隐藏标志
+        this.setData({ isTemporaryHide: false });
       }
     });
 },
