@@ -406,7 +406,7 @@ Page({
 
     Promise.all(uploadPromises).then(uploadResults => {
       console.log('所有图片上传完成:', uploadResults);
-      return that.submitToDatabase(uploadResults);
+      return that.submitWithContentCheck(uploadResults);
     }).catch(err => {
       console.error('上传失败:', err);
       that.publishFail(err);
@@ -477,7 +477,58 @@ Page({
   },
 
   submitTextOnly: function() {
-    this.submitToDatabase([]);
+    this.submitWithContentCheck([]);
+  },
+
+  // 新增：带内容审核的提交函数
+  submitWithContentCheck: function(uploadResults) {
+    const that = this;
+    
+    console.log('开始内容审核和提交:', {
+      uploadResults: uploadResults,
+      title: this.data.title,
+      content: this.data.content,
+      publishMode: this.data.publishMode,
+      isOriginal: this.data.isOriginal,
+      author: this.data.author,
+      tags: this.data.selectedTags
+    });
+    
+    // 准备审核参数
+    const fileIDs = uploadResults.map(result => result.compressedUrl);
+    const auditParams = {
+      title: this.data.title,
+      content: this.data.content,
+      fileIDs: fileIDs,
+      publishMode: this.data.publishMode,
+      isOriginal: this.data.isOriginal,
+      author: this.data.author,
+      tags: this.data.selectedTags || []
+    };
+    
+    // 调用内容审核云函数
+    wx.cloud.callFunction({
+      name: 'contentCheck',
+      data: auditParams
+    }).then(res => {
+      console.log('内容审核结果:', res);
+      
+      if (res.result.code === 0) {
+        // 审核通过，发布成功
+        that.publishSuccess({ _id: res.result.postId });
+      } else {
+        // 审核不通过，显示错误信息
+        wx.hideLoading();
+        wx.showModal({
+          title: '发布失败',
+          content: res.result.msg || '内容审核不通过，请检查内容后重试',
+          showCancel: false
+        });
+      }
+    }).catch(err => {
+      console.error('内容审核失败:', err);
+      that.publishFail(err);
+    });
   },
 
   publishSuccess: function(res) {
