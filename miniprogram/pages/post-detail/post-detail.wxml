@@ -15,7 +15,7 @@
       <view wx:if="{{post.isOriginal}}" class="original-badge">原创</view>
       <view class="post-title">{{post.title}}</view>
       <!-- 诗歌作者信息 -->
-      <view wx:if="{{post.isPoem}}" class="poem-author">{{post.author || post.authorName}}</view>
+      <view wx:if="{{post.isPoem && post.author}}" class="poem-author">{{post.author}}</view>
       <view class="post-content" wx:if="{{post.content}}">{{post.content}}</view>
       
       <!-- 标签显示 -->
