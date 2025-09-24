@@ -7,7 +7,7 @@
   </block>
   <block wx:elif="{{post}}">
     <!-- Post Card -->
-    <view class="post-detail-card">
+    <view class="post-detail-card {{post.isOriginal ? 'original-post' : ''}}">
       <view class="author-info">
         <image wx:if="{{post.authorAvatar}}" class="author-avatar" src="{{post.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindtap="navigateToUserProfile" data-user-id="{{post._openid}}"></image>
         <text class="author-name">{{post.authorName}}</text>

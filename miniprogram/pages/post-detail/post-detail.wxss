@@ -53,6 +53,28 @@
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
+/* 原创帖子特殊样式 */
+.post-detail-card.original-post {
+  border: 3rpx solid #ebc88d;
+  box-shadow: 0 6rpx 24rpx rgba(235, 200, 141, 0.4), 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+/* 原创帖子光影效果 */
+.post-detail-card.original-post::before {
+  content: '';
+  position: absolute;
+  top: -2rpx;
+  left: -2rpx;
+  right: -2rpx;
+  bottom: -2rpx;
+  background: linear-gradient(45deg, #ebc88d, #f4d03f, #ebc88d);
+  border-radius: 18rpx;
+  z-index: -1;
+  opacity: 0.6;
+  filter: blur(10rpx);
+}
+
 .author-info {
   display: flex;
   align-items: center;

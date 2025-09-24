@@ -39,7 +39,7 @@
           wx:for="{{postList}}" 
           wx:key="_id" 
           wx:for-index="index"
-          class="post-item-wrapper"
+          class="post-item-wrapper {{item.isOriginal ? 'original-post' : ''}}"
         >
         <!-- 作者信息 -->
         <view class="author-info-outside">
@@ -142,7 +142,7 @@
           wx:for="{{discoverPostList}}" 
           wx:key="_id" 
           wx:for-index="index"
-          class="post-item-wrapper"
+          class="post-item-wrapper {{item.isOriginal ? 'original-post' : ''}}"
         >
         <!-- 作者信息 -->
         <view class="author-info-outside">

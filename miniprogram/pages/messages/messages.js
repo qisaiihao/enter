@@ -1,5 +1,6 @@
 // pages/messages/messages.js
 const app = getApp();
+const { formatTimeAgo } = require('../../utils/time');
 
 Page({
   data: {
@@ -74,10 +75,20 @@ Page({
           const newMessages = res.result.messages || [];
           const totalCount = res.result.totalCount || 0;
           
-          // 格式化时间
+          // 格式化时间和消息内容
           newMessages.forEach(msg => {
             if (msg.createTime) {
-              msg.formattedTime = this.formatTime(msg.createTime);
+              const timeAgo = formatTimeAgo(msg.createTime);
+              msg.formattedTime = timeAgo;
+              
+              // 根据消息类型和时间生成更清晰的消息内容
+              if (msg.type === 'like') {
+                msg.content = `${timeAgo}被点赞`;
+              } else if (msg.type === 'comment') {
+                msg.content = `${timeAgo}被回复`;
+              } else if (msg.type === 'favorite') {
+                msg.content = `${timeAgo}被收藏`;
+              }
             }
           });
           
@@ -150,25 +161,6 @@ Page({
     });
   },
 
-  // 格式化时间
-  formatTime: function (dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    
-    if (minutes < 1) return '刚刚';
-    if (minutes < 60) return `${minutes}分钟前`;
-    
-    const hours = Math.floor(diff / 3600000);
-    if (hours < 24) return `${hours}小时前`;
-    
-    const days = Math.floor(diff / 86400000);
-    if (days < 7) return `${days}天前`;
-    
-    return date.toLocaleDateString();
-  },
 
   // 跳转到相关帖子
   navigateToPost: function (e) {

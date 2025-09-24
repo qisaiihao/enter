@@ -452,12 +452,25 @@ Page({
             performanceMonitor.recordPageLoad('index', this.pageLoadStartTime);
           }
         } else {
-          wx.showToast({ title: '加载失败', icon: 'none' });
+          // 当没有更多数据时，不显示错误提示，而是设置hasMore为false
+          if (this.data.page === 0) {
+            // 首次加载失败才显示错误
+            wx.showToast({ title: '加载失败', icon: 'none' });
+          } else {
+            // 加载更多时没有数据，这是正常情况，设置hasMore为false
+            this.setData({ hasMore: false });
+          }
         }
       },
       fail: (err) => {
         console.error('【首页】getPostList云函数调用失败:', err);
-        wx.showToast({ title: '网络错误', icon: 'none' });
+        // 只有在首次加载失败时才显示网络错误提示
+        if (isFirstLoad) {
+          wx.showToast({ title: '网络错误', icon: 'none' });
+        } else {
+          // 加载更多时网络错误，静默处理，不显示错误提示
+          console.log('【首页】加载更多时网络错误，静默处理');
+        }
       },
       complete: () => {
         // 请求完成后，根据加载类型释放相应的状态
@@ -592,13 +605,13 @@ Page({
     // 只有当水平滑动距离足够大，且滑动角度接近水平（小于45度）时才翻页
     if (distance > 80 && Math.abs(diffX) > 50 && angle < 45) {
       if (diffX > 0) {
-        // 左滑：切换到发现页
-        console.log('左滑切换到发现页');
-        this.switchToDiscover();
-      } else {
-        // 右滑：切换回主页
-        console.log('右滑切换回主页');
+        // 左滑：切换回主页
+        console.log('左滑切换回主页');
         this.switchToHome();
+      } else {
+        // 右滑：切换到发现页
+        console.log('右滑切换到发现页');
+        this.switchToDiscover();
       }
     }
   },

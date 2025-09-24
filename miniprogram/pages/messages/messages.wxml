@@ -50,10 +50,9 @@
               <text class="type-icon">{{item.type === 'like' ? '👍' : item.type === 'comment' ? '💬' : '⭐'}}</text>
               <text class="type-text">{{item.type === 'like' ? '点赞' : item.type === 'comment' ? '评论' : '收藏'}}</text>
             </view>
-            <text class="message-time">{{item.formattedTime}}</text>
           </view>
           
-          <!-- 消息文本 -->
+          <!-- 消息文本（包含时间信息） -->
           <text class="message-text">{{item.content}}</text>
           
           <!-- 相关帖子预览 -->

@@ -195,6 +195,21 @@
   overflow: hidden;
 }
 
+/* 时间信息样式 */
+.time-info {
+  margin: 12rpx 0;
+  padding: 8rpx 12rpx;
+  background-color: #f0f9ff;
+  border-radius: 8rpx;
+  border-left: 3rpx solid #07c160;
+}
+
+.time-text {
+  font-size: 24rpx;
+  color: #07c160;
+  font-weight: 500;
+}
+
 .delete-btn {
   position: absolute;
   top: 20rpx;
