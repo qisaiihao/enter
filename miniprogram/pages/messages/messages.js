@@ -81,13 +81,16 @@ Page({
               const timeAgo = formatTimeAgo(msg.createTime);
               msg.formattedTime = timeAgo;
               
-              // 根据消息类型和时间生成更清晰的消息内容
+              // 获取用户名称，如果没有则使用默认名称
+              const userName = msg.fromUserName || '某用户';
+              
+              // 根据消息类型生成更详细的消息内容
               if (msg.type === 'like') {
-                msg.content = `${timeAgo}被点赞`;
+                msg.content = `${userName} ${timeAgo}点赞了你的帖子`;
               } else if (msg.type === 'comment') {
-                msg.content = `${timeAgo}被回复`;
+                msg.content = `${userName} ${timeAgo}回复了你的帖子`;
               } else if (msg.type === 'favorite') {
-                msg.content = `${timeAgo}被收藏`;
+                msg.content = `${userName} ${timeAgo}收藏了你的帖子`;
               }
             }
           });
