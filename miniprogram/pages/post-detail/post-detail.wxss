@@ -556,6 +556,12 @@
   line-height: 1.6;
   box-sizing: border-box;
   border: none; /* 移除边框，显示为纯白 */
+  /* iOS兼容性优化 */
+  -webkit-appearance: none;
+  -webkit-box-sizing: border-box;
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
+  outline: none;
 }
 
 .expanded-actions {

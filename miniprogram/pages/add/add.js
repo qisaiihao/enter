@@ -21,6 +21,7 @@ Page({
     isPublished: false, // 是否已发布成功，用于避免发布后再次询问保存草稿
     isTemporaryHide: false, // 是否临时隐藏（如选择图片），用于避免触发草稿保存
     author: '', // 作者信息
+    textareaMinHeight: 400, // 动态计算的textarea最小高度
     
     // 标签分类数据
     tagCategories: [
@@ -62,6 +63,8 @@ Page({
     this.loadAllExistingTags();
     // 加载草稿
     this.loadDraft();
+    // 计算并设置textarea高度
+    this.calculateTextareaHeight();
   },
 
   onUnload: function () {
@@ -137,6 +140,8 @@ Page({
         maxImageCount: 9
       });
       this.checkCanPublish();
+      // 重新计算textarea高度
+      this.calculateTextareaHeight();
     }
   },
 
@@ -152,6 +157,8 @@ Page({
       maxImageCount: 1
     });
     this.checkCanPublish();
+    // 重新计算textarea高度
+    this.calculateTextareaHeight();
   },
 
 
@@ -841,5 +848,39 @@ Page({
     } catch (e) {
       console.error('清除草稿失败:', e);
     }
+  },
+
+  // 计算并设置textarea高度
+  calculateTextareaHeight: function() {
+    const that = this;
+    // 获取系统信息
+    wx.getSystemInfo({
+      success: function(res) {
+        const windowHeight = res.windowHeight;
+        const statusBarHeight = res.statusBarHeight || 0;
+        const navigationBarHeight = 44; // 导航栏高度
+        const toolbarHeight = 120; // 底部工具栏高度（rpx转px约60px）
+        const padding = 60; // 上下padding（rpx转px约30px）
+        const titleHeight = 80; // 标题输入框高度（rpx转px约40px）
+        const authorHeight = that.data.publishMode === 'poem' ? 80 : 0; // 作者输入框高度
+        const margin = 60; // 各种margin（rpx转px约30px）
+        
+        // 计算可用高度
+        const availableHeight = windowHeight - statusBarHeight - navigationBarHeight - toolbarHeight - padding - titleHeight - authorHeight - margin;
+        
+        console.log('计算textarea高度:', {
+          windowHeight,
+          statusBarHeight,
+          availableHeight
+        });
+        
+        // 设置最小高度为可用高度的80%，确保有足够空间
+        const minHeight = Math.max(availableHeight * 0.8, 300);
+        
+        that.setData({
+          textareaMinHeight: minHeight
+        });
+      }
+    });
   }
 })

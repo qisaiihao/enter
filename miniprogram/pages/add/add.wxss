@@ -1,10 +1,11 @@
 /* pages/add/add.wxss */
 .container {
   background: #fff;
-  min-height: 100vh;
+  height: 100vh; /* 改为固定高度，确保在iOS下正确计算 */
   display: flex;
   flex-direction: column;
   padding-bottom: 120rpx; /* 为底部工具栏留出空间，避免内容被遮挡 */
+  box-sizing: border-box; /* 确保padding计算在内 */
 }
 
 /* 发布按钮样式 */
@@ -104,6 +105,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0; /* 关键：允许flex子元素收缩 */
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 
@@ -131,17 +134,32 @@
   display: flex;
   flex-direction: column;
   margin-bottom: 20rpx; /* 减少底部间距，让输入框更接近底部工具栏 */
+  min-height: 0; /* 关键：允许flex子元素收缩 */
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 .content-textarea {
   width: 100%;
-  flex: 1;
+  flex: 1; /* 重新使用flex: 1，但配合父容器的min-height: 0 */
   border: none;
   font-size: 30rpx;
   line-height: 1.6;
   padding: 0;
   background: transparent;
   resize: none;
+  /* iOS兼容性优化 */
+  -webkit-appearance: none;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  /* 确保在iOS上正确显示 */
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
+  /* 防止iOS上的默认样式干扰 */
+  border-radius: 0;
+  outline: none;
+  /* 确保textarea能够正确填充可用空间 */
+  min-height: 0;
+  overflow: auto;
 }
 
 .char-count {

@@ -48,6 +48,12 @@
       bindinput="onContentInput"
       maxlength="1500"
       value="{{content}}"
+      auto-height="{{false}}"
+      show-confirm-bar="{{false}}"
+      adjust-position="{{false}}"
+      cursor-spacing="20"
+      fixed="{{true}}"
+      style="min-height: {{textareaMinHeight}}px;"
     ></textarea>
     <view class="char-count">{{content.length}}/1500</view>
   </view>
