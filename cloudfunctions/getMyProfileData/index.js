@@ -348,14 +348,183 @@ async function getFavoritesByFolder(openid, folderId, skip, limit) {
     }
 
     // 获取收藏夹中的收藏项
-    const result = await db.collection('favorites').where({
+    const favoritesResult = await db.collection('favorites').where({
       _openid: openid,
       folderId: folderId
     }).orderBy('createTime', 'desc').skip(skip).limit(limit).get();
 
+    const favorites = favoritesResult.data;
+    console.log('获取到的收藏项数量:', favorites.length);
+    console.log('收藏项数据:', favorites);
+    
+    if (favorites.length === 0) {
+      console.log('收藏夹为空，返回空数组');
+      return {
+        success: true,
+        favorites: []
+      };
+    }
+
+    // 获取所有相关的帖子ID
+    const postIds = favorites.map(fav => fav.postId);
+    
+    // 获取帖子详细信息
+    const postsResult = await db.collection('posts').where({
+      _id: db.command.in(postIds)
+    }).get();
+    
+    const postsMap = new Map();
+    postsResult.data.forEach(post => {
+      postsMap.set(post._id, post);
+    });
+
+    // 获取用户信息
+    const userIds = [...new Set(postsResult.data.map(post => post._openid))];
+    const usersResult = await db.collection('users').where({
+      _openid: db.command.in(userIds)
+    }).get();
+    
+    const usersMap = new Map();
+    usersResult.data.forEach(user => {
+      usersMap.set(user._openid, user);
+    });
+
+    // 构建完整的收藏数据 - 与getAllFavorites保持一致
+    const completeFavorites = favorites.map(favorite => {
+      const post = postsMap.get(favorite.postId);
+      if (!post) return null;
+      
+      const user = usersMap.get(post._openid);
+      
+      // 确保图片URLs是数组 - 与getPostList保持一致，处理imageUrl和imageUrls字段
+      if (!Array.isArray(post.imageUrls)) {
+        post.imageUrls = post.imageUrls ? [post.imageUrls] : (post.imageUrl ? [post.imageUrl] : []);
+      }
+      if (!Array.isArray(post.originalImageUrls)) {
+        post.originalImageUrls = post.originalImageUrls ? [post.originalImageUrls] : (post.originalImageUrl ? [post.originalImageUrl] : []);
+      }
+      
+      return {
+        ...favorite,
+        // 帖子基本信息
+        postId: post._id,
+        postTitle: post.title,
+        postContent: post.content,
+        postImageUrls: post.imageUrls,
+        postOriginalImageUrls: post.originalImageUrls,
+        postCreateTime: post.createTime,
+        postAuthorName: user ? user.nickName : '未知用户',
+        postAuthorAvatar: user ? user.avatarUrl : '',
+        postAuthorOpenid: post._openid,
+        postTags: post.tags || [],
+        postIsPoem: post.isPoem || false,
+        postAuthor: post.author || '',
+        postIsOriginal: post.isOriginal || false,
+        // 前端期望的字段 - 与getAllFavorites保持一致
+        _id: post._id,
+        title: post.title,
+        content: post.content,
+        imageUrls: post.imageUrls,
+        originalImageUrls: post.originalImageUrls,
+        createTime: post.createTime,
+        votes: post.votes || 0,
+        authorName: user ? user.nickName : '未知用户',
+        authorAvatar: user ? user.avatarUrl : '',
+        _openid: post._openid,
+        tags: post.tags || [],
+        isPoem: post.isPoem || false,
+        author: post.author || '',
+        isOriginal: post.isOriginal || false,
+        favoriteTime: favorite.createTime,
+        favoriteId: favorite._id
+      };
+    }).filter(item => item !== null);
+
+    // 处理图片URL转换 - 与getPostList保持一致，收集所有可能的图片字段
+    const fileIDSet = new Set();
+    completeFavorites.forEach(favorite => {
+      // 处理帖子图片URL
+      if (favorite.imageUrls && Array.isArray(favorite.imageUrls)) {
+        favorite.imageUrls.forEach(url => {
+          if (url && url.startsWith('cloud://')) {
+            fileIDSet.add(url);
+          }
+        });
+      }
+      if (favorite.originalImageUrls && Array.isArray(favorite.originalImageUrls)) {
+        favorite.originalImageUrls.forEach(url => {
+          if (url && url.startsWith('cloud://')) {
+            fileIDSet.add(url);
+          }
+        });
+      }
+      // 处理头像URL
+      if (favorite.authorAvatar && favorite.authorAvatar.startsWith('cloud://')) {
+        fileIDSet.add(favorite.authorAvatar);
+      }
+      if (favorite.postAuthorAvatar && favorite.postAuthorAvatar.startsWith('cloud://')) {
+        fileIDSet.add(favorite.postAuthorAvatar);
+      }
+    });
+
+    // 批量获取临时URL
+    if (fileIDSet.size > 0) {
+      const fileIDs = Array.from(fileIDSet);
+      try {
+        console.log('开始获取临时URL，文件数量:', fileIDs.length);
+        const fileListResult = await cloud.getTempFileURL({ fileList: fileIDs });
+        console.log('临时URL获取结果:', fileListResult);
+        
+        const tempFileURLs = fileListResult.fileList.map(item => ({
+          fileID: item.fileID,
+          tempFileURL: item.status === 0 ? item.tempFileURL : null,
+          status: item.status,
+          errMsg: item.errMsg
+        }));
+
+        // 记录失败的URL转换
+        const failedURLs = tempFileURLs.filter(item => item.status !== 0);
+        if (failedURLs.length > 0) {
+          console.error('部分文件URL转换失败:', failedURLs);
+        }
+
+        const tempURLMap = new Map();
+        tempFileURLs.forEach(({ fileID, tempFileURL }) => {
+          if (tempFileURL) {
+            tempURLMap.set(fileID, tempFileURL);
+          }
+        });
+
+        console.log('成功转换的URL数量:', tempURLMap.size);
+
+      // 替换图片URL和头像URL - 与getAllFavorites保持一致
+      completeFavorites.forEach(favorite => {
+        if (favorite.imageUrls && Array.isArray(favorite.imageUrls)) {
+          favorite.imageUrls = favorite.imageUrls.map(url => {
+            return tempURLMap.has(url) ? tempURLMap.get(url) : url;
+          });
+        }
+        if (favorite.originalImageUrls && Array.isArray(favorite.originalImageUrls)) {
+          favorite.originalImageUrls = favorite.originalImageUrls.map(url => {
+            return tempURLMap.has(url) ? tempURLMap.get(url) : url;
+          });
+        }
+        if (favorite.authorAvatar && tempURLMap.has(favorite.authorAvatar)) {
+          favorite.authorAvatar = tempURLMap.get(favorite.authorAvatar);
+        }
+        if (favorite.postAuthorAvatar && tempURLMap.has(favorite.postAuthorAvatar)) {
+          favorite.postAuthorAvatar = tempURLMap.get(favorite.postAuthorAvatar);
+        }
+      });
+      } catch (fileError) {
+        console.error('获取临时文件URL失败:', fileError);
+        // 即使文件URL转换失败，也继续返回数据
+      }
+    }
+
     return {
       success: true,
-      favorites: result.data
+      favorites: completeFavorites
     };
   } catch (error) {
     console.error('获取收藏内容失败:', error);

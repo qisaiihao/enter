@@ -22,29 +22,56 @@
 }
 
 .favorites-container {
-  margin-bottom: 20rpx;
+  margin: 0 30rpx 30rpx 30rpx;
 }
 
-.favorite-item {
-  width: 100%;
-  padding: 30rpx;
-  margin-bottom: 20rpx;
-  background-color: #ffffff;
+/* 新增：帖子项包装器样式 */
+.post-item-wrapper {
+  background: #fff;
   border-radius: 16rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
-  box-sizing: border-box;
-  transition: transform 0.2s ease;
+  margin-bottom: 20rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+/* 原创帖子特殊样式 */
+.post-item-wrapper.original-post {
+  border: 3rpx solid #ebc88d;
+  box-shadow: 0 4rpx 20rpx rgba(235, 200, 141, 0.3), 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
   position: relative;
 }
 
-.favorite-item:active {
-  transform: scale(0.98);
+/* 原创帖子光影效果 */
+.post-item-wrapper.original-post::before {
+  content: '';
+  position: absolute;
+  top: -2rpx;
+  left: -2rpx;
+  right: -2rpx;
+  bottom: -2rpx;
+  background: linear-gradient(45deg, #ebc88d, #f4d03f, #ebc88d);
+  border-radius: 18rpx;
+  z-index: -1;
+  opacity: 0.6;
+  filter: blur(8rpx);
 }
 
-.author-info {
+/* 新增：内容导航器样式 */
+.post-content-navigator {
+  display: block;
+  background: transparent;
+}
+
+/* 新增：导航器点击效果 */
+.navigator-hover {
+  opacity: 0.8;
+}
+
+/* 作者信息样式 */
+.author-info-outside {
   display: flex;
   align-items: center;
-  margin-bottom: 15rpx;
+  margin-bottom: 20rpx;
 }
 
 .author-avatar {
@@ -55,20 +82,10 @@
   background-color: #f5f5f5;
 }
 
-.author-details {
-  flex: 1;
-}
-
 .author-name {
   font-size: 28rpx;
   color: #333;
   font-weight: 500;
-}
-
-.post-time {
-  font-size: 24rpx;
-  color: #999;
-  margin-top: 4rpx;
 }
 
 .post-title {
@@ -85,6 +102,14 @@
   -webkit-box-orient: vertical;
 }
 
+/* 诗歌作者信息 */
+.poem-author {
+  font-size: 26rpx;
+  color: #666;
+  font-style: italic;
+  margin-bottom: 10rpx;
+}
+
 .post-content {
   font-size: 26rpx;
   color: #666666;
@@ -97,4 +122,142 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   white-space: pre-wrap;
+}
+
+/* 图片容器样式 - 与首页保持一致 */
+.image-container-wrapper {
+  position: relative;
+  width: 100%;
+  background-color: #f0f0f0; /* 占位时的背景色，很重要 */
+  overflow: hidden;
+  border-radius: 8px; /* 可以加个圆角，让占位块更好看 */
+  margin: 20rpx 0; /* 图片和下方内容的间距 */
+}
+
+/* 让图片或Swiper填充整个占位容器 */
+.image-container-wrapper .post-image,
+.image-container-wrapper .image-swiper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.post-image {
+  transition: transform 0.3s ease;
+}
+
+.post-image:active {
+  transform: scale(1.05);
+}
+
+.image-swiper {
+  width: 100%;
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+
+/* 标签样式 - 与首页和详情页保持一致 */
+.post-tags {
+  margin-top: 30rpx;
+  margin-bottom: 10rpx;
+  line-height: 1.5;
+}
+
+.post-tag {
+  color: #24375f;
+  font-size: 26rpx;
+  margin-right: 10rpx;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.post-tag:active {
+  color: #1a2a4a;
+  opacity: 0.8;
+}
+
+/* 删除/操作按钮区域 */
+.delete-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.time-left {
+  flex: 1;
+}
+
+.favorite-time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.button-group {
+  display: flex;
+  gap: 10rpx;
+}
+
+.remove-favorite-btn {
+  background: #ff4757;
+  color: white;
+  border: none;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  padding: 8rpx 16rpx;
+}
+
+.remove-favorite-btn:active {
+  background: #ff3742;
+}
+
+/* 加载更多样式 */
+.loading-more {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30rpx;
+  color: #999;
+  font-size: 28rpx;
+}
+
+.no-more {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30rpx;
+  color: #999;
+  font-size: 28rpx;
+}
+
+/* 空状态样式 */
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 30rpx;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+  opacity: 0.5;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+}
+
+.empty-subtext {
+  font-size: 26rpx;
+  color: #999;
 }

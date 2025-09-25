@@ -104,14 +104,32 @@ Page({
       },
       success: res => {
         clearTimeout(loadTimeout);
+        console.log('云函数调用成功，返回结果:', res);
+        console.log('res.result:', res.result);
 
         if (res.result && res.result.success) {
           const newFavorites = res.result.favorites || [];
+          console.log('【收藏夹】获取到的收藏数据:', newFavorites);
 
-          // 格式化时间
-          newFavorites.forEach(favorite => {
+          // 格式化时间和设置图片样式
+          newFavorites.forEach((favorite, index) => {
             favorite.formattedCreateTime = this.formatTime(favorite.createTime);
             favorite.formattedPostCreateTime = this.formatTime(favorite.postCreateTime);
+            
+            // 调试日志：检查图片数据
+            console.log(`【收藏夹】帖子${index}图片数据:`, {
+              postId: favorite._id,
+              postTitle: favorite.title,
+              imageUrls: favorite.imageUrls,
+              originalImageUrls: favorite.originalImageUrls,
+              hasImageUrls: !!(favorite.imageUrls && favorite.imageUrls.length > 0)
+            });
+            
+            // 设置图片样式占位符（与我的页面保持一致）
+            if (favorite.imageUrls && favorite.imageUrls.length > 0) {
+              favorite.imageStyle = `height: 0; padding-bottom: 75%;`; // 4:3 宽高比占位
+              console.log(`【收藏夹】设置图片样式:`, favorite.imageStyle);
+            }
           });
 
           const allFavorites = this.data.page === 0 ? newFavorites : this.data.favorites.concat(newFavorites);
@@ -132,6 +150,7 @@ Page({
       },
       fail: err => {
         clearTimeout(loadTimeout);
+        console.error('云函数调用失败:', err);
         wx.showToast({ title: '网络错误', icon: 'none' });
         this.setData({ isLoading: false });
       },
@@ -196,7 +215,12 @@ Page({
   },
 
   // 取消收藏
-  removeFavorite: function(favoriteId, postTitle) {
+  removeFavorite: function(e) {
+    const favoriteId = e.currentTarget.dataset.favoriteId;
+    const index = e.currentTarget.dataset.index;
+    const favorite = this.data.favorites[index];
+    const postTitle = favorite ? favorite.postTitle : '未知标题';
+    
     wx.showModal({
       title: '确认取消收藏',
       content: `确定要取消收藏"${postTitle}"吗？`,
@@ -256,22 +280,23 @@ Page({
 
   // 图片加载错误处理（与点赞页面统一）
   onImageError: function(e) {
-    console.error('图片加载失败', e);
+    console.error('【收藏夹】图片加载失败', e);
     const { src } = e.detail;
-    console.error('失败的图片URL:', src);
+    console.error('【收藏夹】失败的图片URL:', src);
     // 获取当前图片的上下文信息
     const { postindex, imgindex } = e.currentTarget.dataset;
     if (postindex !== undefined && imgindex !== undefined) {
       const favorite = this.data.favorites[postindex];
-      console.error('图片加载失败的上下文:', {
-        postId: favorite ? favorite.postId : 'unknown',
-        postTitle: favorite ? favorite.postTitle : 'unknown',
+      console.error('【收藏夹】图片加载失败的上下文:', {
+        postId: favorite ? favorite._id : 'unknown',
+        postTitle: favorite ? favorite.title : 'unknown',
         imageIndex: imgindex,
-        imageUrl: src
+        imageUrl: src,
+        allImageUrls: favorite ? favorite.imageUrls : 'unknown'
       });
     }
     // 不显示toast，避免频繁弹窗，但记录错误
-    console.error('图片加载失败详情:', {
+    console.error('【收藏夹】图片加载失败详情:', {
       error: e.detail,
       src: src,
       dataset: e.currentTarget.dataset
@@ -282,6 +307,15 @@ Page({
   onImageLoad: function(e) {
     const { postid, postindex = 0, imgindex = 0, type } = e.currentTarget.dataset;
     const { width: originalWidth, height: originalHeight } = e.detail;
+    console.log('【收藏夹】图片加载成功:', {
+      postid,
+      postindex,
+      imgindex,
+      type,
+      width: originalWidth,
+      height: originalHeight,
+      src: e.currentTarget.src
+    });
     if (!originalWidth || !originalHeight) return;
 
     // 多图 Swiper 逻辑
@@ -340,5 +374,45 @@ Page({
     if (days < 7) return `${days}天前`;
 
     return date.toLocaleDateString();
+  },
+
+  // 头像加载错误处理
+  onAvatarError: function(e) {
+    console.error('头像加载失败:', e);
+    // 设置默认头像
+    const { postindex } = e.currentTarget.dataset;
+    if (postindex !== undefined) {
+      const favorites = this.data.favorites;
+      if (favorites[postindex]) {
+        favorites[postindex].postAuthorAvatar = '/images/avatar.png'; // 使用默认头像
+        this.setData({ favorites: favorites });
+      }
+    }
+  },
+
+  // 头像加载成功处理
+  onAvatarLoad: function(e) {
+    // 头像加载成功，可以在这里做一些处理
+  },
+
+  // 跳转到用户资料页
+  navigateToUserProfile: function(e) {
+    const userId = e.currentTarget.dataset.userId;
+    if (userId) {
+      wx.navigateTo({
+        url: `/pages/user-profile/user-profile?userId=${userId}`
+      });
+    }
+  },
+
+  // 标签点击处理
+  onTagClick: function(e) {
+    const tag = e.currentTarget.dataset.tag;
+    if (tag) {
+      // 可以跳转到标签页面或搜索页面
+      wx.navigateTo({
+        url: `/pages/search/search?keyword=${encodeURIComponent(tag)}`
+      });
+    }
   }
 });
