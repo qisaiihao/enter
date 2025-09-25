@@ -14,17 +14,17 @@ function getLikeIcon(votes, isVoted) {
   let iconName = '';
   
   if (votes <= 3) {
-    // 3以下：种子
-    iconName = isVoted ? 'seedplus.png' : 'seed.png';
+    // 3以下：发芽
+    iconName = 'faya.png'; // 暂时点赞前后使用相同图标
   } else if (votes <= 7) {
-    // 4-7：叶子
-    iconName = isVoted ? 'leafplus.png' : 'leaf.png';
+    // 4-7：长叶
+    iconName = 'zhangye.png'; // 暂时点赞前后使用相同图标
   } else if (votes <= 15) {
-    // 8-15：花
-    iconName = isVoted ? 'flowerplus .png' : 'flower.png';
+    // 8-15：开花
+    iconName = 'kaihua.png'; // 暂时点赞前后使用相同图标
   } else {
-    // 15以上：果实
-    iconName = isVoted ? 'peachplus.png' : 'peach.png';
+    // 15以上：结果
+    iconName = 'jieguo.png'; // 暂时点赞前后使用相同图标
   }
   
   return basePath + iconName;
@@ -37,13 +37,13 @@ function getLikeIcon(votes, isVoted) {
  */
 function getLikeIconDescription(votes) {
   if (votes <= 3) {
-    return '种子';
+    return '发芽';
   } else if (votes <= 7) {
-    return '叶子';
+    return '长叶';
   } else if (votes <= 15) {
-    return '花';
+    return '开花';
   } else {
-    return '果实';
+    return '结果';
   }
 }
 

@@ -204,16 +204,23 @@
 }
 
 .remove-favorite-btn {
-  background: #ff4757;
-  color: white;
+  background-color: #f39c12;
+  color: #fff;
   border: none;
   border-radius: 8rpx;
   font-size: 24rpx;
   padding: 8rpx 16rpx;
+  line-height: 1.2;
+  min-width: 100rpx;
+  transition: background-color 0.2s ease;
 }
 
 .remove-favorite-btn:active {
-  background: #ff3742;
+  background-color: #e67e22;
+}
+
+.remove-favorite-btn::after {
+  border: none;
 }
 
 /* 加载更多样式 */

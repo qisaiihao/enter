@@ -1,9 +1,13 @@
 /* pages/profile/profile.wxss */
 .container {
   width: 100%;
-  /* height: 100vh; */
-  /* overflow: hidden; */
+  height: 100vh;
   background-color: #f7f8fa;
+}
+
+.scroll-container {
+  width: 100%;
+  height: 100%;
 }
 
 .sidebar-mask {
@@ -284,38 +288,87 @@
   padding: 0 10rpx;
 }
 
-.post-card {
+/* 新增：帖子项包装器样式 */
+.post-item-wrapper {
   background: #fff;
   border-radius: 16rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
   margin-bottom: 20rpx;
-  box-sizing: border-box;
   padding: 30rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
 }
 
-.post-card:active {
-  transform: translateY(2rpx);
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+/* 原创帖子特殊样式 */
+.post-item-wrapper.original-post {
+  border: 3rpx solid #ebc88d;
+  box-shadow: 0 4rpx 20rpx rgba(235, 200, 141, 0.3), 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+  position: relative;
 }
 
-.post-content-area {
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+/* 原创帖子光影效果 */
+.post-item-wrapper.original-post::before {
+  content: '';
+  position: absolute;
+  top: -2rpx;
+  left: -2rpx;
+  right: -2rpx;
+  bottom: -2rpx;
+  background: linear-gradient(45deg, #ebc88d, #f4d03f, #ebc88d);
+  border-radius: 18rpx;
+  z-index: -1;
+  opacity: 0.6;
+  filter: blur(8rpx);
 }
 
-.post-content-area:active {
+/* 新增：内容导航器样式 */
+.post-content-navigator {
+  display: block;
+  background: transparent;
+}
+
+/* 新增：导航器点击效果 */
+.navigator-hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* 外部作者信息样式 */
+.author-info-outside {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 30rpx 10rpx 30rpx;
+  background: #fff;
+  border-radius: 16rpx 16rpx 0 0;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
+}
+
+.author-info-outside .author-avatar {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  margin-right: 15rpx;
   background-color: #f5f5f5;
+  cursor: pointer;
 }
 
-.post-header {
-  padding: 0; /* 主页是无padding的 */
-  margin-bottom: 10rpx;
+.author-info-outside .author-name {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.post-item {
+  width: 100%;
+  background: #fff;
+  border-radius: 0 0 16rpx 16rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
+  box-sizing: border-box;
+  padding: 20rpx 30rpx 30rpx 30rpx;
 }
 
 .post-title {
-  font-size: 32rpx;
+  font-size: 36rpx;
   font-weight: bold;
-  color: #333;
+  color: #333333;
+  margin-bottom: 15rpx;
   line-height: 1.4;
   word-break: break-word;
   overflow: hidden;
@@ -325,15 +378,40 @@
   -webkit-box-orient: vertical;
 }
 
-/* 图片容器样式 */
-.image-container {
-  width: 100%;
-  margin: 15rpx 0;
+/* 诗歌作者样式 */
+.poem-author {
+  font-size: 32rpx;
+  color: #000;
+  text-align: center;
+  margin: 5rpx 0 15rpx 0;
+  letter-spacing: 2rpx;
 }
 
+/* 新增：图片容器占位样式 */
+.image-container-wrapper {
+  position: relative;
+  width: 100%;
+  background-color: #f0f0f0; /* 占位时的背景色，很重要 */
+  overflow: hidden;
+  border-radius: 8px; /* 可以加个圆角，让占位块更好看 */
+  margin: 20rpx 0; /* 图片和下方内容的间距 */
+}
+
+/* 新增：让图片或Swiper填充整个占位容器 */
+.image-container-wrapper .post-image,
+.image-container-wrapper .image-swiper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 多张图片的swiper样式 */
 .image-swiper {
   width: 100%;
   background-color: #fff;
+  /* 高度由 style 绑定动态设置 */
 }
 
 .swiper-item {
@@ -351,12 +429,15 @@
   object-fit: contain;
 }
 
+.post-image:active {
+  transform: scale(1.05);
+}
+
 .post-content {
-  padding: 20rpx 30rpx;
   font-size: 28rpx;
-  color: #666;
-  line-height: 1.5;
-  margin-bottom: 10rpx;
+  color: #666666;
+  line-height: 1.6;
+  margin-top: 15rpx;
   word-break: break-word;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -365,45 +446,51 @@
   -webkit-box-orient: vertical;
 }
 
-.post-actions {
+/* 删除按钮区域样式 */
+.delete-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20rpx 30rpx 30rpx 30rpx;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
   border-top: 1rpx solid #f0f0f0;
-  background-color: #fff;
 }
 
-.action-left {
+.time-left {
+  /* 左侧时间区域，保持原有样式 */
+}
+
+.button-group {
   display: flex;
   align-items: center;
-  gap: 30rpx;
 }
 
-.action-item {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  transition: opacity 0.2s ease;
-}
+/* 删除不再需要的 .delete-btn-container 样式 */
 
-.action-item:active {
-  opacity: 0.7;
-}
-
-.action-icon {
-  width: 32rpx;
-  height: 32rpx;
-}
-
-.action-text {
-  font-size: 26rpx;
+.favorite-time,
+.post-time {
+  font-size: 24rpx;
   color: #999;
 }
 
-.action-right {
-  display: flex;
-  align-items: center;
+/* 标签样式 */
+.post-tags {
+  margin-top: 30rpx;
+  margin-bottom: 10rpx;
+  line-height: 1.5;
+}
+
+.post-tag {
+  color: #24375f;
+  font-size: 26rpx;
+  margin-right: 10rpx;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.post-tag:active {
+  color: #1a2a4a;
+  opacity: 0.8;
 }
 
 .delete-btn {
@@ -564,5 +651,13 @@
   color: #666;
   margin-right: 20rpx;
   white-space: nowrap;
+}
+
+/* 底部加载状态样式 */
+.loading-footer {
+  text-align: center;
+  padding: 20rpx 0;
+  color: #999;
+  font-size: 14px;
 }
 

@@ -1,0 +1,70 @@
+<!-- test.wxml -->
+<view class="container">
+
+
+  <!-- 骨架屏：当 isLoading 为 true 时显示 -->
+  <view wx:if="{{isLoading}}">
+    <skeleton />
+  </view>
+
+  <!-- 真实内容：当 isLoading 为 false 时显示 -->
+  <view wx:else class="square-mode-container">
+    <view wx:if="{{postList.length === 0 && !isLoading}}" class="empty-state">
+      <view class="empty-icon">📝</view>
+      <view class="empty-text">还没有帖子哦～</view>
+      <view class="empty-subtext">快来发布第一条帖子吧！</view>
+    </view>
+    
+    <view id="post-list-container">
+      <view 
+        wx:for="{{postList}}" 
+        wx:key="_id" 
+        wx:for-index="index"
+        class="post-item-wrapper"
+        style="background-color: {{item.backgroundColor}};"
+      >
+      
+      <!-- 可点击的内容区域 - 展开/收起 -->
+      <view 
+        class="post-content-navigator"
+        bindtap="togglePostExpansion"
+        data-index="{{index}}"
+        hover-class="navigator-hover"
+      >
+        <view class="post-item">
+          <view class="post-content {{item.isExpanded ? 'expanded' : 'collapsed'}}" wx:if="{{item.content}}" style="white-space: pre-wrap; color: {{item.textColor}};">{{item.content}}</view>
+        </view>
+      </view>
+
+      <!-- 独立的互动区域 - 只在展开时显示 -->
+      <view class="vote-section" wx:if="{{item.isExpanded}}" style="background-color: {{item.backgroundColor}};">
+        <view class="actions-left">
+          <view class="like-icon-container" catch:tap="onVote" data-postid="{{item._id}}" data-index="{{index}}">
+            <image class="like-icon" src="{{item.likeIcon || '/images/faya.png'}}" mode="aspectFit" binderror="onLikeIconError"></image>
+          </view>
+          <view class="comment-count" catch:tap="onCommentClick" data-postid="{{item._id}}">
+            <image class="comment-icon" src="/images/pinglun.PNG" mode="aspectFit"></image>
+          </view>
+        </view>
+        <view class="button-group">
+          <!-- 右侧留空，保持布局平衡 -->
+        </view>
+      </view>
+    </view>
+    </view>
+    
+    <!-- 加载提示 -->
+    <view class="loading-footer">
+      <block wx:if="{{isLoadingMore}}">
+        <text>正在加载...</text>
+      </block>
+      <block wx:elif="{{!hasMore && postList.length > 0}}">
+        <text>--- 我是有底线的 ---</text>
+      </block>
+    </view>
+  </view>
+
+</view>
+
+<!-- 自定义tabBar -->
+<custom-tabbar />

@@ -1,0 +1,11 @@
+{
+  "usingComponents": {
+    "skeleton": "/components/skeleton/skeleton",
+    "custom-tabbar": "/custom-tab-bar/index"
+  },
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "white",
+  "navigationBarTitleText": ""
+}

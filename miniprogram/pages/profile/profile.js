@@ -15,6 +15,7 @@ Page({
     imageClampHeights: {}, // 单图瘦高图钳制高度
     _hasFirstShow: false, // 新增：标记是否首次进入
     unreadCount: 0, // 未读消息数量
+    isLoadingMore: false, // 是否正在加载更多
     
     // 新增：标签切换相关
     currentTab: 'posts', // 'posts' | 'favorites'
@@ -82,6 +83,7 @@ Page({
         myPosts: [],
         page: 0,
         hasMore: true,
+        isLoadingMore: false,
         swiperHeights: {},
         imageClampHeights: {},
       });
@@ -93,6 +95,7 @@ Page({
         favoriteList: [],
         favoritePage: 0,
         favoriteHasMore: true,
+        favoriteLoading: false,
         swiperHeights: {},
         imageClampHeights: {},
       });
@@ -298,11 +301,13 @@ Page({
   },
 
   loadMyPosts: function (cb) {
-    // 移除阻止重复调用的条件判断，允许在onShow时刷新数据
-    // if (this.data.isLoading) return;
     const { page, PAGE_SIZE } = this.data;
     console.log('【profile】请求分页参数', { page, PAGE_SIZE, skip: page * PAGE_SIZE, limit: PAGE_SIZE });
-    this.setData({ isLoading: true });
+    
+    // 只有在首次加载时才显示骨架屏
+    if (page === 0) {
+      this.setData({ isLoading: true });
+    }
     
     wx.cloud.callFunction({
       name: 'getMyProfileData',
@@ -317,6 +322,10 @@ Page({
           posts.forEach(post => {
             if (post.createTime) {
               post.formattedCreateTime = this.formatTime(post.createTime);
+            }
+            // 为每个帖子设置默认的图片样式
+            if (post.imageUrls && post.imageUrls.length > 0) {
+              post.imageStyle = `height: 0; padding-bottom: 75%;`; // 4:3 宽高比占位
             }
           });
           const newMyPosts = page === 0 ? posts : this.data.myPosts.concat(posts);
@@ -447,6 +456,11 @@ Page({
     // 可以在这里设置默认头像
   },
 
+  // 头像加载成功处理
+  onAvatarLoad: function(e) {
+    // 头像加载成功，可以在这里做一些处理
+  },
+
   // 图片加载错误处理
   onImageError: function(e) {
     console.error('图片加载失败:', e.detail);
@@ -472,17 +486,17 @@ Page({
 
   // 统一图片自适应/钳制逻辑
   onImageLoad: function(e) {
-    const { postindex, imgindex = 0, type } = e.currentTarget.dataset;
-    const { width, height } = e.detail;
-    if (!width || !height) return;
+    const { postid, postindex = 0, imgindex = 0, type } = e.currentTarget.dataset;
+    const { width: originalWidth, height: originalHeight } = e.detail;
+    if (!originalWidth || !originalHeight) return;
 
-    // 多图
+    // 多图 Swiper 逻辑
     if (type === 'multi' && imgindex === 0) {
       const query = wx.createSelectorQuery().in(this);
-      query.select(`#profile-swiper-img-${postindex}-0`).boundingClientRect(rect => {
+      query.select(`#swiper-${postid}`).boundingClientRect(rect => {
         if (rect && rect.width) {
           const containerWidth = rect.width;
-          const actualRatio = width / height;
+          const actualRatio = originalWidth / originalHeight;
           const maxRatio = 16 / 9;
           const minRatio = 9 / 16;
           let targetRatio = actualRatio;
@@ -497,16 +511,16 @@ Page({
     }
     // 单图
     if (type === 'single') {
-      const actualRatio = width / height;
+      const actualRatio = originalWidth / originalHeight;
       const minRatio = 9 / 16;
       if (actualRatio < minRatio) {
         const query = wx.createSelectorQuery().in(this);
-        query.select(`#profile-single-img-${postindex}`).boundingClientRect(rect => {
+        query.select(`#single-image-${postid}`).boundingClientRect(rect => {
           if (rect && rect.width) {
             const containerWidth = rect.width;
             const displayHeight = containerWidth / minRatio;
-            if (this.data.imageClampHeights[postindex] !== displayHeight) {
-              this.setData({ [`imageClampHeights.${postindex}`]: displayHeight });
+            if (this.data.imageClampHeights[postid] !== displayHeight) {
+              this.setData({ [`imageClampHeights.${postid}`]: displayHeight });
             }
           }
         }).exec();
@@ -605,9 +619,34 @@ Page({
     
     this.setData({ currentTab: tab });
     
-    if (tab === 'favorites' && this.data.favoriteList.length === 0) {
-      // 首次加载收藏数据
-      this.loadFavorites();
+    if (tab === 'posts') {
+      // 切换到我的帖子标签
+      if (this.data.myPosts.length === 0) {
+        // 首次加载帖子数据
+        this.setData({
+          myPosts: [],
+          page: 0,
+          hasMore: true,
+          isLoadingMore: false,
+          swiperHeights: {},
+          imageClampHeights: {},
+        });
+        this.loadMyPosts();
+      }
+    } else if (tab === 'favorites') {
+      // 切换到收藏标签
+      if (this.data.favoriteList.length === 0) {
+        // 首次加载收藏数据
+        this.setData({
+          favoriteList: [],
+          favoritePage: 0,
+          favoriteHasMore: true,
+          favoriteLoading: false,
+          swiperHeights: {},
+          imageClampHeights: {},
+        });
+        this.loadFavorites();
+      }
     }
   },
 
@@ -634,10 +673,14 @@ Page({
           const favorites = res.result.favorites || [];
           console.log('【profile】本次返回收藏数量:', favorites.length);
           
-          // 格式化时间
+          // 格式化时间和设置图片样式
           favorites.forEach(favorite => {
             if (favorite.favoriteTime) {
               favorite.formattedFavoriteTime = this.formatTime(favorite.favoriteTime);
+            }
+            // 为每个收藏的帖子设置默认的图片样式
+            if (favorite.imageUrls && favorite.imageUrls.length > 0) {
+              favorite.imageStyle = `height: 0; padding-bottom: 75%;`; // 4:3 宽高比占位
             }
           });
           
@@ -722,5 +765,30 @@ Page({
     wx.navigateTo({
       url: '/pages/image-manager/image-manager'
     });
+  },
+
+  // 滚动到底部触发加载更多
+  onScrollToLower: function() {
+    console.log('【profile】滚动到底部，当前标签:', this.data.currentTab);
+    
+    if (this.data.currentTab === 'posts') {
+      // 我的帖子标签页
+      if (this.data.hasMore && !this.data.isLoadingMore && !this.data.isLoading) {
+        console.log('【profile】开始加载更多帖子');
+        this.setData({ isLoadingMore: true });
+        this.loadMyPosts(() => {
+          this.setData({ isLoadingMore: false });
+          console.log('【profile】加载更多帖子完成');
+        });
+      }
+    } else if (this.data.currentTab === 'favorites') {
+      // 收藏标签页
+      if (this.data.favoriteHasMore && !this.data.favoriteLoading) {
+        console.log('【profile】开始加载更多收藏');
+        this.loadFavorites(() => {
+          console.log('【profile】加载更多收藏完成');
+        });
+      }
+    }
   }
 });

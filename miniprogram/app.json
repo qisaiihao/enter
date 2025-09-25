@@ -4,6 +4,7 @@
     "pages/login/login",
     "pages/my-likes/my-likes",
     "pages/index/index",
+    "pages/test/test",
     "pages/poem/poem",
     "pages/mountain/mountain",
     "pages/profile/profile",
@@ -19,9 +20,9 @@
     "pages/search/search"
   ],
   "window": {
-    "backgroundColor": "#F6F6F6",
-    "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#F6F6F6",
+    "backgroundColor": "#ffffff",
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTitleText": "回车键",
     "navigationBarTextStyle": "black"
   },
@@ -34,27 +35,19 @@
     "list": [
       {
         "pagePath": "pages/index/index",
-        "text": "广场",
-        "iconPath": "images/market.png",
-        "selectedIconPath": "images/marketplus.png"
+        "text": "广场"
       },
       {
         "pagePath": "pages/poem/poem",
-        "text": "路",
-        "iconPath": "images/road.png",
-        "selectedIconPath": "images/roadplus.png"
+        "text": "路"
       },
       {
         "pagePath": "pages/mountain/mountain",
-        "text": "山",
-        "iconPath": "images/mountain.png",
-        "selectedIconPath": "images/mountainplus.png"
+        "text": "山"
       },
       {
         "pagePath": "pages/profile/profile",
-        "text": "湖",
-        "iconPath": "images/pools.png",
-        "selectedIconPath": "images/poolsplus.png"
+        "text": "湖"
       }
     ]
   },

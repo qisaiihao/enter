@@ -6,7 +6,15 @@
   </view>
 
   <!-- 真实内容：当 isLoading 为 false 时，显示真实页面 -->
-  <view wx:else>
+  <scroll-view 
+    wx:else
+    class="scroll-container"
+    scroll-y="{{true}}"
+    bindscrolltolower="onScrollToLower"
+    lower-threshold="100"
+    enhanced="{{true}}"
+    show-scrollbar="{{false}}"
+  >
     <!-- Sidebar Mask -->
     <view class="sidebar-mask" wx:if="{{isSidebarOpen}}" bindtap="toggleSidebar"></view>
 
@@ -69,77 +77,110 @@
       <view class="my-posts-section" wx:if="{{currentTab === 'posts'}}">
         <block wx:if="{{myPosts.length > 0}}">
           <!-- ... 你的帖子循环代码保持不变 ... -->
-          <view wx:for="{{myPosts}}" wx:key="_id" class="post-card" bind:tap="navigateToPostDetail" data-id="{{item._id}}" hover-class="post-item-active">
-            <!-- ...卡片内部结构... -->
-             <view class="author-info">
-              <image wx:if="{{item.authorAvatar}}" class="author-avatar" src="{{item.authorAvatar}}" mode="aspectFill" />
+          <view 
+            wx:for="{{myPosts}}" 
+            wx:key="_id" 
+            wx:for-index="index"
+            class="post-item-wrapper {{item.isOriginal ? 'original-post' : ''}}"
+          >
+            <!-- 作者信息 -->
+            <view class="author-info-outside">
+              <image wx:if="{{item.authorAvatar}}" class="author-avatar" src="{{item.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindload="onAvatarLoad" data-postindex="{{index}}" catch:tap="navigateToUserProfile" data-user-id="{{item._openid}}"></image>
               <text class="author-name">{{item.authorName}}</text>
             </view>
-            <view class="post-header">
-              <text class="post-title">{{item.title}}</text>
-            </view>
-            <view class="image-container">
-              <block wx:if="{{item.imageUrls && item.imageUrls.length > 1}}">
-                <swiper id="profile-swiper-{{index}}" class="image-swiper" indicator-dots="true" circular="false" autoplay="false" style="width: 100%; height: {{swiperHeights[index] ? swiperHeights[index] + 'px' : '220px'}};">
-                  <block wx:for="{{item.imageUrls}}" wx:for-item="imageUrl" wx:key="*this" wx:for-index="imgindex">
-                    <swiper-item>
-                      <image
-                        id="profile-swiper-img-{{index}}-{{imgindex}}"
-                        class="post-image"
-                        src="{{imageUrl}}"
-                        mode="aspectFill"
-                        catch:tap="handlePreview"
-                        data-src="{{imageUrl}}"
-                        data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}"
-                        binderror="onImageError"
-                        bindload="onImageLoad"
-                        data-postindex="{{index}}"
-                        data-imgindex="{{imgindex}}"
-                        data-type="multi"
-                        lazy-load="{{true}}"
-                        style="width: 100%; height: 100%; object-fit: cover; background-color: #f0f0f0;"
-                      ></image>
-                    </swiper-item>
+            
+            <!-- 可点击的内容区域 - 跳转到详情页 -->
+            <navigator 
+              class="post-content-navigator"
+              url="/pages/post-detail/post-detail?id={{item._id}}"
+              hover-class="navigator-hover"
+            >
+              <view class="post-item">
+                <view class="post-title">{{item.title}}</view>
+                <!-- 诗歌作者信息 -->
+                <view wx:if="{{item.isPoem && item.author}}" class="poem-author">{{item.author}}</view>
+                
+                <!-- 图片显示逻辑 (已优化，使用 imageStyle 占位) -->
+                <view wx:if="{{(item.imageUrls && item.imageUrls.length > 0)}}" 
+                      class="image-container-wrapper" 
+                      style="{{item.imageStyle}}" 
+                      catch:tap="handlePreview" 
+                      data-src="{{item.imageUrls[0]}}"
+                      data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}">
+
+                  <!-- 单张图片 -->
+                  <block wx:if="{{item.imageUrls.length === 1}}">
+                    <image
+                      id="single-image-{{item._id}}"
+                      class="post-image"
+                      src="{{item.imageUrls[0]}}"
+                      mode="aspectFill"
+                      lazy-load="{{true}}"
+                      binderror="onImageError"
+                      bindload="onImageLoad"
+                      data-postid="{{item._id}}"
+                      data-postindex="{{index}}"
+                      data-imgindex="0"
+                      data-type="single"
+                    />
                   </block>
-                </swiper>
-              </block>
-              <block wx:elif="{{item.imageUrls && item.imageUrls.length === 1}}">
-                <image
-                  id="profile-single-img-{{index}}"
-                  class="post-image"
-                  src="{{item.imageUrls[0]}}"
-                  mode="{{imageClampHeights[index] ? 'aspectFill' : 'widthFix'}}"
-                  catch:tap="handlePreview"
-                  data-src="{{item.imageUrls[0]}}"
-                  data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}"
-                  binderror="onImageError"
-                  bindload="onImageLoad"
-                  data-postindex="{{index}}"
-                  data-imgindex="0"
-                  data-type="single"
-                  lazy-load="{{true}}"
-                  style="width: 100%; height: {{imageClampHeights[index] ? imageClampHeights[index] + 'px' : 'auto'}}; object-fit: {{imageClampHeights[index] ? 'cover' : 'contain'}}; background-color: #f0f0f0;"
-                ></image>
-              </block>
-            </view>
-            <view class="post-content" wx:if="{{item.content}}" style="white-space: pre-wrap;">{{item.content}}</view>
-            <view class="post-actions" catch:tap="stopPropagation">
-              <view class="action-left">
-                <view class="action-item">
-                  <text class="action-text">👍 {{item.votes || 0}}</text>
+
+                  <!-- 多张图片 -->
+                  <block wx:elif="{{item.imageUrls.length > 1}}">
+                    <swiper id="swiper-{{item._id}}" class="image-swiper" indicator-dots="true" circular="true" style="height: {{swiperHeights[index] ? swiperHeights[index] + 'px' : '220px'}};">
+                      <block wx:for="{{item.imageUrls}}" wx:for-item="img" wx:key="*this" wx:for-index="imgindex">
+                        <swiper-item>
+                          <image
+                            class="post-image"
+                            src="{{img}}"
+                            mode="aspectFill"
+                            lazy-load="{{true}}"
+                            binderror="onImageError"
+                            bindload="onImageLoad"
+                            catch:tap="handlePreview"
+                            data-src="{{img}}"
+                            data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}"
+                            data-postid="{{item._id}}"
+                            data-postindex="{{index}}"
+                            data-imgindex="{{imgindex}}"
+                            data-type="multi"
+                          />
+                        </swiper-item>
+                      </block>
+                    </swiper>
+                  </block>
                 </view>
-                <view class="action-item">
-                  <text class="action-text">💬 {{item.commentCount || 0}}</text>
+                  
+                <view class="post-content" wx:if="{{item.content}}" style="white-space: pre-wrap;">{{item.content}}</view>
+                
+                <!-- 标签显示 -->
+                <view wx:if="{{item.tags && item.tags.length > 0}}" class="post-tags">
+                  <text wx:for="{{item.tags}}" wx:key="index" 
+                        class="post-tag" 
+                        catchtap="onTagClick" 
+                        data-tag="{{item}}">#{{item}}</text>
                 </view>
               </view>
-              <view class="action-right">
+            </navigator>
+
+            <!-- 删除按钮区域 -->
+            <view class="delete-section">
+              <view class="time-left">
+                <text class="post-time">发布于 {{item.formattedCreateTime || '未知时间'}}</text>
+              </view>
+              <view class="button-group">
                 <button class="delete-btn" size="mini" catch:tap="onDelete" data-postid="{{item._id}}" data-index="{{index}}">删除</button>
               </view>
             </view>
           </view>
-          <!-- ... -->
-          <view wx:if="{{isLoading && myPosts.length > 0}}" class="loading-container">
-            <view class="loading-text">加载中...</view>
+          <!-- 加载更多提示 -->
+          <view class="loading-footer">
+            <block wx:if="{{isLoadingMore}}">
+              <text>正在加载...</text>
+            </block>
+            <block wx:elif="{{!hasMore && myPosts.length > 0}}">
+              <text>--- 我是有底线的 ---</text>
+            </block>
           </view>
           <view style="height: 200rpx;"></view>
         </block>
@@ -151,75 +192,110 @@
       <!-- Favorites Section -->
       <view class="favorites-section" wx:if="{{currentTab === 'favorites'}}">
         <block wx:if="{{favoriteList.length > 0}}">
-          <!-- ... 你的收藏循环代码保持不变 ... -->
-          <view wx:for="{{favoriteList}}" wx:key="_id" class="post-card" bind:tap="navigateToFavoriteDetail" data-id="{{item._id}}" hover-class="post-item-active">
-            <!-- ...卡片内部结构... -->
-             <view class="author-info">
-              <image wx:if="{{item.authorAvatar}}" class="author-avatar" src="{{item.authorAvatar}}" mode="aspectFill" />
+          <view 
+            wx:for="{{favoriteList}}" 
+            wx:key="_id" 
+            wx:for-index="index"
+            class="post-item-wrapper {{item.isOriginal ? 'original-post' : ''}}"
+          >
+            <!-- 作者信息 -->
+            <view class="author-info-outside">
+              <image wx:if="{{item.authorAvatar}}" class="author-avatar" src="{{item.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindload="onAvatarLoad" data-postindex="{{index}}" catch:tap="navigateToUserProfile" data-user-id="{{item._openid}}"></image>
               <text class="author-name">{{item.authorName}}</text>
             </view>
-            <view class="post-header">
-              <text class="post-title">{{item.title}}</text>
-            </view>
-            <view class="image-container">
-              <block wx:if="{{item.imageUrls && item.imageUrls.length > 1}}">
-                <swiper id="favorite-swiper-{{index}}" class="image-swiper" indicator-dots="true" circular="false" autoplay="false" style="width: 100%; height: {{swiperHeights[index] ? swiperHeights[index] + 'px' : '220px'}};">
-                  <block wx:for="{{item.imageUrls}}" wx:for-item="imageUrl" wx:key="*this" wx:for-index="imgindex">
-                    <swiper-item>
-                      <image
-                        id="favorite-swiper-img-{{index}}-{{imgindex}}"
-                        class="post-image"
-                        src="{{imageUrl}}"
-                        mode="aspectFill"
-                        catch:tap="handlePreview"
-                        data-src="{{imageUrl}}"
-                        data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}"
-                        binderror="onImageError"
-                        bindload="onImageLoad"
-                        data-postindex="{{index}}"
-                        data-imgindex="{{imgindex}}"
-                        data-type="multi"
-                        lazy-load="{{true}}"
-                        style="width: 100%; height: 100%; object-fit: cover; background-color: #f0f0f0;"
-                      ></image>
-                    </swiper-item>
+            
+            <!-- 可点击的内容区域 - 跳转到详情页 -->
+            <navigator 
+              class="post-content-navigator"
+              url="/pages/post-detail/post-detail?id={{item._id}}"
+              hover-class="navigator-hover"
+            >
+              <view class="post-item">
+                <view class="post-title">{{item.title}}</view>
+                <!-- 诗歌作者信息 -->
+                <view wx:if="{{item.isPoem && item.author}}" class="poem-author">{{item.author}}</view>
+                
+                <!-- 图片显示逻辑 (已优化，使用 imageStyle 占位) -->
+                <view wx:if="{{(item.imageUrls && item.imageUrls.length > 0)}}" 
+                      class="image-container-wrapper" 
+                      style="{{item.imageStyle}}" 
+                      catch:tap="handlePreview" 
+                      data-src="{{item.imageUrls[0]}}"
+                      data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}">
+
+                  <!-- 单张图片 -->
+                  <block wx:if="{{item.imageUrls.length === 1}}">
+                    <image
+                      id="single-image-{{item._id}}"
+                      class="post-image"
+                      src="{{item.imageUrls[0]}}"
+                      mode="aspectFill"
+                      lazy-load="{{true}}"
+                      binderror="onImageError"
+                      bindload="onImageLoad"
+                      data-postid="{{item._id}}"
+                      data-postindex="{{index}}"
+                      data-imgindex="0"
+                      data-type="single"
+                    />
                   </block>
-                </swiper>
-              </block>
-              <block wx:elif="{{item.imageUrls && item.imageUrls.length === 1}}">
-                <image
-                  id="favorite-single-img-{{index}}"
-                  class="post-image"
-                  src="{{item.imageUrls[0]}}"
-                  mode="{{imageClampHeights[index] ? 'aspectFill' : 'widthFix'}}"
-                  catch:tap="handlePreview"
-                  data-src="{{item.imageUrls[0]}}"
-                  data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}"
-                  binderror="onImageError"
-                  bindload="onImageLoad"
-                  data-postindex="{{index}}"
-                  data-imgindex="0"
-                  data-type="single"
-                  lazy-load="{{true}}"
-                  style="width: 100%; height: {{imageClampHeights[index] ? imageClampHeights[index] + 'px' : 'auto'}}; object-fit: {{imageClampHeights[index] ? 'cover' : 'contain'}}; background-color: #f0f0f0;"
-                ></image>
-              </block>
-            </view>
-            <view class="post-content" wx:if="{{item.content}}" style="white-space: pre-wrap;">{{item.content}}</view>
-            <view class="post-actions" catch:tap="stopPropagation">
-              <view class="action-left">
-                <view class="action-item">
-                  <text class="action-text">收藏于 {{item.formattedFavoriteTime || '未知时间'}}</text>
+
+                  <!-- 多张图片 -->
+                  <block wx:elif="{{item.imageUrls.length > 1}}">
+                    <swiper id="swiper-{{item._id}}" class="image-swiper" indicator-dots="true" circular="true" style="height: {{swiperHeights[index] ? swiperHeights[index] + 'px' : '220px'}};">
+                      <block wx:for="{{item.imageUrls}}" wx:for-item="img" wx:key="*this" wx:for-index="imgindex">
+                        <swiper-item>
+                          <image
+                            class="post-image"
+                            src="{{img}}"
+                            mode="aspectFill"
+                            lazy-load="{{true}}"
+                            binderror="onImageError"
+                            bindload="onImageLoad"
+                            catch:tap="handlePreview"
+                            data-src="{{img}}"
+                            data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}"
+                            data-postid="{{item._id}}"
+                            data-postindex="{{index}}"
+                            data-imgindex="{{imgindex}}"
+                            data-type="multi"
+                          />
+                        </swiper-item>
+                      </block>
+                    </swiper>
+                  </block>
+                </view>
+                  
+                <view class="post-content" wx:if="{{item.content}}" style="white-space: pre-wrap;">{{item.content}}</view>
+                
+                <!-- 标签显示 -->
+                <view wx:if="{{item.tags && item.tags.length > 0}}" class="post-tags">
+                  <text wx:for="{{item.tags}}" wx:key="index" 
+                        class="post-tag" 
+                        catchtap="onTagClick" 
+                        data-tag="{{item}}">#{{item}}</text>
                 </view>
               </view>
-              <view class="action-right">
+            </navigator>
+
+            <!-- 取消收藏按钮区域 -->
+            <view class="delete-section">
+              <view class="time-left">
+                <text class="favorite-time">收藏于 {{item.formattedFavoriteTime || '未知时间'}}</text>
+              </view>
+              <view class="button-group">
                 <button class="remove-favorite-btn" size="mini" catch:tap="removeFavorite" data-favorite-id="{{item.favoriteId}}" data-index="{{index}}">取消收藏</button>
               </view>
             </view>
           </view>
-          <!-- ... -->
-          <view wx:if="{{favoriteLoading && favoriteList.length > 0}}" class="loading-container">
-            <view class="loading-text">加载中...</view>
+          <!-- 加载更多提示 -->
+          <view class="loading-footer">
+            <block wx:if="{{favoriteLoading}}">
+              <text>正在加载...</text>
+            </block>
+            <block wx:elif="{{!favoriteHasMore && favoriteList.length > 0}}">
+              <text>--- 我是有底线的 ---</text>
+            </block>
           </view>
           <view style="height: 200rpx;"></view>
         </block>
@@ -228,7 +304,7 @@
         </view>
       </view>
     </view>
-  </view>
+  </scroll-view>
 </view> <!-- 这是为 <view class="container"> 添加的结束标签 -->
 
 <!-- 自定义tabBar -->

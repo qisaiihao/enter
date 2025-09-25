@@ -643,3 +643,52 @@
   font-weight: 500;
 }
 
+/* 测试页提示样式 */
+.test-page-prompt {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20rpx;
+  padding: 60rpx 40rpx;
+  margin: 40rpx 0;
+  text-align: center;
+  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.3);
+}
+
+.test-prompt-icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+}
+
+.test-prompt-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 15rpx;
+}
+
+.test-prompt-text {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 40rpx;
+  line-height: 1.5;
+}
+
+.test-prompt-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
+  border-radius: 25rpx;
+  padding: 20rpx 40rpx;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.test-prompt-button:active {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0.95);
+}
+
+.test-prompt-button text {
+  color: white;
+  font-size: 28rpx;
+  font-weight: 500;
+}
+

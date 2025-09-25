@@ -23,7 +23,7 @@ Page({
     unreadMessageCount: 0, // 未读消息数量
     
     // --- 页面切换相关 ---
-    currentPage: 'home', // 'home' 或 'discover'
+    currentPage: 'home', // 'home'、'discover' 或 'test'
     showPageIndicator: false, // 是否显示页面切换提示
     pageIndicatorText: '', // 切换提示文字
     discoverPostList: [], // 发现页的帖子列表
@@ -124,6 +124,22 @@ Page({
       // 发现页刷新 - 重新获取推荐
       this.refreshDiscoverPosts();
       wx.stopPullDownRefresh();
+    } else if (this.data.currentPage === 'test') {
+      // 测试页刷新 - 跳转到测试页面
+      wx.stopPullDownRefresh();
+      wx.navigateTo({
+        url: '/pages/test/test',
+        success: () => {
+          console.log('跳转到测试页面成功');
+        },
+        fail: (err) => {
+          console.error('跳转到测试页面失败:', err);
+          wx.showToast({
+            title: '跳转失败',
+            icon: 'none'
+          });
+        }
+      });
     }
   },
 
@@ -605,13 +621,23 @@ Page({
     // 只有当水平滑动距离足够大，且滑动角度接近水平（小于45度）时才翻页
     if (distance > 80 && Math.abs(diffX) > 50 && angle < 45) {
       if (diffX > 0) {
-        // 左滑：切换回主页
-        console.log('左滑切换回主页');
-        this.switchToHome();
+        // 左滑：根据当前页面决定切换逻辑
+        if (this.data.currentPage === 'discover') {
+          console.log('左滑从发现页切换回主页');
+          this.switchToHome();
+        } else if (this.data.currentPage === 'test') {
+          console.log('左滑从测试页切换回主页');
+          this.switchToHome();
+        }
       } else {
-        // 右滑：切换到发现页
-        console.log('右滑切换到发现页');
-        this.switchToDiscover();
+        // 右滑：根据当前页面决定切换逻辑
+        if (this.data.currentPage === 'home') {
+          console.log('右滑从主页切换到发现页');
+          this.switchToDiscover();
+        } else if (this.data.currentPage === 'discover') {
+          console.log('右滑从发现页切换到测试页');
+          this.switchToTest();
+        }
       }
     }
   },
@@ -656,6 +682,26 @@ Page({
       currentPage: 'home',
       showPageIndicator: true,
       pageIndicatorText: '主页'
+    });
+    
+    // 3秒后隐藏提示
+    setTimeout(() => {
+      this.setData({ showPageIndicator: false });
+    }, 3000);
+  },
+  
+  // 切换到测试页
+  switchToTest: function() {
+    if (this.data.currentPage === 'test') {
+      console.log('已经在测试页，无需切换');
+      return;
+    }
+    
+    console.log('切换到测试页');
+    this.setData({
+      currentPage: 'test',
+      showPageIndicator: true,
+      pageIndicatorText: '测试页'
     });
     
     // 3秒后隐藏提示
@@ -765,5 +811,23 @@ Page({
     
     // 重新加载数据
     this.getIndexData();
+  },
+
+  // 跳转到测试页面
+  navigateToTestPage: function() {
+    console.log('跳转到测试页面');
+    wx.navigateTo({
+      url: '/pages/test/test',
+      success: () => {
+        console.log('跳转到测试页面成功');
+      },
+      fail: (err) => {
+        console.error('跳转到测试页面失败:', err);
+        wx.showToast({
+          title: '跳转失败',
+          icon: 'none'
+        });
+      }
+    });
   }
 });

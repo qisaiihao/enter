@@ -1,0 +1,232 @@
+/* test.wxss */
+/* 测试页面样式 - 复制主页样式并添加测试页面特有样式 */
+
+
+/* 复制主页的所有样式 */
+.container {
+  min-height: 100vh;
+  background-color: white;
+  position: relative;
+  padding-bottom: 200rpx;
+  box-sizing: border-box;
+}
+
+/* 页面切换提示 */
+.page-indicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 20rpx 40rpx;
+  border-radius: 40rpx;
+  z-index: 1000;
+  font-size: 28rpx;
+}
+
+.page-indicator-text {
+  text-align: center;
+}
+
+
+/* 广场模式容器 */
+.square-mode-container {
+  padding: 40rpx 40rpx 0 40rpx;
+  margin-bottom: 200rpx;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 100rpx 0;
+  color: #999;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  margin-bottom: 10rpx;
+  color: #666;
+}
+
+.empty-subtext {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 帖子项 */
+.post-item-wrapper {
+  /* background: #f8f9fa; 移除默认背景色，使用动态背景色 */
+  border-radius: 40rpx;
+  margin-bottom: 60rpx;
+  overflow: hidden;
+  border: 1rpx solid #e9ecef;
+  box-shadow: 0 12rpx 15rpx rgba(0, 0, 0, 0.20);
+  transition: transform 0.3s ease; /* 只过渡transform属性，避免其他颜色变化 */
+}
+
+.post-item-wrapper:active {
+  transform: scale(0.98);
+  /* box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.12); 移除点击时的阴影变化效果 */
+}
+
+.original-post {
+  border-left: 6rpx solid #667eea;
+}
+
+
+/* 帖子内容导航器 */
+.post-content-navigator {
+  display: block;
+}
+
+.navigator-hover {
+  /* background: #f8f9fa; 移除点击时的浅色背景效果 */
+}
+
+/* 帖子项 */
+.post-item {
+  padding: 40rpx 50rpx;
+}
+
+
+
+/* 帖子内容 */
+.post-content {
+  font-size: 32rpx;
+  font-family: 'XiaoXiaoHao', sans-serif; /* 使用自定义字体 */
+  /* color: #333; 移除默认颜色，使用动态颜色 */
+  line-height: 1.6;
+  margin: 30rpx 0;
+  /* transition: all 0.3s ease; 移除过渡效果，避免颜色变化 */
+}
+
+/* 收起状态 - 三行省略号 */
+.post-content.collapsed {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 展开状态 - 显示全部内容 */
+.post-content.expanded {
+  display: block;
+  overflow: visible;
+}
+
+
+/* 投票区域 */
+.vote-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25rpx 50rpx;
+  /* border-top: 1rpx solid rgba(255, 255, 255, 0.2); 移除分割线 */
+  /* background: #f1f3f4; 移除固定背景色，使用继承的背景色 */
+  /* animation: slideDown 0.3s ease-out; 移除复杂动画 */
+}
+
+/* 移除不再使用的动画关键帧 */
+
+.actions-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.button-group {
+  display: flex;
+  align-items: center;
+  gap: 30rpx;
+}
+
+.comment-count {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 10rpx 15rpx;
+  /* 移除背景色和阴影，让按钮透明 */
+}
+
+.vote-count {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 10rpx 15rpx;
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.comment-icon {
+  width: 80rpx;
+  height: 80rpx;
+}
+
+.action-text {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.vote-count.voted {
+  background: #fff0f0;
+}
+
+.vote-count.voted .action-text {
+  color: #ff4757;
+}
+
+.like-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 移除背景色、阴影和固定尺寸，让按钮透明 */
+}
+
+.like-icon-container:active {
+  transform: scale(0.9);
+}
+
+.like-icon {
+  width: 100rpx;
+  height: 100rpx;
+}
+
+/* 加载提示 */
+.loading-footer {
+  text-align: center;
+  padding: 20rpx 0;
+  color: #999;
+  font-size: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+
+/* 调试按钮 */
+.debug-button {
+  position: fixed;
+  bottom: 240rpx;
+  right: 30rpx;
+  width: 80rpx;
+  height: 80rpx;
+  background: #ff4757;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 12rpx rgba(255, 71, 87, 0.3);
+  z-index: 100;
+}
+
+.debug-button view {
+  color: white;
+  font-size: 32rpx;
+}

@@ -66,7 +66,9 @@ exports.main = async (event, context) => {
         return {
           ...comment,
           authorName: author.nickName,
-          authorAvatar: author.avatarUrl
+          authorAvatar: author.avatarUrl,
+          // 保留 replyToAuthorName 字段
+          replyToAuthorName: comment.replyToAuthorName
         };
       });
     };

@@ -233,6 +233,18 @@
         </view>
       </view>
       </view>
+      
+      <!-- 测试页提示 -->
+      <view wx:elif="{{currentPage === 'test'}}">
+        <view class="test-page-prompt">
+          <view class="test-prompt-icon">🧪</view>
+          <view class="test-prompt-title">测试页面</view>
+          <view class="test-prompt-text">这是一个测试页面，内容与主页相同</view>
+          <view class="test-prompt-button" bindtap="navigateToTestPage">
+            <text>进入测试页面</text>
+          </view>
+        </view>
+      </view>
     </view>
     
     <!-- 在容器外部，页面的最底部添加加载提示 -->

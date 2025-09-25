@@ -1,4 +1,14 @@
 /**app.wxss**/
+
+/* 自定义字体定义 */
+@font-face {
+  font-family: 'XiaoXiaoHao';
+  src: url('https://636c-cloud1-5gb0pbyl400845f5-1378788263.tcb.qcloud.la/fonts/%E5%B0%8F%E5%B0%8F%E7%9A%93%E4%BD%93.woff2?sign=e838e5ba290238c30be425b1277b20c1&t=1758796775') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 .container {
   display: flex;
   flex-direction: column;

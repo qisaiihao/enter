@@ -11,26 +11,22 @@ Component({
       {
         pagePath: "pages/index/index",
         text: "广场",
-        iconPath: "/images/market.png",
-        selectedIconPath: "/images/marketplus.png"
+        iconPath: "/images/market.PNG"
       },
       {
         pagePath: "pages/poem/poem", 
         text: "路",
-        iconPath: "/images/road.png",
-        selectedIconPath: "/images/roadplus.png"
+        iconPath: "/images/road.PNG"
       },
       {
         pagePath: "pages/mountain/mountain",
         text: "山", 
-        iconPath: "/images/mountain.png",
-        selectedIconPath: "/images/mountainplus.png"
+        iconPath: "/images/mountain.PNG"
       },
       {
         pagePath: "pages/profile/profile",
         text: "湖",
-        iconPath: "/images/pools.png", 
-        selectedIconPath: "/images/poolsplus.png"
+        iconPath: "/images/pools.PNG" 
       }
     ]
   },
@@ -63,6 +59,11 @@ Component({
         isCurrentTab: this.data.selected === index
       });
       
+      // 先更新本地选中态，立刻产生按下的视觉反馈
+      if (this.data.selected !== index) {
+        this.setData({ selected: index });
+      }
+
       // 更新点击记录
       this.setData({
         lastTapTime: currentTime,

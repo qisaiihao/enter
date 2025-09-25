@@ -127,7 +127,7 @@
                   <view class="reply-main">
                     <view class="reply-author">{{reply.authorName}}</view>
                     <view class="reply-content">
-                      <text class="reply-to">回复@{{item.authorName}}：</text>
+                      <text class="reply-to">回复@{{reply.replyToAuthorName || item.authorName}}：</text>
                       <text>{{reply.content}}</text>
                     </view>
                     <view class="reply-footer">

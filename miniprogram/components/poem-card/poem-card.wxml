@@ -1,0 +1,168 @@
+<!-- components/poem-card/poem-card.wxml -->
+<view class="poem-card-wrapper {{computedPost.isOriginal ? 'original-post' : ''}} {{mode === 'detail' ? 'detail-mode' : ''}} {{mode === 'immersive' ? 'immersive-mode' : ''}}">
+  
+  <!-- 作者信息 -->
+  <view class="author-info-outside">
+    <image 
+      wx:if="{{computedPost.authorAvatar}}" 
+      class="author-avatar" 
+      src="{{computedPost.authorAvatar}}" 
+      mode="aspectFill" 
+      binderror="onAvatarError" 
+      catch:tap="navigateToUserProfile" 
+      data-user-id="{{computedPost._openid}}"
+    />
+    <text class="author-name">{{computedPost.authorName}}</text>
+  </view>
+  
+  <!-- 可点击的内容区域 - 跳转到详情页 -->
+  <navigator 
+    wx:if="{{mode !== 'detail'}}"
+    class="poem-card-navigator"
+    url="/pages/post-detail/post-detail?id={{computedPost._id}}"
+    hover-class="navigator-hover"
+  >
+    <view class="poem-card-content">
+      <view class="poem-card-title">{{computedPost.title}}</view>
+      <!-- 诗歌作者信息 -->
+      <view wx:if="{{computedPost.isPoem && computedPost.author}}" class="poem-author">{{computedPost.author}}</view>
+      
+      <!-- 图片显示逻辑 (仅列表和详情模式) -->
+      <view wx:if="{{mode !== 'immersive' && (computedPost.imageUrls && computedPost.imageUrls.length > 0)}}" 
+            class="image-container-wrapper" 
+            style="{{computedPost.imageStyle}}" 
+            catch:tap="handlePreview" 
+            data-src="{{computedPost.imageUrls[0]}}"
+            data-original-image-urls="{{computedPost.originalImageUrls || computedPost.imageUrls}}">
+
+        <!-- 单张图片 -->
+        <block wx:if="{{computedPost.imageUrls.length === 1}}">
+          <image
+            class="post-image"
+            src="{{computedPost.imageUrls[0]}}"
+            mode="aspectFill"
+            lazy-load="{{true}}"
+            binderror="onImageError"
+          />
+        </block>
+
+        <!-- 多张图片 -->
+        <block wx:elif="{{computedPost.imageUrls.length > 1}}">
+          <swiper class="image-swiper" indicator-dots="true" circular="true">
+            <block wx:for="{{computedPost.imageUrls}}" wx:for-item="img" wx:key="*this">
+              <swiper-item>
+                <image
+                  class="post-image"
+                  src="{{img}}"
+                  mode="aspectFill"
+                  lazy-load="{{true}}"
+                  binderror="onImageError"
+                  catch:tap="handlePreview"
+                  data-src="{{img}}"
+                  data-original-image-urls="{{computedPost.originalImageUrls || computedPost.imageUrls}}"
+                />
+              </swiper-item>
+            </block>
+          </swiper>
+        </block>
+      </view>
+        
+      <view class="poem-card-content-text" wx:if="{{computedPost.content}}" style="white-space: pre-wrap;">{{computedPost.content}}</view>
+      
+      <!-- 标签显示 -->
+      <view wx:if="{{computedPost.tags && computedPost.tags.length > 0}}" class="post-tags">
+        <text wx:for="{{computedPost.tags}}" wx:key="index" 
+              class="post-tag" 
+              catch:tap="onTagClick" 
+              data-tag="{{item}}">#{{item}}</text>
+      </view>
+    </view>
+  </navigator>
+  
+  <!-- 详情页模式：不包装navigator -->
+  <view wx:else class="poem-card-content">
+    <view class="poem-card-title">{{computedPost.title}}</view>
+    <!-- 诗歌作者信息 -->
+    <view wx:if="{{computedPost.isPoem && computedPost.author}}" class="poem-author">{{computedPost.author}}</view>
+    
+    <!-- 图片显示逻辑 -->
+    <view wx:if="{{(computedPost.imageUrls && computedPost.imageUrls.length > 0)}}" 
+          class="image-container-wrapper" 
+          style="{{computedPost.imageStyle}}" 
+          catch:tap="handlePreview" 
+          data-src="{{computedPost.imageUrls[0]}}"
+          data-original-image-urls="{{computedPost.originalImageUrls || computedPost.imageUrls}}">
+
+      <!-- 单张图片 -->
+      <block wx:if="{{computedPost.imageUrls.length === 1}}">
+        <image
+          class="post-image"
+          src="{{computedPost.imageUrls[0]}}"
+          mode="aspectFill"
+          lazy-load="{{true}}"
+          binderror="onImageError"
+        />
+      </block>
+
+      <!-- 多张图片 -->
+      <block wx:elif="{{computedPost.imageUrls.length > 1}}">
+        <swiper class="image-swiper" indicator-dots="true" circular="true">
+          <block wx:for="{{computedPost.imageUrls}}" wx:for-item="img" wx:key="*this">
+            <swiper-item>
+              <image
+                class="post-image"
+                src="{{img}}"
+                mode="aspectFill"
+                lazy-load="{{true}}"
+                binderror="onImageError"
+                catch:tap="handlePreview"
+                data-src="{{img}}"
+                data-original-image-urls="{{computedPost.originalImageUrls || computedPost.imageUrls}}"
+              />
+            </swiper-item>
+          </block>
+        </swiper>
+      </block>
+    </view>
+      
+    <view class="poem-card-content-text" wx:if="{{computedPost.content}}" style="white-space: pre-wrap;">{{computedPost.content}}</view>
+    
+    <!-- 标签显示 -->
+    <view wx:if="{{computedPost.tags && computedPost.tags.length > 0}}" class="post-tags">
+      <text wx:for="{{computedPost.tags}}" wx:key="index" 
+            class="post-tag" 
+            catch:tap="onTagClick" 
+            data-tag="{{item}}">#{{item}}</text>
+    </view>
+  </view>
+
+  <!-- 沉浸式模式：只显示文字内容 -->
+  <view wx:if="{{mode === 'immersive'}}" class="poem-card-content">
+    <view class="poem-card-title" wx:if="{{computedPost.title}}">{{computedPost.title}}</view>
+    <!-- 诗歌作者信息 -->
+    <view wx:if="{{computedPost.isPoem}}" class="poem-author">{{computedPost.author || computedPost.authorName}}</view>
+    
+    <!-- 内容 -->
+    <view class="poem-card-content-text" wx:if="{{computedPost.content}}" style="white-space: pre-wrap;">{{computedPost.content}}</view>
+  </view>
+
+  <!-- 独立的互动区域 - 不触发详情页跳转 (仅列表模式) -->
+  <view wx:if="{{mode === 'list' && showInteractions}}" class="vote-section">
+    <view class="actions-left">
+      <!-- 左侧留空，保持布局平衡 -->
+    </view>
+    <view class="button-group">
+      <view class="comment-count" catch:tap="onCommentClick" data-postid="{{computedPost._id}}">
+        <text class="action-emoji">💬</text>
+        <text class="action-text">{{computedPost.commentCount || 0}}</text>
+      </view>
+      <view class="like-icon-container" catch:tap="onVote" data-postid="{{computedPost._id}}" data-index="{{index}}">
+        <image class="like-icon" src="{{computedPost.likeIcon || '/images/seed.png'}}" mode="aspectFit" binderror="onLikeIconError"></image>
+      </view>
+      <view class="vote-count {{computedPost.isVoted ? 'voted' : ''}}">
+        <text class="action-text">{{computedPost.votes || 0}}</text>
+      </view>
+    </view>
+  </view>
+</view>
+
