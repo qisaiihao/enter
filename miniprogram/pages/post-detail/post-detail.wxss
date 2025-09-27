@@ -3,10 +3,9 @@
   padding: 20rpx;
   background-color: #f7f8fa;
   min-height: 100vh;
-  padding-bottom: 140rpx; /* 为底部输入框留出空间 */
+  padding-bottom: 140rpx;
 }
 
-/* 加载状态 */
 .loading-container {
   display: flex;
   justify-content: center;
@@ -23,7 +22,6 @@
   color: #999;
 }
 
-/* 错误状态 */
 .error-container {
   display: flex;
   flex-direction: column;
@@ -45,7 +43,7 @@
 }
 
 .post-detail-card {
-  position: relative; /* 为绝对定位的子元素提供参照 */
+  position: relative;
   background-color: #fff;
   border-radius: 16rpx;
   padding: 30rpx;
@@ -53,14 +51,12 @@
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
-/* 原创帖子特殊样式 */
 .post-detail-card.original-post {
   border: 3rpx solid #ebc88d;
   box-shadow: 0 6rpx 24rpx rgba(235, 200, 141, 0.4), 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
   position: relative;
 }
 
-/* 原创帖子光影效果 */
 .post-detail-card.original-post::before {
   content: '';
   position: absolute;
@@ -78,7 +74,44 @@
 .author-info {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 20rpx;
+  gap: 20rpx;
+}
+
+.author-basic {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 12rpx;
+  flex-wrap: wrap;
+}
+
+.follow-btn {
+  padding: 0 28rpx;
+  height: 60rpx;
+  line-height: 60rpx;
+  background-color: #9ed7ee;
+  color: #ffffff;
+  border: none;
+  border-radius: 999rpx;
+  font-size: 26rpx;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.follow-btn.following {
+  background-color: #f0f0f0;
+  color: #666666;
+}
+
+.follow-btn::after {
+  border: none;
+}
+
+.follow-btn[disabled] {
+  opacity: 0.7;
 }
 
 .author-avatar {
@@ -109,7 +142,6 @@
   -webkit-box-orient: vertical;
 }
 
-/* 诗歌作者样式 */
 .poem-author {
   font-size: 28rpx;
   color: #333;
@@ -128,7 +160,6 @@
   word-break: break-word;
 }
 
-/* 图片容器样式 */
 .image-container {
   position: relative;
   width: 100%;
@@ -155,7 +186,6 @@
   background-color: #f5f5f5;
 }
 
-/* 图片数量指示器 */
 .image-count-indicator {
   position: absolute;
   top: 20rpx;
@@ -258,7 +288,6 @@
   border: none;
 }
 
-/* 已收藏状态样式 */
 .favorite-button.favorited {
   background-color: #999;
   color: #fff;
@@ -289,7 +318,6 @@
   color: #333;
 }
 
-/* 评论列表样式 */
 .comment-list {
   margin-top: 20rpx;
 }
@@ -373,7 +401,6 @@
   margin-right: 8rpx;
 }
 
-
 .like-count {
   font-size: 26rpx;
   color: #666;
@@ -412,7 +439,6 @@
   color: #9ed7ee;
 }
 
-/* 回复样式 */
 .replies-container {
   margin-top: 15rpx;
   padding-left: 20rpx;
@@ -491,7 +517,6 @@
   color: #9ed7ee;
 }
 
-/* 空评论状态 */
 .no-comment-tip {
   display: flex;
   flex-direction: column;
@@ -512,9 +537,6 @@
   color: #999;
 }
 
-/* ★★★ 核心修改：重构评论输入区域样式 ★★★ */
-
-/* 遮罩层样式 */
 .input-overlay {
   position: fixed;
   top: 0;
@@ -524,28 +546,26 @@
   background-color: rgba(0, 0, 0, 0.4);
   z-index: 99;
   opacity: 0;
-  pointer-events: none; /* 隐藏时不可点击 */
+  pointer-events: none;
   transition: opacity 0.3s ease;
 }
 .input-overlay.show {
   opacity: 1;
-  pointer-events: auto; /* 显示时可点击 */
+  pointer-events: auto;
 }
 
-/* 评论输入区总容器 */
 .comment-input-area {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0; /* 初始在底部 */
+  bottom: 0;
   background-color: #ffffff;
   z-index: 100;
-  transition: bottom 0.2s ease-out; /* 关键：让上移动画流畅 */
-  padding-bottom: constant(safe-area-inset-bottom); /* 适配 iPhone X 等底部安全区 */
+  transition: bottom 0.2s ease-out;
+  padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* --- 收起状态 --- */
 .collapsed-bar {
   padding: 16rpx 30rpx;
   display: flex;
@@ -563,8 +583,6 @@
   color: #999;
 }
 
-
-/* --- 展开状态 --- */
 .expanded-container {
   padding: 20rpx 30rpx;
   display: flex;
@@ -574,16 +592,15 @@
 
 .expanded-textarea {
   width: 100%;
-  min-height: 180rpx; /* 进一步增加到180rpx，让输入框更大 */
-  max-height: 350rpx; /* 增加最大高度到350rpx */
-  padding: 20rpx 24rpx; /* 增加内边距，让输入框更舒适 */
-  background-color: #ffffff; /* 改为白色背景 */
-  border-radius: 0; /* 移除圆角，显示为纯白矩形 */
+  min-height: 180rpx;
+  max-height: 350rpx;
+  padding: 20rpx 24rpx;
+  background-color: #ffffff;
+  border-radius: 0;
   font-size: 30rpx;
   line-height: 1.6;
   box-sizing: border-box;
-  border: none; /* 移除边框，显示为纯白 */
-  /* iOS兼容性优化 */
+  border: none;
   -webkit-appearance: none;
   -webkit-box-sizing: border-box;
   -webkit-user-select: text;
@@ -593,12 +610,11 @@
 
 .expanded-actions {
   display: flex;
-  justify-content: flex-end; /* 改为靠右对齐 */
+  justify-content: flex-end;
   align-items: center;
   margin-top: 20rpx;
 }
 
-/* 回复提示 */
 .reply-prompt {
   display: flex;
   justify-content: space-between;
@@ -615,7 +631,6 @@
   color: #9ed7ee;
 }
 
-/* 发送按钮 */
 .submit-button {
   width: 140rpx !important;
   height: 64rpx !important;
@@ -637,20 +652,11 @@
   border: none;
 }
 
-
-
-
-
-
-/* --- 请将这段样式合并到 post-detail.wxss 文件中 --- */
-
-/* 新增：Swiper 的包裹容器，用于正确定位指示器 */
 .swiper-wrapper {
   position: relative;
   width: 100%;
 }
 
-/* Swiper 容器样式 */
 .image-swiper {
   width: 100%;
   background-color: #f0f0f0;
@@ -658,7 +664,6 @@
   overflow: hidden;
 }
 
-/* Swiper-item 样式 */
 .swiper-item {
   width: 100%;
   height: 100%;
@@ -667,13 +672,11 @@
   justify-content: center;
 }
 
-/* 确保 post-image 能够适应 swiper-item */
 .post-image {
   max-width: 100%;
   max-height: 100%;
 }
 
-/* 图片数量指示器 (现在会正确定位在 swiper 的右下角) */
 .image-count-indicator {
   position: absolute;
   bottom: 20rpx;
@@ -686,19 +689,7 @@
   z-index: 10;
   backdrop-filter: blur(10rpx);
 }
-.original-badge {
-  position: absolute;
-  top: 20rpx;
-  right: 20rpx;
-  background-color: #ff4757;
-  color: white;
-  padding: 4rpx 12rpx;
-  border-radius: 8rpx;
-  font-size: 20rpx;
-  font-weight: bold;
-}
 
-/* 标签样式 */
 .post-tags {
   margin: 30rpx 0 10rpx 0;
   line-height: 1.5;
@@ -715,4 +706,22 @@
 .post-tag:active {
   color: #1a2a4a;
   opacity: 0.8;
+}
+
+.mutual-tag {
+  font-size: 24rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  background-color: #e6f4ff;
+  color: #1f6fd2;
+  flex-shrink: 0;
+}
+
+.followed-tag {
+  font-size: 24rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  background-color: #f4ebff;
+  color: #7c55c7;
+  flex-shrink: 0;
 }

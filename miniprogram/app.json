@@ -7,6 +7,8 @@
     "pages/poem/poem",
     "pages/mountain/mountain",
     "pages/profile/profile",
+    "pages/following/following",
+    "pages/fans/fans",
     "pages/user-profile/user-profile",
     "pages/profile-edit/profile-edit",
     "pages/post-detail/post-detail",

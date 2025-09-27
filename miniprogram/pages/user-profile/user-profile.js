@@ -1,4 +1,4 @@
-const PAGE_SIZE = 5;
+﻿const PAGE_SIZE = 5;
 
 Page({
   data: {
@@ -76,6 +76,8 @@ Page({
             hasMore: posts.length === this.data.PAGE_SIZE
           });
 
+          this.prepareFollowState();
+
           // 设置页面标题为用户昵称
           wx.setNavigationBarTitle({
             title: userInfo.nickName || '用户主页'
@@ -88,7 +90,7 @@ Page({
         }
       },
       fail: err => {
-        console.error('【用户主页】getUserProfile 云函数失败:', err);
+        console.error('【用户主页】getUserProfile 云函数失败', err);
         wx.showToast({ title: '网络错误', icon: 'none' });
       },
       complete: () => {
@@ -137,7 +139,119 @@ Page({
     });
   },
 
-  // 跳转到帖子详情
+  // 准备关注状态
+  prepareFollowState: function() {
+    const targetUserId = this.data.targetUserId;
+    const currentUserId = this.getCurrentUserId();
+
+    if (!targetUserId || !currentUserId || targetUserId === currentUserId) {
+      this.setData({
+        showFollowButton: false,
+        isFollowing: false,
+        isFollowedByTarget: false,
+        isMutualFollow: false
+      });
+      return;
+    }
+
+    this.setData({
+      showFollowButton: true,
+      isFollowing: false,
+      isFollowedByTarget: false,
+      isMutualFollow: false
+    });
+
+    this.fetchFollowStatus(targetUserId);
+  },
+
+  fetchFollowStatus: function(targetOpenid) {
+    if (!targetOpenid) {
+      return;
+    }
+
+    wx.cloud.callFunction({
+      name: 'follow',
+      data: {
+        action: 'checkFollow',
+        targetOpenid
+      },
+      success: res => {
+        if (res.result && res.result.success) {
+          this.setData({
+            isFollowing: !!res.result.isFollowing,
+            isFollowedByTarget: !!res.result.isFollower,
+            isMutualFollow: !!res.result.isMutual
+          });
+        } else {
+          console.warn('检查关注状态失败', res.result);
+        }
+      },
+      fail: err => {
+        console.error('检查关注状态调用失败:', err);
+      }
+    });
+  },
+
+  onFollowTap: function() {
+    if (this.data.followPending) {
+      return;
+    }
+
+    const targetOpenid = this.data.targetUserId;
+    if (!targetOpenid) {
+      return;
+    }
+
+    const currentUserId = this.getCurrentUserId();
+    if (!currentUserId) {
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none'
+      });
+      return;
+    }
+
+    this.setData({ followPending: true });
+
+    wx.cloud.callFunction({
+      name: 'follow',
+      data: {
+        action: 'toggleFollow',
+        targetOpenid
+      },
+      success: res => {
+        if (res.result && res.result.success) {
+          const isFollowing = !!res.result.isFollowing;
+          this.setData({ isFollowing });
+          wx.showToast({
+            title: isFollowing ? '关注成功' : '已取消关注',
+            icon: 'success'
+          });
+          this.fetchFollowStatus(targetOpenid);
+        } else {
+          wx.showToast({
+            title: res.result && res.result.message ? res.result.message : '操作失败',
+            icon: 'none'
+          });
+        }
+      },
+      fail: err => {
+        console.error('切换关注状态失败:', err);
+        wx.showToast({
+          title: '网络错误',
+          icon: 'none'
+        });
+      },
+      complete: () => {
+        this.setData({ followPending: false });
+      }
+    });
+  },
+
+  getCurrentUserId: function() {
+    return getApp().globalData.openid || wx.getStorageSync('openid') || wx.getStorageSync('userOpenId');
+  },
+
   navigateToPostDetail: function(e) {
     const postId = e.currentTarget.dataset.id;
     wx.navigateTo({ url: `/pages/post-detail/post-detail?id=${postId}` });

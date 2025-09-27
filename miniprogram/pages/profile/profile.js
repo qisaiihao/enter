@@ -1,4 +1,4 @@
-const app = getApp();
+﻿const app = getApp();
 
 const PAGE_SIZE = 5;
 
@@ -12,7 +12,7 @@ Page({
     hasMore: true,
     PAGE_SIZE: PAGE_SIZE,
     swiperHeights: {}, // 多图swiper高度
-    imageClampHeights: {}, // 单图瘦高图钳制高度
+    imageClampHeights: {}, // 单图限制高度
     _hasFirstShow: false, // 新增：标记是否首次进入
     unreadCount: 0, // 未读消息数量
     
@@ -30,7 +30,7 @@ Page({
   },
 
   onLoad: function (options) {
-    // 计算3:4比例高度（宽3高4，竖图）
+    // 计算3:4比例高度（宽3高4，竖屏）
     const windowWidth = wx.getSystemInfoSync().windowWidth;
     const fixedHeight = Math.round(windowWidth * 4 / 3);
     this.setData({ swiperFixedHeight: fixedHeight });
@@ -135,13 +135,13 @@ Page({
   },
 
   onReachBottom: function () {
-    console.log('【profile】触底加载触发', 'currentTab:', this.data.currentTab);
+    console.log('【profile】触底加载触发, currentTab:', this.data.currentTab);
     if (this.data.currentTab === 'posts') {
-      console.log('【profile】触底加载我的帖子', 'hasMore:', this.data.hasMore, 'isLoading:', this.data.isLoading, '当前页:', this.data.page);
+      console.log('【profile】触底加载我的帖子, hasMore:', this.data.hasMore, 'isLoading:', this.data.isLoading, '当前页:', this.data.page);
       if (!this.data.hasMore || this.data.isLoading) return;
       this.loadMyPosts();
     } else if (this.data.currentTab === 'favorites') {
-      console.log('【profile】触底加载收藏', 'favoriteHasMore:', this.data.favoriteHasMore, 'favoriteLoading:', this.data.favoriteLoading);
+      console.log('【profile】触底加载收藏, favoriteHasMore:', this.data.favoriteHasMore, 'favoriteLoading:', this.data.favoriteLoading);
       if (!this.data.favoriteHasMore || this.data.favoriteLoading) return;
       this.loadFavorites();
     }
@@ -202,7 +202,7 @@ Page({
         wx.cloud.callFunction({
           name: 'getMyProfileData',
           success: res => {
-            console.log('getMyProfileData 返回：', res);
+            console.log('getMyProfileData 返回:', res);
             if (res.result && res.result.success && res.result.userInfo) {
               const user = res.result.userInfo;
               if (user.birthday) {
@@ -252,7 +252,7 @@ Page({
         wx.cloud.callFunction({
           name: 'getMyProfileData',
           success: res => {
-            console.log('getMyProfileData 返回：', res);
+            console.log('getMyProfileData 返回:', res);
             if (res.result && res.result.success && res.result.userInfo) {
               const user = res.result.userInfo;
               if (user.birthday) {
@@ -299,7 +299,7 @@ Page({
 
   loadMyPosts: function (cb) {
     const { page, PAGE_SIZE } = this.data;
-    console.log('【profile】请求分页参数', { page, PAGE_SIZE, skip: page * PAGE_SIZE, limit: PAGE_SIZE });
+    console.log('【profile】请求分页参数:', { page, PAGE_SIZE, skip: page * PAGE_SIZE, limit: PAGE_SIZE });
     
     // 只有在首次加载时才显示骨架屏
     if (page === 0) {
@@ -392,14 +392,14 @@ Page({
       title: '删除帖子',
       content: '您确定要删除这条帖子吗？',
       confirmText: '删除',
-      cancelText: '存草稿箱',
+      cancelText: '保存草稿',
       confirmColor: '#ff4d4f',
       success: function(res) {
         if (res.confirm) {
           // 直接删除
           that.deletePost(postId, index);
         } else {
-          // 存草稿箱
+          // 保存草稿
           that.saveToDraftBox(postId, index);
         }
       }
@@ -557,7 +557,7 @@ Page({
     });
   },
 
-  // 统一图片自适应/钳制逻辑
+  // 统一图片自适应/限制逻辑
   onImageLoad: function(e) {
     const { postid, postindex = 0, imgindex = 0, type } = e.currentTarget.dataset;
     const { width: originalWidth, height: originalHeight } = e.detail;
@@ -616,11 +616,11 @@ Page({
           console.log(`  - 图片${imgIndex + 1}:`, url);
           // 检查URL格式
           if (url && url.startsWith('http')) {
-            console.log(`    ✓ 格式正确 (HTTP URL)`);
+            console.log(`    ✅ 格式正确 (HTTP URL)`);
           } else if (url && url.startsWith('cloud://')) {
-            console.log(`    ⚠ 格式为cloud:// (需要转换)`);
+            console.log(`    ⚠️ 格式为cloud:// (需要转换)`);
           } else if (!url) {
-            console.log(`    ✗ URL为空`);
+            console.log(`    ❌ URL为空`);
           } else {
             console.log(`    ? 未知格式: ${url}`);
           }
@@ -642,6 +642,18 @@ Page({
   navigateToMyLikes: function() {
     wx.navigateTo({
       url: '/pages/my-likes/my-likes',
+    });
+  },
+
+  navigateToFollowing: function() {
+    wx.navigateTo({
+      url: '/pages/following/following',
+    });
+  },
+
+  navigateToFans: function() {
+    wx.navigateTo({
+      url: '/pages/fans/fans',
     });
   },
 
@@ -685,7 +697,24 @@ Page({
         }
       },
       fail: err => {
-        console.error('检查未读消息失败:', err);
+        console.error('获取未读消息失败:', err);
+      }
+    });
+
+    wx.cloud.callFunction({
+      name: 'follow',
+      data: {
+        action: 'getNewFollowerCount'
+      },
+      success: res => {
+        if (res.result && res.result.success) {
+          this.setData({
+            newFollowerCount: res.result.count || 0
+          });
+        }
+      },
+      fail: err => {
+        console.error('获取新粉丝数量失败:', err);
       }
     });
   },
@@ -693,7 +722,7 @@ Page({
   // 新增：标签切换方法
   switchTab: function(e) {
     const tab = e.currentTarget.dataset.tab;
-    console.log('【profile】切换标签到:', tab);
+    console.log('【profile】切换到标签:', tab);
     
     if (tab === this.data.currentTab) return; // 如果是当前标签，不做任何操作
     
@@ -711,7 +740,7 @@ Page({
     // if (this.data.favoriteLoading) return;
     
     const { favoritePage, PAGE_SIZE } = this.data;
-    console.log('【profile】请求收藏分页参数', { favoritePage, PAGE_SIZE, skip: favoritePage * PAGE_SIZE, limit: PAGE_SIZE });
+    console.log('【profile】请求收藏分页参数:', { favoritePage, PAGE_SIZE, skip: favoritePage * PAGE_SIZE, limit: PAGE_SIZE });
     
     this.setData({ favoriteLoading: true });
     

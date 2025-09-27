@@ -128,7 +128,7 @@ exports.main = async (event, context) => {
     let commentCount = resultPost.commentCount;
     console.log('从数据库获取的commentCount:', commentCount, '类型:', typeof commentCount);
     
-    if (commentCount === undefined || commentCount === null || commentCount === 0) {
+    if (commentCount === undefined || commentCount === null) {
       console.log('需要实时计算评论数量');
       const commentsRes = await db.collection('comments').where({
         postId: postId

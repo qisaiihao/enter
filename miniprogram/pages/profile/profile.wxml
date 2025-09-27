@@ -1,4 +1,4 @@
-<!--pages/profile/profile.wxml-->
+﻿<!--pages/profile/profile.wxml-->
 <view class="container">
   <!-- 骨架屏：当 isLoading 为 true 时，显示骨架屏，其他所有内容都不渲染 -->
   <view wx:if="{{isLoading}}">
@@ -38,6 +38,13 @@
         <view class="sidebar-item" bindtap="navigateToMyLikes">
           <text>我的点赞</text>
         </view>
+        <view class="sidebar-item" bindtap="navigateToFollowing">
+          <text>我关注的</text>
+        </view>
+        <view class="sidebar-item" bindtap="navigateToFans">
+          <text>我的粉丝</text>
+          <view wx:if="{{newFollowerCount > 0}}" class="unread-dot"></view>
+        </view>
         <view class="sidebar-item" bindtap="navigateToFavoriteFolders">
           <text>我的收藏夹</text>
         </view>
@@ -58,7 +65,7 @@
         </view>
         <view class="profile-info-center">
           <text class="profile-name-center">{{userInfo.nickName || '微信用户'}}</text>
-          <text class="profile-bio-center">{{userInfo.bio || '这个用户很懒,什么都还没留下...'}}</text>
+          <text class="profile-bio-center">{{userInfo.bio || '这个用户很懒,什么都没留下...'}}</text>
         </view>
       </view>
       <!-- 年龄和生日卡片 -->
@@ -169,7 +176,7 @@
             <!-- 删除按钮区域 -->
             <view class="delete-section">
               <view class="time-left">
-                <text class="post-time">发布于 {{item.formattedCreateTime || '未知时间'}}</text>
+                <text class="post-time">发布于{{item.formattedCreateTime || '未知时间'}}</text>
               </view>
               <view class="button-group">
                 <button class="delete-btn" size="mini" catch:tap="onDelete" data-postid="{{item._id}}" data-index="{{index}}">删除</button>
@@ -284,7 +291,7 @@
             <!-- 取消收藏按钮区域 -->
             <view class="delete-section">
               <view class="time-left">
-                <text class="favorite-time">收藏于 {{item.formattedFavoriteTime || '未知时间'}}</text>
+                <text class="favorite-time">收藏于{{item.formattedFavoriteTime || '未知时间'}}</text>
               </view>
               <view class="button-group">
                 <button class="remove-favorite-btn" size="mini" catch:tap="removeFavorite" data-favorite-id="{{item.favoriteId}}" data-index="{{index}}">取消收藏</button>
@@ -308,7 +315,7 @@
       </view>
     </view>
   </scroll-view>
-</view> <!-- 这是为 <view class="container"> 添加的结束标签 -->
+</view> <!-- 这是一个<view class="container"> 添加的结束标签 -->
 
-<!-- 自定义tabBar -->
+<!-- 自定义TabBar -->
 <custom-tabbar />

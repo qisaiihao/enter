@@ -96,7 +96,7 @@
   /* height: 100vh; */
   background-color: #f7f8fa;
   /* overflow-y: auto; */
-  padding-bottom: 100rpx; /* 为底部tabBar留出空间 */
+  padding-bottom: 100rpx; /* 为底部TabBar留出空间 */
 }
 
 .header {
@@ -385,7 +385,7 @@
   margin: 20rpx 0; /* 图片和下方内容的间距 */
 }
 
-/* 新增：让图片或Swiper填充整个占位容器 */
+/* 新增：让图片或swiper填充整个占位容器 */
 .image-container-wrapper .post-image,
 .image-container-wrapper .image-swiper {
   position: absolute;
@@ -645,4 +645,12 @@
   padding: 20rpx 0;
   color: #999;
   font-size: 14px;
+}
+
+.unread-dot {
+  width: 16rpx;
+  height: 16rpx;
+  background-color: #ff6b6b;
+  border-radius: 50%;
+  margin-left: 12rpx;
 }
