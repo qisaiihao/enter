@@ -42,19 +42,27 @@
 
   <!-- 正文输入区域 -->
   <view class="content-input-wrapper">
-    <textarea 
-      class="content-textarea" 
-      placeholder="此刻你想要分享..." 
-      bindinput="onContentInput"
-      maxlength="1500"
-      value="{{content}}"
-      auto-height="{{false}}"
-      show-confirm-bar="{{false}}"
-      adjust-position="{{false}}"
-      cursor-spacing="20"
-      fixed="{{true}}"
-      style="min-height: {{textareaMinHeight}}px;"
-    ></textarea>
+    <scroll-view 
+      class="content-scroll" 
+      scroll-y="true"
+      enhanced="{{true}}"
+      show-scrollbar="{{false}}"
+      keyboard-up-adjust="{{true}}"
+      hold-keyboard="{{true}}"
+    >
+      <textarea 
+        class="content-textarea" 
+        placeholder="此刻你想要分享..." 
+        bindinput="onContentInput"
+        maxlength="1500"
+        value="{{content}}"
+        auto-height="{{true}}"
+        show-confirm-bar="{{false}}"
+        adjust-position="{{false}}"
+        cursor-spacing="50"
+        fixed="{{true}}"
+      ></textarea>
+    </scroll-view>
     <view class="char-count">{{content.length}}/1500</view>
   </view>
 </view>

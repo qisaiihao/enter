@@ -80,15 +80,18 @@ Page({
             if (msg.createTime) {
               const timeAgo = formatTimeAgo(msg.createTime);
               msg.formattedTime = timeAgo;
-              
+
               // 获取用户名称，如果没有则使用默认名称
               const userName = msg.fromUserName || '某用户';
-              
+              const originalContent = msg.content || '';
+
               // 根据消息类型生成更详细的消息内容
               if (msg.type === 'like') {
                 msg.content = `${userName} ${timeAgo}点赞了你的帖子`;
               } else if (msg.type === 'comment') {
-                msg.content = `${userName} ${timeAgo}回复了你的帖子`;
+                const isReply = originalContent.includes('回复了你的评论');
+                const actionText = isReply ? '回复了你的评论' : '评论了你的帖子';
+                msg.content = `${userName} ${timeAgo}${actionText}`;
               } else if (msg.type === 'favorite') {
                 msg.content = `${userName} ${timeAgo}收藏了你的帖子`;
               }

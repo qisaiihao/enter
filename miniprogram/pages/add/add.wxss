@@ -138,9 +138,15 @@
   overflow: hidden; /* 防止内容溢出 */
 }
 
+.content-scroll {
+  flex: 1;
+  width: 100%;
+  min-height: 0; /* 关键：允许flex子元素收缩 */
+}
+
 .content-textarea {
   width: 100%;
-  flex: 1; /* 重新使用flex: 1，但配合父容器的min-height: 0 */
+  min-height: 300rpx; /* 设置最小高度，让auto-height生效 */
   border: none;
   font-size: 30rpx;
   line-height: 1.6;
@@ -157,9 +163,6 @@
   /* 防止iOS上的默认样式干扰 */
   border-radius: 0;
   outline: none;
-  /* 确保textarea能够正确填充可用空间 */
-  min-height: 0;
-  overflow: auto;
 }
 
 .char-count {

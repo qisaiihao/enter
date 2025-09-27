@@ -247,7 +247,7 @@
   font-size: 24rpx;
   padding: 8rpx 16rpx;
   line-height: 1.2;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .favorite-button:active {
@@ -256,6 +256,16 @@
 
 .favorite-button::after {
   border: none;
+}
+
+/* 已收藏状态样式 */
+.favorite-button.favorited {
+  background-color: #999;
+  color: #fff;
+}
+
+.favorite-button.favorited:active {
+  background-color: #777;
 }
 
 .like-icon {

@@ -24,7 +24,11 @@ Page({
     isFocus: false,         // 新增：控制 textarea 的 focus 状态
     // --- 浏览记录相关 ---
     viewStartTime: 0,       // 浏览开始时间
-    currentPostId: null     // 当前帖子ID
+    currentPostId: null,    // 当前帖子ID
+    // --- 收藏状态相关 ---
+    isFavorited: false,     // 是否已收藏
+    favoriteButtonText: '收藏', // 收藏按钮文字
+    favoriteButtonClass: 'favorite-button' // 收藏按钮样式类
   },
 
   onLoad: function (options) {
@@ -181,6 +185,15 @@ Page({
 
   // --- 收藏功能 ---
   onFavorite: function() {
+    // 如果已经收藏，显示提示
+    if (this.data.isFavorited) {
+      wx.showToast({
+        title: '已经收藏过了',
+        icon: 'none',
+      });
+      return;
+    }
+    
     this.setData({
       showFavoriteModal: true,
     });
@@ -194,6 +207,12 @@ Page({
 
   onFavoriteSuccess: function() {
     this.hideFavoriteModal();
+    // 更新收藏状态
+    this.setData({
+      isFavorited: true,
+      favoriteButtonText: '已收藏',
+      favoriteButtonClass: 'favorite-button favorited'
+    });
     wx.showToast({
       title: '收藏成功',
       icon: 'success',

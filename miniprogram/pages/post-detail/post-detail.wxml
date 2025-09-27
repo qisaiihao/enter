@@ -78,8 +78,8 @@
       </view>
       <view class="vote-section" catch:tap="preventBubble">
         <view class="actions-left">
-          <button class="favorite-button" size="mini" catch:tap="onFavorite">
-            收藏
+          <button class="{{favoriteButtonClass}}" size="mini" catch:tap="onFavorite">
+            {{favoriteButtonText}}
           </button>
         </view>
         <view class="button-group">
