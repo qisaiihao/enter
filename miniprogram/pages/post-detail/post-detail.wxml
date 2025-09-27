@@ -114,6 +114,9 @@
                     <image class="like-icon" src="{{item.likeIcon}}"></image>
                     <text class="like-count">{{item.likes || 0}}</text>
                   </view>
+                  <view wx:if="{{item.canDelete}}" class="delete-btn" bindtap="onDeleteComment" data-comment-id="{{item._id}}">
+                    <text class="delete-text">删除</text>
+                  </view>
                   <view class="reply-btn" bindtap="showReplyInput" data-comment-id="{{item._id}}" data-author-name="{{item.authorName}}">
                     <text class="reply-text">回复</text>
                   </view>
@@ -136,6 +139,9 @@
                         <view class="like-section" bindtap="toggleLikeComment" data-comment-id="{{reply._id}}" data-liked="{{reply.liked}}">
                           <image class="like-icon" src="{{reply.likeIcon}}"></image>
                           <text class="like-count">{{reply.likes || 0}}</text>
+                        </view>
+                        <view wx:if="{{reply.canDelete}}" class="delete-btn" bindtap="onDeleteComment" data-comment-id="{{reply._id}}" data-parent-id="{{item._id}}">
+                          <text class="delete-text">删除</text>
                         </view>
                         <view class="reply-btn" bindtap="showReplyInput" data-comment-id="{{item._id}}" data-author-name="{{reply.authorName}}">
                           <text class="reply-text">回复</text>

@@ -16,7 +16,8 @@
     "pages/messages/messages",
     "pages/image-manager/image-manager",
     "pages/tag-filter/tag-filter",
-    "pages/search/search"
+    "pages/search/search",
+    "pages/draft-box/draft-box"
   ],
   "window": {
     "backgroundColor": "#F6F6F6",

@@ -33,6 +33,9 @@
         <view class="sidebar-item" bindtap="navigateToFavoriteFolders">
           <text>我的收藏夹</text>
         </view>
+        <view class="sidebar-item" bindtap="navigateToDraftBox">
+          <text>草稿箱</text>
+        </view>
       </view>
     </view>
 

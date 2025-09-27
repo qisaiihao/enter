@@ -1,0 +1,29 @@
+<!-- pages/draft-box/draft-box.wxml -->
+<view class="container">
+  <!-- 草稿列表 -->
+  <view wx:if="{{drafts.length > 0}}" class="draft-list">
+    <view wx:for="{{drafts}}" wx:key="_id" class="draft-item" bindtap="editDraft" data-draft="{{item}}">
+      <view class="draft-content">
+        <view class="draft-title">{{item.title || '无标题'}}</view>
+        <view class="draft-preview">{{item.content || '无内容'}}</view>
+        <view class="draft-meta">
+          <text class="draft-time">{{item.formattedSaveTime}}</text>
+          <text class="draft-mode">{{item.publishMode === 'poem' ? '诗歌' : '普通'}}</text>
+          <text wx:if="{{item.isOriginal}}" class="draft-original">原创</text>
+        </view>
+      </view>
+      <view class="draft-actions">
+        <button class="action-btn edit-btn" size="mini" catch:tap="editDraft" data-draft="{{item}}">编辑</button>
+        <button class="action-btn delete-btn" size="mini" catch:tap="deleteDraft" data-draft-id="{{item._id}}">删除</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:else class="empty-container">
+    <view class="empty-icon">📝</view>
+    <view class="empty-text">草稿箱是空的</view>
+    <view class="empty-subtext">去发布一些内容吧</view>
+    <button class="create-btn" bindtap="goToPublish">开始创作</button>
+  </view>
+</view>

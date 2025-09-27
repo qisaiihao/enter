@@ -379,6 +379,23 @@
   color: #666;
 }
 
+.delete-btn {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 12rpx;
+  margin-right: 15rpx;
+  transition: opacity 0.2s ease;
+}
+
+.delete-btn:active {
+  opacity: 0.7;
+}
+
+.delete-text {
+  font-size: 26rpx;
+  color: #ff4d4f;
+}
+
 .reply-btn {
   display: flex;
   align-items: center;

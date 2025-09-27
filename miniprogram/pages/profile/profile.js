@@ -383,34 +383,115 @@ Page({
     const that = this;
 
     wx.showModal({
-      title: '确认删除',
-      content: '您确定要删除这条帖子吗？此操作不可恢复。',
+      title: '删除帖子',
+      content: '您确定要删除这条帖子吗？',
+      confirmText: '删除',
+      cancelText: '存草稿箱',
+      confirmColor: '#ff4d4f',
       success: function(res) {
         if (res.confirm) {
-          wx.showLoading({ title: '删除中...' });
+          // 直接删除
+          that.deletePost(postId, index);
+        } else {
+          // 存草稿箱
+          that.saveToDraftBox(postId, index);
+        }
+      }
+    });
+  },
+
+  // 直接删除帖子
+  deletePost: function(postId, index) {
+    const that = this;
+    wx.showLoading({ title: '删除中...' });
+    wx.cloud.callFunction({
+      name: 'deletePost',
+      data: { postId: postId },
+      success: function(res) {
+        wx.hideLoading();
+        if (res.result && res.result.success) {
+          wx.showToast({ title: '删除成功' });
+          const newList = that.data.myPosts.filter(post => post._id !== postId);
+          that.setData({ myPosts: newList });
+          // 新增：删除成功后设置首页需要刷新标记
+          try {
+            wx.setStorageSync('shouldRefreshIndex', true);
+          } catch (e) {}
+        } else {
+          wx.showToast({ title: '删除失败', icon: 'none' });
+        }
+      },
+      fail: function(err) {
+        wx.hideLoading();
+        wx.showToast({ title: '调用失败', icon: 'none' });
+      }
+    });
+  },
+
+  // 保存到草稿箱
+  saveToDraftBox: function(postId, index) {
+    const that = this;
+    wx.showLoading({ title: '保存中...' });
+    
+    // 先获取帖子详情
+    wx.cloud.callFunction({
+      name: 'getPostDetail',
+      data: { postId: postId },
+      success: function(res) {
+        if (res.result && res.result.post) {
+          const post = res.result.post;
+          const draftData = {
+            title: post.title || '',
+            content: post.content || '',
+            imageList: post.imageUrls ? post.imageUrls.map(url => ({
+              previewUrl: url,
+              compressedPath: url,
+              originalPath: url,
+              needCompression: false
+            })) : [],
+            publishMode: post.isPoem ? 'poem' : 'normal',
+            isOriginal: post.isOriginal || false,
+            selectedTags: post.tags || [],
+            customTag: '',
+            author: post.author || '',
+            saveTime: new Date()
+          };
+
+          // 保存到草稿箱
           wx.cloud.callFunction({
-            name: 'deletePost',
-            data: { postId: postId },
-            success: function(res) {
+            name: 'getMyProfileData',
+            data: {
+              action: 'saveDraft',
+              draftData: draftData
+            },
+            success: function(draftRes) {
               wx.hideLoading();
-              if (res.result && res.result.success) {
-                wx.showToast({ title: '删除成功' });
-                const newList = that.data.myPosts.filter(post => post._id !== postId);
-                that.setData({ myPosts: newList });
-                // 新增：删除成功后设置首页需要刷新标记
-                try {
-                  wx.setStorageSync('shouldRefreshIndex', true);
-                } catch (e) {}
+              if (draftRes.result && draftRes.result.success) {
+                wx.showToast({ title: '已保存到草稿箱', icon: 'success' });
+                // 删除原帖子
+                that.deletePost(postId, index);
               } else {
-                wx.showToast({ title: '删除失败', icon: 'none' });
+                wx.showToast({ 
+                  title: draftRes.result?.message || '保存草稿失败', 
+                  icon: 'none' 
+                });
               }
             },
             fail: function(err) {
               wx.hideLoading();
-              wx.showToast({ title: '调用失败', icon: 'none' });
+              console.error('保存草稿失败:', err);
+              wx.showToast({ title: '保存草稿失败', icon: 'none' });
             }
           });
+        } else {
+          wx.hideLoading();
+          wx.showToast({ title: '获取帖子信息失败', icon: 'none' });
         }
+      },
+      fail: function(err) {
+        wx.hideLoading();
+        console.error('获取帖子详情失败:', err);
+        wx.showToast({ title: '获取帖子信息失败', icon: 'none' });
       }
     });
   },
@@ -569,6 +650,13 @@ Page({
   navigateToFavoriteFolders: function() {
     wx.navigateTo({
       url: '/pages/favorite-folders/favorite-folders',
+    });
+  },
+
+  // 跳转到草稿箱页面
+  navigateToDraftBox: function() {
+    wx.navigateTo({
+      url: '/pages/draft-box/draft-box',
     });
   },
 

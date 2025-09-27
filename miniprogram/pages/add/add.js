@@ -57,11 +57,17 @@ Page({
     ]
   },
 
-  onLoad: function () {
+  onLoad: function (options) {
     // 页面加载时获取所有已有标签
     this.loadAllExistingTags();
-    // 加载草稿
-    this.loadDraft();
+    
+    // 检查是否是编辑草稿模式
+    if (options.mode === 'edit') {
+      this.loadEditingDraft();
+    } else {
+      // 加载草稿
+      this.loadDraft();
+    }
   },
 
   onUnload: function () {
@@ -776,16 +782,37 @@ Page({
       selectedTags: this.data.selectedTags,
       customTag: this.data.customTag,
       author: this.data.author,
-      saveTime: new Date().getTime()
+      saveTime: new Date()
     };
     
-    try {
-      wx.setStorageSync('publish_draft', draftData);
-      wx.showToast({ title: '草稿已保存', icon: 'success' });
-    } catch (e) {
-      console.error('保存草稿失败:', e);
-      wx.showToast({ title: '保存草稿失败', icon: 'none' });
-    }
+    wx.showLoading({ title: '保存中...' });
+    
+    wx.cloud.callFunction({
+      name: 'getMyProfileData',
+      data: {
+        action: 'saveDraft',
+        draftData: draftData
+      },
+      success: res => {
+        wx.hideLoading();
+        if (res.result && res.result.success) {
+          wx.showToast({ title: '草稿已保存', icon: 'success' });
+          // 清除本地草稿
+          this.clearDraft();
+        } else {
+          console.error('保存草稿失败:', res.result);
+          wx.showToast({ 
+            title: res.result?.message || '保存草稿失败', 
+            icon: 'none' 
+          });
+        }
+      },
+      fail: err => {
+        wx.hideLoading();
+        console.error('保存草稿失败:', err);
+        wx.showToast({ title: '网络错误，保存失败', icon: 'none' });
+      }
+    });
   },
 
   // 加载草稿
@@ -831,6 +858,39 @@ Page({
       }
     } catch (e) {
       console.error('加载草稿失败:', e);
+    }
+  },
+
+  // 加载编辑中的草稿
+  loadEditingDraft: function() {
+    try {
+      const draftData = wx.getStorageSync('editing_draft');
+      if (draftData) {
+        this.setData({
+          title: draftData.title || '',
+          content: draftData.content || '',
+          imageList: draftData.imageList || [],
+          publishMode: draftData.publishMode || 'normal',
+          isOriginal: draftData.isOriginal || false,
+          selectedTags: draftData.selectedTags || [],
+          customTag: draftData.customTag || '',
+          author: draftData.author || '',
+          maxImageCount: draftData.publishMode === 'poem' ? 1 : 9
+        });
+        this.checkCanPublish();
+        wx.showToast({
+          title: '草稿已加载',
+          icon: 'success'
+        });
+        // 清除编辑草稿数据
+        wx.removeStorageSync('editing_draft');
+      }
+    } catch (e) {
+      console.error('加载编辑草稿失败:', e);
+      wx.showToast({
+        title: '加载草稿失败',
+        icon: 'none'
+      });
     }
   },
 

@@ -92,18 +92,26 @@ Page({
       data: { postId: postId },
       success: res => {
         if (res.result && res.result.comments) {
+          const currentUserOpenid = app.globalData.openid || wx.getStorageSync('openid');
+
           const comments = res.result.comments.map(comment => {
-            comment.formattedCreateTime = this.formatTime(comment.createTime);
-            // 添加评论的动态点赞图标
-            comment.likeIcon = likeIcon.getLikeIcon(comment.likes || 0, comment.liked || false);
+            const processedComment = {
+              ...comment,
+              formattedCreateTime: this.formatTime(comment.createTime),
+              likeIcon: likeIcon.getLikeIcon(comment.likes || 0, comment.liked || false),
+              canDelete: comment._openid === currentUserOpenid
+            };
+
             if (comment.replies) {
-              comment.replies.forEach(reply => {
-                reply.formattedCreateTime = this.formatTime(reply.createTime);
-                // 添加回复的动态点赞图标
-                reply.likeIcon = likeIcon.getLikeIcon(reply.likes || 0, reply.liked || false);
-              });
+              processedComment.replies = comment.replies.map(reply => ({
+                ...reply,
+                formattedCreateTime: this.formatTime(reply.createTime),
+                likeIcon: likeIcon.getLikeIcon(reply.likes || 0, reply.liked || false),
+                canDelete: reply._openid === currentUserOpenid
+              }));
             }
-            return comment;
+
+            return processedComment;
           });
           console.log('getComments返回的commentCount:', res.result.commentCount);
           console.log('comments数组长度:', comments.length);
@@ -391,6 +399,75 @@ Page({
     this.setData({
       replyToComment: null,
       replyToAuthor: ''
+    });
+  },
+
+  onDeleteComment: function(e) {
+    const { commentId, parentId } = e.currentTarget.dataset;
+    if (!commentId) return;
+
+    wx.showModal({
+      title: '删除评论',
+      content: '确定要删除这条评论吗？',
+      confirmColor: '#ff4d4f',
+      success: res => {
+        if (!res.confirm) return;
+
+        wx.showLoading({ title: '正在删除', mask: true });
+
+        wx.cloud.callFunction({
+          name: 'deleteComment',
+          data: { commentId },
+          success: result => {
+            if (result.result && result.result.success) {
+              const deletedCount = Math.max(1, result.result.deletedCount || 1);
+              let updatedComments;
+
+              if (parentId) {
+                updatedComments = this.data.comments.map(comment => ({
+                  ...comment,
+                  replies: comment.replies ? comment.replies.slice() : []
+                }));
+                const parentIndex = updatedComments.findIndex(comment => comment._id === parentId);
+                if (parentIndex !== -1) {
+                  updatedComments[parentIndex].replies = updatedComments[parentIndex].replies.filter(reply => reply._id !== commentId);
+                }
+              } else {
+                updatedComments = this.data.comments.filter(comment => comment._id !== commentId);
+              }
+
+              const newCommentCount = Math.max(0, this.data.commentCount - deletedCount);
+
+              this.setData({
+                comments: updatedComments,
+                commentCount: newCommentCount
+              });
+
+              const pages = getCurrentPages();
+              if (pages.length > 1) {
+                const prePage = pages[pages.length - 2];
+                if (typeof prePage.updatePostCommentCount === 'function') {
+                  prePage.updatePostCommentCount(this.data.post._id, newCommentCount);
+                }
+              }
+
+              wx.showToast({ title: '已删除', icon: 'success' });
+            } else {
+              wx.showToast({
+                title: (result.result && result.result.message) || '删除失败',
+                icon: 'none'
+              });
+            }
+          },
+          fail: err => {
+            console.error('Failed to delete comment', err);
+            wx.showToast({ title: '删除失败', icon: 'none' });
+          },
+          complete: () => {
+            wx.hideLoading();
+          }
+        });
+      }
     });
   },
 
