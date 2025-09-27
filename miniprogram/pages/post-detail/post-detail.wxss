@@ -409,7 +409,7 @@
 
 .reply-text {
   font-size: 26rpx;
-  color: #07c160;
+  color: #9ed7ee;
 }
 
 /* 回复样式 */
@@ -455,7 +455,7 @@
 }
 
 .reply-to {
-  color: #07c160;
+  color: #9ed7ee;
   font-weight: bold;
 }
 
@@ -488,7 +488,7 @@
 
 .show-more-text {
   font-size: 24rpx;
-  color: #07c160;
+  color: #9ed7ee;
 }
 
 /* 空评论状态 */
@@ -612,7 +612,7 @@
 }
 .cancel-reply .cancel-text {
   font-size: 26rpx;
-  color: #07c160;
+  color: #9ed7ee;
 }
 
 /* 发送按钮 */
@@ -620,7 +620,7 @@
   width: 140rpx !important;
   height: 64rpx !important;
   line-height: 64rpx !important;
-  background-color: #07c160;
+  background-color: #9ed7ee;
   color: white;
   border-radius: 32rpx;
   font-size: 28rpx;

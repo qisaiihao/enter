@@ -100,7 +100,7 @@
 }
 
 .edit-btn {
-  background: #07c160;
+  background: #9ed7ee;
   color: white;
 }
 
@@ -146,7 +146,7 @@
 }
 
 .create-btn {
-  background: #07c160;
+  background: #9ed7ee;
   color: white;
   border: none;
   border-radius: 50rpx;

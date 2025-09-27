@@ -1,4 +1,4 @@
-// pages/add/add.js
+﻿// pages/add/add.js
 const db = wx.cloud.database();
 
 Page({
@@ -21,6 +21,7 @@ Page({
     isPublished: false, // 是否已发布成功，用于避免发布后再次询问保存草稿
     isTemporaryHide: false, // 是否临时隐藏（如选择图片），用于避免触发草稿保存
     author: '', // 作者信息
+    keyboardHeight: 0, // 键盘高度
     
     // 标签分类数据
     tagCategories: [
@@ -68,6 +69,26 @@ Page({
       // 加载草稿
       this.loadDraft();
     }
+    
+    // 确保页面不会滚动
+    this.preventPageScroll();
+  },
+
+  onShow: function() {
+    // 每次显示页面时都确保页面不会滚动
+    this.preventPageScroll();
+  },
+
+  preventPageScroll: function() {
+    // 尝试禁用页面滚动
+    try {
+      wx.pageScrollTo({
+        scrollTop: 0,
+        duration: 0
+      });
+    } catch (e) {
+      console.log('preventPageScroll error:', e);
+    }
   },
 
   onUnload: function () {
@@ -91,10 +112,54 @@ Page({
     this.checkCanPublish();
   },
   
-  onContentInput: function(event) { 
-    this.setData({ content: event.detail.value }); 
+  onContentInput: function(event) {
+    const { value, cursor } = event.detail;
+    this.setData({ content: value });
     this.checkCanPublish();
   },
+
+  onContainerTap: function(event) {
+    // 点击空白区域退出输入法，但不要立即隐藏，给textarea一点时间
+    console.log('容器被点击，准备隐藏键盘');
+    setTimeout(() => {
+      wx.hideKeyboard();
+    }, 100);
+  },
+
+  onTextareaTap: function(event) {
+    // 确保输入框能正常获取焦点
+    console.log('textarea被点击，应该获取焦点');
+  },
+
+  // 输入框获得焦点时触发，获取键盘高度
+  onTextareaFocus: function(e) {
+    console.log('textarea获得焦点，键盘高度:', e.detail.height);
+    // 在开发者工具中，键盘高度可能为0，我们需要设置一个默认值
+    let keyboardHeight = e.detail.height;
+    
+    // 如果键盘高度为0，可能是开发者工具的问题，设置一个合理的默认值
+    if (!keyboardHeight || keyboardHeight === 0) {
+      // 获取系统信息来设置合适的键盘高度
+      const systemInfo = wx.getSystemInfoSync();
+      console.log('系统信息:', systemInfo);
+      // 根据屏幕高度设置键盘高度，通常是屏幕高度的1/3到1/2
+      keyboardHeight = Math.min(systemInfo.windowHeight * 0.4, 300);
+      console.log('使用默认键盘高度:', keyboardHeight);
+    }
+    
+    this.setData({
+      keyboardHeight: keyboardHeight
+    });
+  },
+
+  // 输入框失去焦点时触发，重置键盘高度
+  onTextareaBlur: function() {
+    console.log('textarea失去焦点');
+    this.setData({
+      keyboardHeight: 0
+    });
+  },
+
 
   onAuthorInput: function(event) {
     this.setData({ author: event.detail.value });

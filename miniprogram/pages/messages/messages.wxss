@@ -64,7 +64,7 @@
 }
 
 .tab-item.active text {
-  color: #07c160;
+  color: #9ed7ee;
   font-weight: 500;
 }
 
@@ -75,7 +75,7 @@
   transform: translateX(-50%);
   width: 60rpx;
   height: 4rpx;
-  background-color: #07c160;
+  background-color: #9ed7ee;
   border-radius: 2rpx;
 }
 
@@ -118,7 +118,7 @@
 
 .message-item.unread {
   background-color: #f0f9ff;
-  border-left: 6rpx solid #07c160;
+  border-left: 6rpx solid #9ed7ee;
 }
 
 .message-content {
@@ -183,7 +183,7 @@
   background-color: #f8f9fa;
   padding: 16rpx;
   border-radius: 8rpx;
-  border-left: 4rpx solid #07c160;
+  border-left: 4rpx solid #9ed7ee;
 }
 
 .post-title {
@@ -201,12 +201,12 @@
   padding: 8rpx 12rpx;
   background-color: #f0f9ff;
   border-radius: 8rpx;
-  border-left: 3rpx solid #07c160;
+  border-left: 3rpx solid #9ed7ee;
 }
 
 .time-text {
   font-size: 24rpx;
-  color: #07c160;
+  color: #9ed7ee;
   font-weight: 500;
 }
 

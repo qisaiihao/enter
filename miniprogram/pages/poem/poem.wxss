@@ -254,7 +254,7 @@ page {
   right: 30rpx;
   width: 100rpx;
   height: 100rpx;
-  background-color: #07c160;
+  background-color: #9ed7ee;
   border-radius: 50%;
   display: flex;
   align-items: center;

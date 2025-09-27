@@ -64,6 +64,6 @@
 
 .save-button {
   margin-top: 60rpx;
-  background-color: #07c160;
+  background-color: #9ed7ee;
   color: white;
 }

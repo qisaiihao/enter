@@ -1,5 +1,5 @@
 <!-- pages/add/add.wxml -->
-<view class="container">
+<view class="container" style="padding-bottom: calc(120rpx + {{keyboardHeight}}px);">
 
 <!-- 图片预览区域 -->
 <view wx:if="{{imageList.length > 0}}" class="image-section">
@@ -42,28 +42,19 @@
 
   <!-- 正文输入区域 -->
   <view class="content-input-wrapper">
-    <scroll-view 
-      class="content-scroll" 
-      scroll-y="true"
-      enhanced="{{true}}"
-      show-scrollbar="{{false}}"
-      keyboard-up-adjust="{{true}}"
-      hold-keyboard="{{true}}"
-    >
-      <textarea 
-        class="content-textarea" 
-        placeholder="此刻你想要分享..." 
-        bindinput="onContentInput"
-        maxlength="1500"
-        value="{{content}}"
-        auto-height="{{true}}"
-        show-confirm-bar="{{false}}"
-        adjust-position="{{false}}"
-        cursor-spacing="50"
-        fixed="{{true}}"
-      ></textarea>
-    </scroll-view>
-    <view class="char-count">{{content.length}}/1500</view>
+    <textarea 
+      class="content-textarea" 
+      placeholder="此刻你想要分享..." 
+      bindinput="onContentInput"
+      bindtap="onTextareaTap"
+      maxlength="1500"
+      value="{{content}}"
+      show-confirm-bar="{{false}}"
+      adjust-position="{{false}}"
+      bindfocus="onTextareaFocus"
+      bindblur="onTextareaBlur"
+    ></textarea>
+    <view wx:if="{{content.length > 1400}}" class="char-count">{{content.length}}/1500</view>
   </view>
 </view>
 
@@ -80,7 +71,7 @@
 </view>
 
 <!-- 底部工具栏 -->
-<view class="toolbar">
+<view class="toolbar" style="bottom: {{keyboardHeight}}px;">
   <view class="toolbar-item" bindtap="handleChooseImage">
     <view class="toolbar-icon">📷</view>
     <view class="toolbar-text">图片</view>
@@ -97,7 +88,7 @@
 </view>
 
 <!-- 标签选择区域 -->
-<view wx:if="{{showTagSelector}}" class="tag-section">
+<view wx:if="{{showTagSelector}}" class="tag-section" style="bottom: calc(120rpx + {{keyboardHeight}}px);">
   <view class="tag-header">
     <text class="tag-title">添加标签</text>
     <text class="tag-count">{{selectedTags.length}}/5</text>
