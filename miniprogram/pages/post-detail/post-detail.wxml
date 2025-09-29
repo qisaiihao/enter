@@ -102,11 +102,26 @@
       <view class="section-title">共{{commentCount}} 条评论</view>
       <view class="comment-list">
         <block wx:if="{{comments.length > 0}}">
-          <view wx:for="{{comments}}" wx:key="_id" class="comment-item">
+          <view wx:for="{{comments}}" wx:key="_id" wx:for-index="commentIndex" class="comment-item">
             <image class="comment-avatar" src="{{item.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindtap="navigateToUserProfile" data-user-id="{{item._openid}}"></image>
             <view class="comment-main">
               <view class="comment-author">{{item.authorName}}</view>
               <view class="comment-content">{{item.content}}</view>
+              <view wx:if="{{item.imageUrls && item.imageUrls.length}}" class="comment-image-grid">
+                  <image
+                    wx:for="{{item.imageUrls}}"
+                    wx:key="*this"
+                    wx:for-item="commentImage"
+                    wx:for-index="imageIndex"
+                    class="comment-image"
+                    src="{{commentImage}}"
+                    mode="aspectFill"
+                    bindtap="previewCommentImageFromList"
+                    data-comment-index="{{commentIndex}}"
+                    data-image-index="{{imageIndex}}"
+                    data-is-reply="false"
+                  />
+                </view>
               <view class="comment-footer">
                 <view class="comment-time">{{item.formattedCreateTime}}</view>
                 <view class="comment-actions">
@@ -130,9 +145,25 @@
                   <view class="reply-main">
                     <view class="reply-author">{{reply.authorName}}</view>
                     <view class="reply-content">
-                      <text class="reply-to">回复@{{item.authorName}}：</text>
-                      <text>{{reply.content}}</text>
-                    </view>
+                        <text class="reply-to">回复@{{item.authorName}}：</text>
+                        <text>{{reply.content}}</text>
+                      </view>
+                    <view wx:if="{{reply.imageUrls && reply.imageUrls.length}}" class="comment-image-grid reply-image-grid">
+                        <image
+                          wx:for="{{reply.imageUrls}}"
+                          wx:key="*this"
+                          wx:for-item="replyImage"
+                          wx:for-index="replyImageIndex"
+                          class="comment-image"
+                          src="{{replyImage}}"
+                          mode="aspectFill"
+                          bindtap="previewCommentImageFromList"
+                          data-comment-index="{{commentIndex}}"
+                          data-reply-index="{{replyIndex}}"
+                          data-image-index="{{replyImageIndex}}"
+                          data-is-reply="true"
+                        />
+                      </view>
                     <view class="reply-footer">
                       <view class="reply-time">{{reply.formattedCreateTime}}</view>
                       <view class="reply-actions">
@@ -220,9 +251,23 @@
       show-confirm-bar="{{false}}"
       adjust-position="{{false}}"
     ></textarea>
-    
+    <view wx:if="{{commentImages.length}}" class="selected-comment-images">
+      <view class="selected-image-item" wx:for="{{commentImages}}" wx:key="id" data-index="{{index}}">
+        <image class="selected-image-thumb" src="{{item.previewUrl}}" mode="aspectFill" bindtap="previewSelectedCommentImage" data-index="{{index}}"></image>
+        <view class="remove-image-btn" bindtap="removeCommentImage" data-index="{{index}}">✕</view>
+      </view>
+    </view>
+
     <!-- 底部操作栏，包含发送按钮 -->
     <view class="expanded-actions">
+      <view class="action-icons">
+        <view class="action-icon" bindtap="chooseCommentImages">
+          <text class="action-icon-text">🖼️</text>
+        </view>
+        <view class="action-icon" bindtap="toggleEmojiPanel">
+          <text class="action-icon-text">😊</text>
+        </view>
+      </view>
       <button 
         class="submit-button" 
         bindtap="onSubmitComment" 
@@ -230,6 +275,9 @@
       >
         发送
       </button>
+    </view>
+    <view wx:if="{{showEmojiPanel}}" class="emoji-panel">
+      <text class="emoji-item" wx:for="{{emojiList}}" wx:key="emoji" data-emoji="{{item}}" bindtap="insertEmoji">{{item}}</text>
     </view>
   </view>
 </view>
@@ -243,3 +291,10 @@
   post-id="{{post._id}}"
   bind:hide="hideFavoriteModal"
   bind:favoriteSuccess="onFavoriteSuccess" />
+
+
+
+
+
+
+

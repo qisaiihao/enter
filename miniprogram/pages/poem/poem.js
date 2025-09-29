@@ -330,6 +330,16 @@ Page({
     this.loadImageForIndex(nextIndex);
   },
 
+  resetBackgroundLayers: function() {
+    this.setData({
+      'bgLayers[0].url': '',
+      'bgLayers[0].visible': false,
+      'bgLayers[1].url': '',
+      'bgLayers[1].visible': false,
+      activeLayerIndex: 0
+    });
+  },
+
   // --- 核心新函数 ---
   // 统一更新帖子内容和背景的函数
   updatePostDisplay: function(index) {
@@ -348,7 +358,13 @@ Page({
 
     // 2. 延迟切换背景图，让文字先显示
     const imageUrl = post.poemBgImage || (post.imageUrls && post.imageUrls[0]) || '';
-    
+
+    if (!imageUrl) {
+      this.resetBackgroundLayers();
+      this.preloadNextBackgroundImage(index);
+      return;
+    }
+
     // 优先使用预加载好的本地缓存路径
     let finalImageUrl = this.data.preloadedImages[imageUrl];
     
@@ -395,7 +411,10 @@ Page({
 
   // 双图层切换函数 - 轻量级版本
   switchBackgroundImage: function(newImageUrl) {
-    if (!newImageUrl) return;
+    if (!newImageUrl) {
+      this.resetBackgroundLayers();
+      return;
+    }
 
     // 优先使用预加载的本地路径
     const preloadedUrl = this.data.preloadedImages[newImageUrl];

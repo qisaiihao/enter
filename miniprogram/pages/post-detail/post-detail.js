@@ -30,7 +30,12 @@ Page({
     isFollowing: false,
     followPending: false,
     isFollowedByAuthor: false,
-    isMutualFollow: false
+    isMutualFollow: false,
+    commentImages: [],
+    maxCommentImages: 3,
+    showEmojiPanel: false,
+    emojiList: ['😀','😁','😂','🤣','😊','😍','😎','🤔','😢','🙏','👍','👎'],
+    isSubmittingComment: false
   },
 
   onLoad: function (options) {
@@ -100,7 +105,9 @@ Page({
               ...comment,
               formattedCreateTime: this.formatTime(comment.createTime),
               likeIcon: likeIcon.getLikeIcon(comment.likes || 0, comment.liked || false),
-              canDelete: comment._openid === currentUserOpenid
+              canDelete: comment._openid === currentUserOpenid,
+              imageUrls: comment.imageUrls || [],
+              originalImageUrls: comment.originalImageUrls || []
             };
 
             if (comment.replies) {
@@ -108,7 +115,9 @@ Page({
                 ...reply,
                 formattedCreateTime: this.formatTime(reply.createTime),
                 likeIcon: likeIcon.getLikeIcon(reply.likes || 0, reply.liked || false),
-                canDelete: reply._openid === currentUserOpenid
+                canDelete: reply._openid === currentUserOpenid,
+                imageUrls: reply.imageUrls || [],
+                originalImageUrls: reply.originalImageUrls || []
               }));
             }
 
@@ -283,70 +292,317 @@ Page({
     console.error('头像加载失败', e);
   },
 
+  updateSubmitState: function() {
+    const hasText = (this.data.newComment || '').trim().length > 0;
+    const hasImages = Array.isArray(this.data.commentImages) && this.data.commentImages.length > 0;
+    const disabled = (!hasText && !hasImages) || this.data.isSubmittingComment;
+    if (this.data.isSubmitDisabled !== disabled) {
+      this.setData({ isSubmitDisabled: disabled });
+    }
+  },
+
   onCommentInput: function(e) {
     this.setData({
-      newComment: e.detail.value,
-      isSubmitDisabled: e.detail.value.trim() === ''
+      newComment: e.detail.value
+    }, () => {
+      this.updateSubmitState();
     });
   },
 
-  onSubmitComment: function() {
-    if (this.data.isSubmitDisabled) return;
+  toggleEmojiPanel: function() {
+    const shouldShow = !this.data.showEmojiPanel;
+    const updateData = {
+      showEmojiPanel: shouldShow,
+      isFocus: !shouldShow
+    };
+    if (shouldShow) {
+      updateData.keyboardHeight = 0;
+      wx.hideKeyboard();
+    }
+    this.setData(updateData);
+  },
 
-    console.log('--- onSubmitComment function triggered ---');
-    console.log('提交前的回复状态:', {
-      replyToComment: this.data.replyToComment,
-      replyToAuthor: this.data.replyToAuthor
+  insertEmoji: function(e) {
+    const emoji = e.currentTarget.dataset.emoji;
+    if (!emoji) return;
+    const newComment = (this.data.newComment || '') + emoji;
+    this.setData({
+      newComment: newComment
+    }, () => {
+      this.updateSubmitState();
     });
+  },
 
-    const content = this.data.newComment;
-    const postId = this.data.post._id;
-    const parentId = this.data.replyToComment; 
-    const replyToAuthor = this.data.replyToAuthor;
+  closeEmojiPanel: function() {
+    if (this.data.showEmojiPanel) {
+      this.setData({ showEmojiPanel: false });
+    }
+  },
 
-    wx.showLoading({ title: '提交中...' });
-    wx.cloud.callFunction({
-      name: 'addComment',
-      data: { 
-        postId: postId,
-        content: content,
-        parentId: parentId,
-        replyToAuthorName: replyToAuthor
-      },
+  chooseCommentImages: function() {
+    this.closeEmojiPanel();
+    const existing = this.data.commentImages ? this.data.commentImages.length : 0;
+    const remaining = this.data.maxCommentImages - existing;
+    if (remaining <= 0) {
+      wx.showToast({ title: '最多选择3张图片', icon: 'none' });
+      return;
+    }
+    wx.chooseImage({
+      count: remaining,
+      sizeType: ['original', 'compressed'],
+      sourceType: ['album', 'camera'],
       success: res => {
-        wx.hideLoading();
-        if (res.result && res.result.success) {
-          wx.showToast({ title: '评论成功' });
-          const newCommentCount = this.data.commentCount + 1;
+        const tempFiles = res.tempFiles || (res.tempFilePaths || []).map(path => ({ tempFilePath: path, size: 0 }));
+        const tasks = tempFiles.map(file => this.prepareCommentImage(file));
+        Promise.all(tasks).then(processedImages => {
+          const validImages = processedImages.filter(item => !!item);
+          if (validImages.length === 0) {
+            return;
+          }
+          const updatedImages = (this.data.commentImages || []).concat(validImages);
           this.setData({
-            newComment: '',
-            isSubmitDisabled: true,
-            commentCount: newCommentCount,
+            commentImages: updatedImages.slice(0, this.data.maxCommentImages)
+          }, () => {
+            this.updateSubmitState();
           });
+        }).catch(err => {
+          console.error('评论图片处理失败:', err);
+          wx.showToast({ title: '图片处理失败', icon: 'none' });
+        });
+      },
+      fail: err => {
+        if (err && err.errMsg && err.errMsg.indexOf('cancel') === -1) {
+          console.error('选择评论图片失败:', err);
+          wx.showToast({ title: '无法选择图片', icon: 'none' });
+        }
+      }
+    });
+  },
 
-          this.collapseInput();
+  prepareCommentImage: function(file) {
+    return new Promise((resolve) => {
+      const tempPath = file.tempFilePath || file.path || (Array.isArray(file.tempFilePaths) ? file.tempFilePaths[0] : '');
+      if (!tempPath) {
+        resolve(null);
+        return;
+      }
+      const sizeInBytes = file.size || 0;
+      const needCompression = sizeInBytes > 300 * 1024;
+      const imageInfo = {
+        id: 'comment_' + Date.now() + '_' + Math.floor(Math.random() * 100000),
+        originalPath: tempPath,
+        previewUrl: tempPath,
+        compressedPath: tempPath,
+        size: sizeInBytes,
+        needCompression: needCompression
+      };
+      if (!needCompression) {
+        resolve(imageInfo);
+        return;
+      }
+      this.compressCommentImage(imageInfo).then(resolvedInfo => {
+        resolve(resolvedInfo);
+      }).catch(err => {
+        console.warn('评论图片压缩异常:', err);
+        imageInfo.compressedPath = imageInfo.originalPath;
+        imageInfo.previewUrl = imageInfo.originalPath;
+        imageInfo.needCompression = false;
+        resolve(imageInfo);
+      });
+    });
+  },
 
-          this.getComments(postId);
+  compressCommentImage: function(imageInfo) {
+    return new Promise((resolve) => {
+      wx.compressImage({
+        src: imageInfo.originalPath,
+        quality: 80,
+        success: res => {
+          imageInfo.compressedPath = res.tempFilePath;
+          imageInfo.previewUrl = res.tempFilePath;
+          resolve(imageInfo);
+        },
+        fail: err => {
+          console.warn('评论图片压缩失败:', err);
+          imageInfo.compressedPath = imageInfo.originalPath;
+          imageInfo.previewUrl = imageInfo.originalPath;
+          imageInfo.needCompression = false;
+          resolve(imageInfo);
+        }
+      });
+    });
+  },
 
-          const pages = getCurrentPages();
-          if (pages.length > 1) {
-            const prePage = pages[pages.length - 2];
-            if (prePage.route === 'pages/index/index' && typeof prePage.updatePostCommentCount === 'function') {
-              prePage.updatePostCommentCount(postId, newCommentCount);
-            } else if (prePage.route === 'pages/profile/profile' && typeof prePage.updatePostCommentCount === 'function') {
-              prePage.updatePostCommentCount(postId, newCommentCount);
+  removeCommentImage: function(e) {
+    const index = e.currentTarget.dataset.index;
+    if (index === undefined) return;
+    const images = (this.data.commentImages || []).slice();
+    images.splice(index, 1);
+    this.setData({ commentImages: images }, () => {
+      this.updateSubmitState();
+    });
+  },
+
+  previewSelectedCommentImage: function(e) {
+    const index = e.currentTarget.dataset.index || 0;
+    const images = this.data.commentImages || [];
+    if (!images.length) return;
+    const urls = images.map(item => item.previewUrl);
+    wx.previewImage({
+      current: urls[index],
+      urls: urls
+    });
+  },
+
+  uploadCommentImages: function() {
+    const images = this.data.commentImages || [];
+    if (!images.length) {
+      return Promise.resolve([]);
+    }
+    const openid = this.getCurrentUserId() || 'guest';
+    const timestamp = Date.now();
+    return Promise.all(images.map((image, index) => {
+      const uniqueKey = (openid || 'guest') + '_' + timestamp + '_' + index;
+      const compressedCloudPath = 'comment_images/' + uniqueKey + '_compressed.jpg';
+      return wx.cloud.uploadFile({
+        cloudPath: compressedCloudPath,
+        filePath: image.compressedPath || image.previewUrl || image.originalPath
+      }).then(compressedRes => {
+        if (image.needCompression) {
+          const originalCloudPath = 'comment_images/' + uniqueKey + '_original.jpg';
+          return wx.cloud.uploadFile({
+            cloudPath: originalCloudPath,
+            filePath: image.originalPath
+          }).then(originalRes => ({
+            compressedUrl: compressedRes.fileID,
+            originalUrl: originalRes.fileID
+          }));
+        }
+        return {
+          compressedUrl: compressedRes.fileID,
+          originalUrl: compressedRes.fileID
+        };
+      });
+    }));
+  },
+
+  previewCommentImageFromList: function(e) {
+    const commentIndex = Number(e.currentTarget.dataset.commentIndex);
+    const replyIndexRaw = e.currentTarget.dataset.replyIndex;
+    const replyIndex = typeof replyIndexRaw === 'undefined' ? -1 : Number(replyIndexRaw);
+    const imageIndex = Number(e.currentTarget.dataset.imageIndex) || 0;
+    const isReplyRaw = e.currentTarget.dataset.isReply;
+    const isReply = isReplyRaw === true || isReplyRaw === 'true';
+
+    let images = [];
+    if (!Number.isNaN(commentIndex) && commentIndex >= 0) {
+      const targetComment = this.data.comments[commentIndex];
+      if (targetComment) {
+        if (isReply && Array.isArray(targetComment.replies) && replyIndex >= 0) {
+          const targetReply = targetComment.replies[replyIndex];
+          if (targetReply) {
+            if (Array.isArray(targetReply.originalImageUrls) && targetReply.originalImageUrls.length > 0) {
+              images = targetReply.originalImageUrls;
+            } else if (Array.isArray(targetReply.imageUrls)) {
+              images = targetReply.imageUrls;
             }
           }
         } else {
-          wx.showToast({ title: (res.result && res.result.message) || '评论失败', icon: 'none' });
+          if (Array.isArray(targetComment.originalImageUrls) && targetComment.originalImageUrls.length > 0) {
+            images = targetComment.originalImageUrls;
+          } else if (Array.isArray(targetComment.imageUrls)) {
+            images = targetComment.imageUrls;
+          }
         }
-      },
-      fail: err => {
-        wx.hideLoading();
-        console.error('Failed to add comment', err);
-        wx.showToast({ title: '网络错误', icon: 'none' });
       }
+    }
+
+    if (!images || !images.length) {
+      return;
+    }
+
+    wx.previewImage({
+      current: images[imageIndex] || images[0],
+      urls: images
     });
+  },
+
+  onSubmitComment: async function() {
+    if (this.data.isSubmitDisabled || this.data.isSubmittingComment) return;
+
+    const trimmedContent = (this.data.newComment || '').trim();
+    const hasContent = trimmedContent.length > 0;
+    const hasImages = Array.isArray(this.data.commentImages) && this.data.commentImages.length > 0;
+
+    if (!hasContent && !hasImages) {
+      wx.showToast({ title: '请输入内容或添加图片', icon: 'none' });
+      return;
+    }
+
+    const postId = this.data.post && this.data.post._id;
+    if (!postId) {
+      wx.showToast({ title: '帖子信息缺失', icon: 'none' });
+      return;
+    }
+
+    const parentId = this.data.replyToComment;
+    const replyToAuthor = this.data.replyToAuthor;
+
+    this.setData({ isSubmittingComment: true });
+    this.updateSubmitState();
+    wx.showLoading({ title: '提交中...' });
+
+    try {
+      const imageUploadResults = await this.uploadCommentImages();
+      const imageUrls = imageUploadResults.map(item => item.compressedUrl);
+      const originalImageUrls = imageUploadResults.map(item => item.originalUrl);
+
+      const res = await wx.cloud.callFunction({
+        name: 'addComment',
+        data: {
+          postId: postId,
+          content: trimmedContent,
+          parentId: parentId,
+          replyToAuthorName: replyToAuthor,
+          imageUrls: imageUrls,
+          originalImageUrls: originalImageUrls
+        }
+      });
+
+      wx.hideLoading();
+
+      if (res.result && res.result.success) {
+        wx.showToast({ title: '评论成功' });
+        const newCommentCount = this.data.commentCount + 1;
+
+        this.setData({
+          newComment: '',
+          commentImages: [],
+          showEmojiPanel: false,
+          commentCount: newCommentCount
+        });
+        this.updateSubmitState();
+        this.collapseInput();
+        this.getComments(postId);
+
+        const pages = getCurrentPages();
+        if (pages.length > 1) {
+          const prePage = pages[pages.length - 2];
+          if ((prePage.route === 'pages/index/index' || prePage.route === 'pages/profile/profile') && typeof prePage.updatePostCommentCount === 'function') {
+            prePage.updatePostCommentCount(postId, newCommentCount);
+          }
+        }
+      } else {
+        wx.showToast({ title: (res.result && res.result.message) || '评论失败', icon: 'none' });
+      }
+    } catch (error) {
+      wx.hideLoading();
+      console.error('Failed to add comment with media:', error);
+      wx.showToast({ title: '评论失败', icon: 'none' });
+    } finally {
+      this.setData({ isSubmittingComment: false });
+      this.updateSubmitState();
+    }
   },
 
   showReplyInput: function(e) {
@@ -686,14 +942,16 @@ Page({
   expandInput: function() {
     this.setData({
       isInputExpanded: true,
-      isFocus: true
+      isFocus: true,
+      showEmojiPanel: false
     });
   },
 
   onInputFocus: function(e) {
     console.log('键盘弹起，高度为:', e.detail.height);
     this.setData({
-      keyboardHeight: e.detail.height
+      keyboardHeight: e.detail.height,
+      showEmojiPanel: false
     });
   },
   
@@ -712,7 +970,8 @@ Page({
       isFocus: false,
       keyboardHeight: 0,
       replyToComment: null,
-      replyToAuthor: ''
+      replyToAuthor: '',
+      showEmojiPanel: false
     });
   },
 
@@ -772,3 +1031,20 @@ Page({
     });
   }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

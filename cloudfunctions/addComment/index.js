@@ -14,17 +14,35 @@ exports.main = async (event, context) => {
   const openid = wxContext.OPENID;
 
   // [新增] 接收前端传来的 replyToAuthorName
-  const { postId, content, parentId, replyToAuthorName } = event;
+  const {
+    postId,
+    content = '',
+    parentId,
+    replyToAuthorName,
+    imageUrls = [],
+    originalImageUrls = []
+  } = event;
+
+  const trimmedContent = (content || '').trim();
+  const sanitizedImageUrls = Array.isArray(imageUrls) ? imageUrls.filter(url => !!url) : [];
+  let sanitizedOriginalImageUrls = Array.isArray(originalImageUrls) ? originalImageUrls.filter(url => !!url) : [];
+
+  if (sanitizedOriginalImageUrls.length === 0 && sanitizedImageUrls.length > 0) {
+    sanitizedOriginalImageUrls = sanitizedImageUrls.slice();
+  }
+
+  const hasContent = trimmedContent.length > 0;
+  const hasImages = sanitizedImageUrls.length > 0;
 
   // Basic validation
   if (!openid) {
     return { success: false, message: 'User not logged in.' };
   }
-  if (!postId || !content) {
-    return { success: false, message: 'Post ID and content are required.' };
+  if (!postId) {
+    return { success: false, message: 'Post ID is required.' };
   }
-  if (content.trim().length === 0) {
-    return { success: false, message: 'Comment content cannot be empty.' };
+  if (!hasContent && !hasImages) {
+    return { success: false, message: '评论内容或图片至少需要一项。' };
   }
 
   try {
@@ -32,9 +50,12 @@ exports.main = async (event, context) => {
     const commentData = {
       _openid: openid,
       postId: postId,
-      content: content,
+      content: trimmedContent,
       likes: 0, // [建议] 初始化点赞数为0
-      createTime: new Date()
+      createTime: new Date(),
+      imageUrls: sanitizedImageUrls,
+      originalImageUrls: sanitizedOriginalImageUrls,
+      hasImages: hasImages
     };
 
     // 如果 parentId 存在，说明这是一条回复
@@ -116,3 +137,5 @@ exports.main = async (event, context) => {
     };
   }
 };
+
+

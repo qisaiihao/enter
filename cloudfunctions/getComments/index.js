@@ -131,13 +131,31 @@ exports.main = async (event, context) => {
       });
       return avatars;
     };
+    const getAllImageFileIds = (comments) => {
+      let imageIds = [];
+      comments.forEach(comment => {
+        if (Array.isArray(comment.imageUrls) && comment.imageUrls.length > 0) {
+          imageIds = imageIds.concat(comment.imageUrls);
+        }
+        if (Array.isArray(comment.originalImageUrls) && comment.originalImageUrls.length > 0) {
+          imageIds = imageIds.concat(comment.originalImageUrls);
+        }
+        if (comment.replies && comment.replies.length > 0) {
+          imageIds = imageIds.concat(getAllImageFileIds(comment.replies));
+        }
+      });
+      return imageIds;
+    };
 
-    const fileIDs = getAllAvatars(resultComments);
-    if (fileIDs.length > 0) {
-      const fileListResult = await cloud.getTempFileURL({ fileList: fileIDs });
+    const avatarFileIDs = getAllAvatars(resultComments);
+    const imageFileIDs = getAllImageFileIds(resultComments);
+    const combinedFileIDs = [...new Set([...avatarFileIDs, ...imageFileIDs])];
+
+    if (combinedFileIDs.length > 0) {
+      const fileListResult = await cloud.getTempFileURL({ fileList: combinedFileIDs });
       const urlMap = new Map();
       fileListResult.fileList.forEach(item => {
-        if (item.status === 0) { // status 为 0 表示获取成功
+        if (item.status === 0) {
           urlMap.set(item.fileID, item.tempFileURL);
         }
       });
@@ -152,7 +170,23 @@ exports.main = async (event, context) => {
           }
         });
       };
+
+      const updateImages = (comments) => {
+        comments.forEach(comment => {
+          if (Array.isArray(comment.imageUrls) && comment.imageUrls.length > 0) {
+            comment.imageUrls = comment.imageUrls.map(id => urlMap.get(id) || id);
+          }
+          if (Array.isArray(comment.originalImageUrls) && comment.originalImageUrls.length > 0) {
+            comment.originalImageUrls = comment.originalImageUrls.map(id => urlMap.get(id) || id);
+          }
+          if (comment.replies) {
+            updateImages(comment.replies);
+          }
+        });
+      };
+
       updateAvatars(resultComments);
+      updateImages(resultComments);
     }
 
     // 11. 返回最终处理好的评论数据
@@ -177,3 +211,4 @@ exports.main = async (event, context) => {
     };
   }
 };
+

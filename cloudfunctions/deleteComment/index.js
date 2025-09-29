@@ -18,10 +18,26 @@ exports.main = async (event, context) => {
   try {
     const commentRes = await db.collection('comments').doc(commentId).get();
     const comment = commentRes.data;
+    const fileIDsToDelete = new Set();
+
+    const collectFileIds = (commentDoc) => {
+      if (!commentDoc) {
+        return;
+      }
+      if (Array.isArray(commentDoc.imageUrls) && commentDoc.imageUrls.length > 0) {
+        commentDoc.imageUrls.forEach(id => id && fileIDsToDelete.add(id));
+      }
+      if (Array.isArray(commentDoc.originalImageUrls) && commentDoc.originalImageUrls.length > 0) {
+        commentDoc.originalImageUrls.forEach(id => id && fileIDsToDelete.add(id));
+      }
+    };
+
 
     if (!comment) {
       return { success: false, message: '评论不存在' };
     }
+
+    collectFileIds(comment);
 
     if (comment._openid !== OPENID) {
       return { success: false, message: '无权删除该评论' };
@@ -34,6 +50,7 @@ exports.main = async (event, context) => {
         .where({ parentId: commentId })
         .limit(1000)
         .get();
+      repliesRes.data.forEach(reply => collectFileIds(reply));
       const replyIds = repliesRes.data.map(reply => reply._id);
       if (replyIds.length > 0) {
         deleteIds = deleteIds.concat(replyIds);
@@ -41,6 +58,13 @@ exports.main = async (event, context) => {
     }
 
     if (deleteIds.length > 0) {
+      if (fileIDsToDelete.size > 0) {
+        try {
+          await cloud.deleteFile({ fileList: Array.from(fileIDsToDelete) });
+        } catch (fileErr) {
+          console.error('删除评论图片失败:', fileErr);
+        }
+      }
       const batchRemove = async (collectionName, buildFilter) => {
         const tasks = [];
         for (let i = 0; i < deleteIds.length; i += 10) {
@@ -98,3 +122,7 @@ exports.main = async (event, context) => {
     };
   }
 };
+
+
+
+
