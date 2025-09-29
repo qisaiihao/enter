@@ -1,4 +1,6 @@
 ﻿const PAGE_SIZE = 5;
+const avatarCache = require('../../utils/avatarCache');
+const followCache = require('../../utils/followCache');
 
 Page({
   data: {
@@ -14,7 +16,7 @@ Page({
   },
 
   onLoad: function (options) {
-    console.log('【用户主页】页面加载，options:', options);
+    console.log('【用户主页】页面加载,options:', options);
     
     const targetUserId = options.userId;
     if (!targetUserId) {
@@ -76,7 +78,9 @@ Page({
             hasMore: posts.length === this.data.PAGE_SIZE
           });
 
-          this.prepareFollowState();
+          // 更新缓存
+          avatarCache.updateUserAvatar(this.data.targetUserId, userInfo);
+          this.prepareFollowStateWithCache();
 
           // 设置页面标题为用户昵称
           wx.setNavigationBarTitle({
@@ -161,7 +165,53 @@ Page({
       isMutualFollow: false
     });
 
-    this.fetchFollowStatus(targetUserId);
+    this.fetchFollowStatusWithCache(targetUserId);
+  },
+
+  prepareFollowStateWithCache: function() {
+    const targetUserId = this.data.targetUserId;
+    const currentUserId = this.getCurrentUserId();
+
+    if (!targetUserId || !currentUserId || targetUserId === currentUserId) {
+      this.setData({
+        showFollowButton: false,
+        isFollowing: false,
+        isFollowedByTarget: false,
+        isMutualFollow: false
+      });
+      return;
+    }
+
+    this.setData({
+      showFollowButton: true,
+      isFollowing: false,
+      isFollowedByTarget: false,
+      isMutualFollow: false
+    });
+
+    this.fetchFollowStatusWithCache(targetUserId);
+  },
+
+  fetchFollowStatusWithCache: function(targetOpenid) {
+    if (!targetOpenid) {
+      return;
+    }
+    
+    const currentUserId = this.getCurrentUserId();
+    if (!currentUserId) {
+      return;
+    }
+
+    // 使用缓存获取关注状态
+    followCache.getFollowStatus(currentUserId, targetOpenid).then(followData => {
+      if (followData) {
+        this.setData({
+          isFollowing: followData.isFollowing,
+          isFollowedByTarget: followData.isFollowedByAuthor,
+          isMutualFollow: followData.isMutualFollow
+        });
+      }
+    });
   },
 
   fetchFollowStatus: function(targetOpenid) {
@@ -213,38 +263,32 @@ Page({
 
     this.setData({ followPending: true });
 
-    wx.cloud.callFunction({
-      name: 'follow',
-      data: {
-        action: 'toggleFollow',
-        targetOpenid
-      },
-      success: res => {
-        if (res.result && res.result.success) {
-          const isFollowing = !!res.result.isFollowing;
-          this.setData({ isFollowing });
-          wx.showToast({
-            title: isFollowing ? '关注成功' : '已取消关注',
-            icon: 'success'
-          });
-          this.fetchFollowStatus(targetOpenid);
-        } else {
-          wx.showToast({
-            title: res.result && res.result.message ? res.result.message : '操作失败',
-            icon: 'none'
-          });
-        }
-      },
-      fail: err => {
-        console.error('切换关注状态失败:', err);
+    // 使用缓存切换关注状态
+    followCache.toggleFollowStatus(currentUserId, targetOpenid).then(followData => {
+      if (followData) {
+        this.setData({ 
+          isFollowing: followData.isFollowing,
+          isFollowedByTarget: followData.isFollowedByAuthor,
+          isMutualFollow: followData.isMutualFollow
+        });
         wx.showToast({
-          title: '网络错误',
+          title: followData.isFollowing ? '关注成功' : '已取消关注',
+          icon: 'success'
+        });
+      } else {
+        wx.showToast({
+          title: '操作失败',
           icon: 'none'
         });
-      },
-      complete: () => {
-        this.setData({ followPending: false });
       }
+    }).catch(err => {
+      console.error('切换关注状态失败:', err);
+      wx.showToast({
+        title: '网络错误',
+        icon: 'none'
+      });
+    }).finally(() => {
+      this.setData({ followPending: false });
     });
   },
 

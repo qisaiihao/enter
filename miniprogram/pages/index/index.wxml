@@ -74,6 +74,9 @@
                   mode="aspectFill"
                   lazy-load="{{true}}"
                   binderror="onImageError"
+                  catch:tap="handlePreview"
+                  data-src="{{item.imageUrls[0]}}"
+                  data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}"
                 />
               </block>
 
@@ -177,6 +180,9 @@
                   mode="aspectFill"
                   lazy-load="{{true}}"
                   binderror="onImageError"
+                  catch:tap="handlePreview"
+                  data-src="{{item.imageUrls[0]}}"
+                  data-original-image-urls="{{item.originalImageUrls || item.imageUrls}}"
                 />
               </block>
 

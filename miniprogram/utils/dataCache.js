@@ -67,6 +67,74 @@ class DataCache {
       return false;
     }
   }
+
+  // 头像缓存相关方法
+  setAvatarCache(userId, avatarData) {
+    const key = `avatar_${userId}`;
+    // 头像缓存24小时
+    return this.set(key, avatarData, 24 * 60 * 60 * 1000);
+  }
+
+  getAvatarCache(userId) {
+    const key = `avatar_${userId}`;
+    return this.get(key);
+  }
+
+  // 关注状态缓存相关方法
+  setFollowStatusCache(currentUserId, targetUserId, followData) {
+    const key = `follow_${currentUserId}_${targetUserId}`;
+    // 关注状态缓存1小时
+    return this.set(key, followData, 60 * 60 * 1000);
+  }
+
+  getFollowStatusCache(currentUserId, targetUserId) {
+    const key = `follow_${currentUserId}_${targetUserId}`;
+    return this.get(key);
+  }
+
+  // 批量获取用户头像缓存
+  getBatchAvatarCache(userIds) {
+    const results = {};
+    userIds.forEach(userId => {
+      const cached = this.getAvatarCache(userId);
+      if (cached) {
+        results[userId] = cached;
+      }
+    });
+    return results;
+  }
+
+  // 批量获取关注状态缓存
+  getBatchFollowStatusCache(currentUserId, targetUserIds) {
+    const results = {};
+    targetUserIds.forEach(targetUserId => {
+      const cached = this.getFollowStatusCache(currentUserId, targetUserId);
+      if (cached) {
+        results[targetUserId] = cached;
+      }
+    });
+    return results;
+  }
+
+  // 清理特定用户的缓存
+  clearUserCache(userId) {
+    try {
+      // 清理该用户的头像缓存
+      this.remove(`avatar_${userId}`);
+      
+      // 清理所有与该用户相关的关注状态缓存
+      const keys = wx.getStorageInfoSync().keys;
+      keys.forEach(key => {
+        if (key.startsWith(`follow_`) && key.includes(`_${userId}`)) {
+          this.remove(key);
+        }
+      });
+      return true;
+    } catch (e) {
+      console.error('清理用户缓存失败:', e);
+      return false;
+    }
+  }
 }
 
 // 创建单例

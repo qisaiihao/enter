@@ -28,3 +28,6 @@
 
   <button class="save-button" bindtap="onSaveChanges" loading="{{isSaving}}">保存</button>
 </view>
+
+<!-- 隐藏的canvas用于头像压缩 -->
+<canvas canvas-id="avatarCompressCanvas" style="position: fixed; top: -9999px; left: -9999px; width: 200px; height: 200px;"></canvas>

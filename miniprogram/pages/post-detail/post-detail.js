@@ -1,6 +1,8 @@
 ﻿// pages/post-detail/post-detail.js
 const app = getApp();
 const likeIcon = require('../../utils/likeIcon');
+const avatarCache = require('../../utils/avatarCache');
+const followCache = require('../../utils/followCache');
 
 Page({
   data: {
@@ -347,6 +349,12 @@ Page({
       wx.showToast({ title: '最多选择3张图片', icon: 'none' });
       return;
     }
+    
+    // 确保输入框保持展开状态
+    if (!this.data.isInputExpanded) {
+      this.expandInput();
+    }
+    
     wx.chooseImage({
       count: remaining,
       sizeType: ['original', 'compressed'],
@@ -364,6 +372,11 @@ Page({
             commentImages: updatedImages.slice(0, this.data.maxCommentImages)
           }, () => {
             this.updateSubmitState();
+            // 选择图片后保持输入框展开状态
+            this.setData({
+              isInputExpanded: true,
+              isFocus: false // 不自动聚焦，避免键盘弹出
+            });
           });
         }).catch(err => {
           console.error('评论图片处理失败:', err);
@@ -387,7 +400,8 @@ Page({
         return;
       }
       const sizeInBytes = file.size || 0;
-      const needCompression = sizeInBytes > 300 * 1024;
+      // 降低压缩阈值到200KB，确保所有超过200KB的图片都被压缩
+      const needCompression = sizeInBytes > 200 * 1024;
       const imageInfo = {
         id: 'comment_' + Date.now() + '_' + Math.floor(Math.random() * 100000),
         originalPath: tempPath,
@@ -414,22 +428,57 @@ Page({
 
   compressCommentImage: function(imageInfo) {
     return new Promise((resolve) => {
-      wx.compressImage({
-        src: imageInfo.originalPath,
-        quality: 80,
-        success: res => {
-          imageInfo.compressedPath = res.tempFilePath;
-          imageInfo.previewUrl = res.tempFilePath;
-          resolve(imageInfo);
-        },
-        fail: err => {
-          console.warn('评论图片压缩失败:', err);
-          imageInfo.compressedPath = imageInfo.originalPath;
-          imageInfo.previewUrl = imageInfo.originalPath;
-          imageInfo.needCompression = false;
-          resolve(imageInfo);
-        }
-      });
+      // 使用更激进的压缩参数，确保文件大小不超过200KB
+      const compressWithQuality = (quality) => {
+        wx.compressImage({
+          src: imageInfo.originalPath,
+          quality: quality,
+          success: res => {
+            // 检查压缩后的文件大小
+            wx.getFileInfo({
+              filePath: res.tempFilePath,
+              success: fileInfo => {
+                const compressedSize = fileInfo.size;
+                console.log(`压缩质量${quality}%，文件大小: ${(compressedSize / 1024).toFixed(2)}KB`);
+                
+                // 如果文件大小超过200KB且质量还可以继续降低，则继续压缩
+                if (compressedSize > 200 * 1024 && quality > 30) {
+                  console.log(`文件大小${(compressedSize / 1024).toFixed(2)}KB超过200KB，继续压缩...`);
+                  compressWithQuality(quality - 10);
+                } else {
+                  imageInfo.compressedPath = res.tempFilePath;
+                  imageInfo.previewUrl = res.tempFilePath;
+                  imageInfo.compressedSize = compressedSize;
+                  console.log(`最终压缩质量${quality}%，文件大小: ${(compressedSize / 1024).toFixed(2)}KB`);
+                  resolve(imageInfo);
+                }
+              },
+              fail: () => {
+                // 如果无法获取文件信息，直接使用压缩结果
+                imageInfo.compressedPath = res.tempFilePath;
+                imageInfo.previewUrl = res.tempFilePath;
+                resolve(imageInfo);
+              }
+            });
+          },
+          fail: err => {
+            console.warn(`压缩质量${quality}%失败:`, err);
+            if (quality > 30) {
+              // 如果压缩失败且质量还可以降低，尝试更低的质量
+              compressWithQuality(quality - 10);
+            } else {
+              // 如果所有压缩都失败，使用原图
+              imageInfo.compressedPath = imageInfo.originalPath;
+              imageInfo.previewUrl = imageInfo.originalPath;
+              imageInfo.needCompression = false;
+              resolve(imageInfo);
+            }
+          }
+        });
+      };
+      
+      // 从60%质量开始压缩，逐步降低直到文件大小符合要求
+      compressWithQuality(60);
     });
   },
 
@@ -825,7 +874,29 @@ Page({
       isFollowedByAuthor: false,
       isMutualFollow: false
     });
-    this.fetchFollowStatus(authorOpenid);
+    this.fetchFollowStatusWithCache(authorOpenid);
+  },
+
+  fetchFollowStatusWithCache: function(targetOpenid) {
+    if (!targetOpenid) {
+      return;
+    }
+    
+    const currentUserId = this.getCurrentUserId();
+    if (!currentUserId) {
+      return;
+    }
+
+    // 使用缓存获取关注状态
+    followCache.getFollowStatus(currentUserId, targetOpenid).then(followData => {
+      if (followData) {
+        this.setData({
+          isFollowing: followData.isFollowing,
+          isFollowedByAuthor: followData.isFollowedByAuthor,
+          isMutualFollow: followData.isMutualFollow
+        });
+      }
+    });
   },
 
   fetchFollowStatus: function(targetOpenid) {
@@ -876,38 +947,32 @@ Page({
 
     this.setData({ followPending: true });
 
-    wx.cloud.callFunction({
-      name: 'follow',
-      data: {
-        action: 'toggleFollow',
-        targetOpenid
-      },
-      success: res => {
-        if (res.result && res.result.success) {
-          const isFollowing = !!res.result.isFollowing;
-          this.setData({ isFollowing });
-          wx.showToast({
-            title: isFollowing ? '关注成功' : '已取消关注',
-            icon: 'success'
-          });
-          this.fetchFollowStatus(targetOpenid);
-        } else {
-          wx.showToast({
-            title: res.result && res.result.message ? res.result.message : '操作失败',
-            icon: 'none'
-          });
-        }
-      },
-      fail: err => {
-        console.error('切换关注状态失败:', err);
+    // 使用缓存切换关注状态
+    followCache.toggleFollowStatus(currentUserId, targetOpenid).then(followData => {
+      if (followData) {
+        this.setData({ 
+          isFollowing: followData.isFollowing,
+          isFollowedByAuthor: followData.isFollowedByAuthor,
+          isMutualFollow: followData.isMutualFollow
+        });
         wx.showToast({
-          title: '网络错误',
+          title: followData.isFollowing ? '关注成功' : '已取消关注',
+          icon: 'success'
+        });
+      } else {
+        wx.showToast({
+          title: '操作失败',
           icon: 'none'
         });
-      },
-      complete: () => {
-        this.setData({ followPending: false });
       }
+    }).catch(err => {
+      console.error('切换关注状态失败:', err);
+      wx.showToast({
+        title: '网络错误',
+        icon: 'none'
+      });
+    }).finally(() => {
+      this.setData({ followPending: false });
     });
   },
 
