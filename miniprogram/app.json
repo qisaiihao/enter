@@ -19,7 +19,9 @@
     "pages/image-manager/image-manager",
     "pages/tag-filter/tag-filter",
     "pages/search/search",
-    "pages/draft-box/draft-box"
+    "pages/draft-box/draft-box",
+    "pages/feedback/feedback",
+    "pages/feedback-admin/feedback-admin"
   ],
   "window": {
     "backgroundColor": "#F6F6F6",

@@ -47,10 +47,10 @@ Page({
     
     // 每次进入页面时主动刷新数据（但避免首次加载时重复调用）
     if (this.data._hasFirstShow) {
-      console.log('【profile】onShow触发，开始刷新数据');
+      console.log('【profile】onShow触发,开始刷新数据');
       this.refreshProfileData();
     } else {
-      console.log('【profile】首次显示，标记已显示');
+      console.log('【profile】首次显示,标记已显示');
       this.setData({ _hasFirstShow: true });
     }
   },
@@ -187,7 +187,8 @@ Page({
       success: openIdRes => {
         if (openIdRes.result && openIdRes.result.openid) {
           const currentOpenid = openIdRes.result.openid;
-          const isAdmin = currentOpenid === 'ojYBd1_A3uCbQ1LGcHxWxOAeA5SE'; // 你的openid
+          const adminOpenids = ['ojYBd1_A3uCbQ1LGcHxWxOAeA5SE', 'ojYBd14JG3-ghYuGCI2WHmkMc9nE']; // 管理员openid列表
+          const isAdmin = adminOpenids.includes(currentOpenid);
           
           console.log('当前用户openid:', currentOpenid);
           console.log('是否为管理员:', isAdmin);
@@ -848,6 +849,20 @@ Page({
   navigateToImageManager: function() {
     wx.navigateTo({
       url: '/pages/image-manager/image-manager'
+    });
+  },
+
+  // 跳转到意见反馈页面
+  navigateToFeedback: function() {
+    wx.navigateTo({
+      url: '/pages/feedback/feedback'
+    });
+  },
+
+  // 跳转到反馈管理页面（管理员）
+  navigateToFeedbackAdmin: function() {
+    wx.navigateTo({
+      url: '/pages/feedback-admin/feedback-admin'
     });
   },
 

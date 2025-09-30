@@ -51,6 +51,12 @@
         <view class="sidebar-item" bindtap="navigateToDraftBox">
           <text>草稿箱</text>
         </view>
+        <view class="sidebar-item" bindtap="navigateToFeedback">
+          <text>意见反馈</text>
+        </view>
+        <view class="sidebar-item" wx:if="{{isAdmin}}" bindtap="navigateToFeedbackAdmin">
+          <text>反馈管理</text>
+        </view>
       </view>
     </view>
 

@@ -20,7 +20,7 @@ exports.main = async (event, context) => {
     };
     
     // 如果指定了消息类型，添加类型过滤
-    if (type && ['like', 'comment', 'favorite'].includes(type)) {
+    if (type && ['like', 'comment', 'favorite', 'feedback', 'feedback_processed'].includes(type)) {
       whereCondition.type = type;
     }
     

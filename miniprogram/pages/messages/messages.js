@@ -94,6 +94,10 @@ Page({
                 msg.content = `${userName} ${timeAgo}${actionText}`;
               } else if (msg.type === 'favorite') {
                 msg.content = `${userName} ${timeAgo}收藏了你的帖子`;
+              } else if (msg.type === 'feedback') {
+                msg.content = `${userName} ${timeAgo}提交了新的意见反馈`;
+              } else if (msg.type === 'feedback_processed') {
+                msg.content = `管理员 ${timeAgo}处理了您的意见反馈`;
               }
             }
           });
