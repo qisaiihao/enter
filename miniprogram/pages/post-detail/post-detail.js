@@ -3,6 +3,7 @@ const app = getApp();
 const likeIcon = require('../../utils/likeIcon');
 const avatarCache = require('../../utils/avatarCache');
 const followCache = require('../../utils/followCache');
+const dataCache = require('../../utils/dataCache');
 
 Page({
   data: {
@@ -182,6 +183,12 @@ Page({
             'post.votes': res.result.votes,
             'post.likeIcon': likeIcon.getLikeIcon(res.result.votes, newIsVoted)
           });
+        }
+        
+        // === 新增：更新首页缓存中的帖子数据 ===
+        if (res.result.success) {
+          console.log('【帖子详情点赞】更新首页缓存中的帖子数据');
+          dataCache.updatePostLikeInCache(postId, this.data.post.votes, this.data.post.isVoted, this.data.post.likeIcon);
         }
       },
       fail: () => {

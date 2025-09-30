@@ -135,6 +135,32 @@ class DataCache {
       return false;
     }
   }
+
+  // 更新帖子缓存中的点赞信息
+  updatePostLikeInCache(postId, votes, isVoted, likeIcon) {
+    try {
+      const cacheKeys = ['index_postList_cache', 'poem_postList_cache', 'mountain_postList_cache'];
+      
+      cacheKeys.forEach(cacheKey => {
+        const cachedData = this.get(cacheKey);
+        if (cachedData && Array.isArray(cachedData)) {
+          const postIndex = cachedData.findIndex(p => p._id === postId);
+          if (postIndex > -1) {
+            cachedData[postIndex].votes = votes;
+            cachedData[postIndex].isVoted = isVoted;
+            cachedData[postIndex].likeIcon = likeIcon;
+            // 重新设置缓存
+            this.set(cacheKey, cachedData);
+            console.log(`【缓存更新】${cacheKey} 中的帖子 ${postId} 点赞信息已更新`);
+          }
+        }
+      });
+      return true;
+    } catch (e) {
+      console.error('更新帖子点赞缓存失败:', e);
+      return false;
+    }
+  }
 }
 
 // 创建单例

@@ -310,6 +310,12 @@ Page({
         } else {
           console.log('【点赞】云函数调用成功，数据已同步');
         }
+        
+        // === 新增：更新缓存中的帖子数据 ===
+        if (res.result.success) {
+          console.log('【点赞】更新缓存中的帖子数据');
+          dataCache.updatePostLikeInCache(postId, postList[index].votes, postList[index].isVoted, postList[index].likeIcon);
+        }
       },
       fail: (err) => {
         console.error('【点赞】云函数调用失败:', err);
