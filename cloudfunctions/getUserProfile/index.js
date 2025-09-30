@@ -182,7 +182,8 @@ exports.main = async (event, context) => {
         _openid: userInfo._openid,
         nickName: userInfo.nickName || '微信用户',
         avatarUrl: userInfo.avatarUrl || '',
-        bio: userInfo.bio || '这个用户很懒，什么都还没留下...'
+        bio: userInfo.bio || '这个用户很懒，什么都还没留下...',
+        signatureUrl: userInfo.signatureUrl || '' // 添加签名URL字段
       },
       posts: posts
     };

@@ -58,12 +58,6 @@
         <image class="signature-image" src="{{currentAuthorSignature}}" mode="aspectFit" binderror="onSignatureError" bindload="onSignatureLoad"></image>
       </view>
       
-      <!-- 调试信息：显示签名状态 -->
-      <view class="debug-signature" style="position: absolute; top: 10rpx; left: 10rpx; background: rgba(0,0,0,0.7); color: white; padding: 10rpx; font-size: 24rpx; border-radius: 8rpx;">
-        <text>作者签名状态: {{currentAuthorSignature ? '已设置' : '未设置'}}</text>
-        <text wx:if="{{currentAuthorSignature}}" style="display: block; margin-top: 5rpx; word-break: break-all;">{{currentAuthorSignature}}</text>
-      </view>
-      
     </view>
     
     <view wx:if="{{postList.length === 0 && !isLoading}}" class="empty-state">

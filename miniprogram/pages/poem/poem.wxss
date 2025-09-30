@@ -31,7 +31,7 @@ page {
   width: 100vw;
   height: 100vh;
   z-index: 1; /* 确保在模糊层之上 */
-  overflow: hidden;
+  overflow: visible; /* 允许签名显示在容器外部 */
 }
 
 /* 新增：背景图的容器和样式 */
@@ -203,18 +203,20 @@ page {
   border-radius: 0; /* 移除圆角 */
   max-height: 62vh; /* 稍微减少高度，配合底部内边距 */
   overflow-y: auto;
+  overflow-x: visible; /* 确保水平方向不被裁剪 */
   font-family: -apple-system-font, 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   letter-spacing: 1rpx;
   text-shadow: 0 1rpx 2rpx rgba(255,255,255,0.8); /* 添加文字阴影增强可读性 */
   flex: 1; /* 让文字区域占据剩余空间 */
+  position: relative; /* 确保定位上下文正确 */
 }
 
 /* 用户签名样式 */
 .user-signature {
   position: absolute;
-  bottom: 30rpx;
-  right: 30rpx;
-  z-index: 10;
+  bottom: 140rpx; /* 从30rpx调整到120rpx，避免被底部导航栏遮挡 */
+  right: 50rpx;
+  z-index: 1001; /* 提高层级，确保不被其他元素覆盖 */
   pointer-events: none; /* 防止签名影响点击事件 */
 }
 
@@ -223,6 +225,8 @@ page {
   height: 60rpx;
   opacity: 0.8; /* 稍微透明，不抢夺主要内容的注意力 */
   filter: drop-shadow(0 2rpx 4rpx rgba(0, 0, 0, 0.1)); /* 添加轻微阴影 */
+  display: block; /* 确保图片正确显示 */
+  background: transparent; /* 确保背景透明 */
 }
 
 /* 骨架屏容器 */

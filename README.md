@@ -535,6 +535,10 @@
 - **交互优化**：签名设置为pointer-events: none，不影响页面其他交互功能
 - **云存储支持**：自动处理云存储签名图片的URL转换，确保图片正常显示
 
+## 最近更新
+
+- **修复签名显示问题**：修复了poem页面签名图片加载成功但不显示的问题。问题原因有五个：1) getUserProfile云函数返回的userInfo对象中缺少signatureUrl字段；2) WXML中的调试信息view覆盖了签名图片的显示；3) 签名的z-index层级太低(10)，被其他元素(999-1000)覆盖；4) poem-mode-container的overflow:hidden裁剪了签名显示；5) 签名位置太低(bottom:30rpx)，被底部导航栏遮挡。现已全部修复，签名位置调整至bottom:120rpx，z-index提升至1001，容器overflow改为visible，并添加了调试样式。
+
 ## 参考文档
 
 - [云开发文档](https://developers.weixin.qq.com/miniprogram/dev/wxcloud/basis/getting-started.html)
