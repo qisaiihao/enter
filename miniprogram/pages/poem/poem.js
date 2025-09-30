@@ -27,7 +27,9 @@ Page({
     activeLayerIndex: 0, // 当前激活的图层索引 (0 或 1)
     
     // --- 用户签名相关 ---
-    currentAuthorSignature: '' // 当前帖子作者的签名图片URL
+    currentAuthorSignature: '', // 当前帖子作者的签名图片URL
+    currentAuthorOpenid: '', // 当前作者的openid，用于防重复获取
+    isFetchingSignature: false // 是否正在获取签名，防止重复调用
   },
 
   onLoad: function () {
@@ -107,7 +109,25 @@ Page({
       return;
     }
     
+    // 防重复调用：如果是同一个作者且正在获取中，直接返回
+    if (this.data.currentAuthorOpenid === authorOpenid && this.data.isFetchingSignature) {
+      console.log('【poem】正在获取该作者签名，跳过重复调用');
+      return;
+    }
+    
+    // 防重复调用：如果是同一个作者且已有签名，直接返回
+    if (this.data.currentAuthorOpenid === authorOpenid && this.data.currentAuthorSignature) {
+      console.log('【poem】该作者签名已存在，跳过重复获取');
+      return;
+    }
+    
     console.log('【poem】获取作者签名信息，openid:', authorOpenid);
+    
+    // 设置获取状态
+    this.setData({ 
+      isFetchingSignature: true,
+      currentAuthorOpenid: authorOpenid 
+    });
     
     // 临时调试：直接查询数据库
     const db = wx.cloud.database();
@@ -121,18 +141,29 @@ Page({
         if (user.signatureUrl) {
           console.log('【poem】数据库中找到签名:', user.signatureUrl);
           this.setData({
-            currentAuthorSignature: user.signatureUrl
+            currentAuthorSignature: user.signatureUrl,
+            isFetchingSignature: false
           });
         } else {
           console.log('【poem】数据库中用户没有设置签名');
-          this.setData({ currentAuthorSignature: '' });
+          this.setData({ 
+            currentAuthorSignature: '',
+            isFetchingSignature: false
+          });
         }
       } else {
         console.log('【poem】数据库中未找到用户');
-        this.setData({ currentAuthorSignature: '' });
+        this.setData({ 
+          currentAuthorSignature: '',
+          isFetchingSignature: false
+        });
       }
     }).catch(err => {
       console.error('【poem】直接查询数据库失败:', err);
+      this.setData({ 
+        currentAuthorSignature: '',
+        isFetchingSignature: false
+      });
     });
     
     // 原来的云函数调用（保留作为备用）
@@ -147,21 +178,31 @@ Page({
           if (user.signatureUrl) {
             console.log('【poem】获取到作者签名:', user.signatureUrl);
             this.setData({
-              currentAuthorSignature: user.signatureUrl
+              currentAuthorSignature: user.signatureUrl,
+              isFetchingSignature: false
             });
             console.log('【poem】作者签名已设置到data中');
           } else {
             console.log('【poem】作者未设置签名，signatureUrl为空');
-            this.setData({ currentAuthorSignature: '' });
+            this.setData({ 
+              currentAuthorSignature: '',
+              isFetchingSignature: false
+            });
           }
         } else {
           console.log('【poem】获取作者信息失败或数据格式错误');
-          this.setData({ currentAuthorSignature: '' });
+          this.setData({ 
+            currentAuthorSignature: '',
+            isFetchingSignature: false
+          });
         }
       },
       fail: err => {
         console.error('【poem】获取作者签名失败:', err);
-        this.setData({ currentAuthorSignature: '' });
+        this.setData({ 
+          currentAuthorSignature: '',
+          isFetchingSignature: false
+        });
       }
     });
   },
