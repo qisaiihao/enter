@@ -46,6 +46,7 @@ exports.main = async (event, context) => {
         nickName: 1,
         avatarUrl: 1,
         bio: 1,
+        signatureUrl: 1, // 添加签名URL字段
         // 不返回私人信息如生日、年龄等
         posts: 1
       })
@@ -90,9 +91,12 @@ exports.main = async (event, context) => {
       }
     });
 
-    // 处理用户头像URL
+    // 处理用户头像URL和签名URL
     if (userInfo.avatarUrl && userInfo.avatarUrl.startsWith('cloud://')) {
       fileIDs.push(userInfo.avatarUrl);
+    }
+    if (userInfo.signatureUrl && userInfo.signatureUrl.startsWith('cloud://')) {
+      fileIDs.push(userInfo.signatureUrl);
     }
 
     if (fileIDs.length > 0) {
@@ -122,9 +126,12 @@ exports.main = async (event, context) => {
           }
         });
 
-        // 转换用户头像URL
+        // 转换用户头像URL和签名URL
         if (userInfo.avatarUrl && urlMap.has(userInfo.avatarUrl)) {
           userInfo.avatarUrl = urlMap.get(userInfo.avatarUrl);
+        }
+        if (userInfo.signatureUrl && urlMap.has(userInfo.signatureUrl)) {
+          userInfo.signatureUrl = urlMap.get(userInfo.signatureUrl);
         }
       } catch (fileError) {
         console.error('文件URL转换失败:', fileError);
