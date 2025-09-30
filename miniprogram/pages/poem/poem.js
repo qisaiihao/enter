@@ -108,22 +108,37 @@ Page({
     wx.cloud.callFunction({
       name: 'getMyProfileData',
       success: res => {
+        console.log('【poem】getMyProfileData返回结果:', res);
         if (res.result && res.result.success && res.result.userInfo) {
           const user = res.result.userInfo;
+          console.log('【poem】用户信息:', user);
           if (user.signatureUrl) {
             console.log('【poem】获取到用户签名:', user.signatureUrl);
             this.setData({
               userSignature: user.signatureUrl
             });
+            console.log('【poem】签名已设置到data中');
           } else {
-            console.log('【poem】用户未设置签名');
+            console.log('【poem】用户未设置签名，signatureUrl为空');
           }
+        } else {
+          console.log('【poem】获取用户信息失败或数据格式错误');
         }
       },
       fail: err => {
         console.error('【poem】获取用户签名失败:', err);
       }
     });
+  },
+
+  // 签名图片加载成功
+  onSignatureLoad: function(e) {
+    console.log('【poem】签名图片加载成功:', e);
+  },
+
+  // 签名图片加载失败
+  onSignatureError: function(e) {
+    console.error('【poem】签名图片加载失败:', e);
   },
 
   getPostList: function (cb) {
