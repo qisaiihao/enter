@@ -27,14 +27,11 @@ Page({
     activeLayerIndex: 0, // 当前激活的图层索引 (0 或 1)
     
     // --- 用户签名相关 ---
-    userSignature: '' // 当前用户的签名图片URL
+    currentAuthorSignature: '' // 当前帖子作者的签名图片URL
   },
 
   onLoad: function () {
     console.log('Poem 页面 onLoad');
-    
-    // 获取用户签名信息
-    this.fetchUserSignature();
     
     const app = getApp();
     // 检查预加载数据
@@ -102,31 +99,41 @@ Page({
     this.getPostList();
   },
 
-  // 获取用户签名信息
-  fetchUserSignature: function() {
-    console.log('【poem】获取用户签名信息');
+  // 获取指定作者的签名信息
+  fetchAuthorSignature: function(authorOpenid) {
+    if (!authorOpenid) {
+      console.log('【poem】作者openid为空，不获取签名');
+      this.setData({ currentAuthorSignature: '' });
+      return;
+    }
+    
+    console.log('【poem】获取作者签名信息，openid:', authorOpenid);
     wx.cloud.callFunction({
-      name: 'getMyProfileData',
+      name: 'getUserProfile',
+      data: { userId: authorOpenid },
       success: res => {
-        console.log('【poem】getMyProfileData返回结果:', res);
+        console.log('【poem】getUserProfile返回结果:', res);
         if (res.result && res.result.success && res.result.userInfo) {
           const user = res.result.userInfo;
-          console.log('【poem】用户信息:', user);
+          console.log('【poem】作者信息:', user);
           if (user.signatureUrl) {
-            console.log('【poem】获取到用户签名:', user.signatureUrl);
+            console.log('【poem】获取到作者签名:', user.signatureUrl);
             this.setData({
-              userSignature: user.signatureUrl
+              currentAuthorSignature: user.signatureUrl
             });
-            console.log('【poem】签名已设置到data中');
+            console.log('【poem】作者签名已设置到data中');
           } else {
-            console.log('【poem】用户未设置签名，signatureUrl为空');
+            console.log('【poem】作者未设置签名，signatureUrl为空');
+            this.setData({ currentAuthorSignature: '' });
           }
         } else {
-          console.log('【poem】获取用户信息失败或数据格式错误');
+          console.log('【poem】获取作者信息失败或数据格式错误');
+          this.setData({ currentAuthorSignature: '' });
         }
       },
       fail: err => {
-        console.error('【poem】获取用户签名失败:', err);
+        console.error('【poem】获取作者签名失败:', err);
+        this.setData({ currentAuthorSignature: '' });
       }
     });
   },
@@ -400,6 +407,9 @@ Page({
       currentPost: post,
       currentPostIndex: index
     });
+
+    // 2. 获取当前帖子作者的签名
+    this.fetchAuthorSignature(post._openid);
 
     // 2. 延迟切换背景图，让文字先显示
     const imageUrl = post.poemBgImage || (post.imageUrls && post.imageUrls[0]) || '';
