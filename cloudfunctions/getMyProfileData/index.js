@@ -71,6 +71,7 @@ exports.main = async (event, context) => {
         avatarUrl: 1, // This is a fileID
         birthday: 1, // 新增：获取生日
         bio: 1,      // 新增：获取个性签名
+        signatureUrl: 1,
         posts: '$userPosts'
       })
       .end();
@@ -84,7 +85,8 @@ exports.main = async (event, context) => {
       nickName: result.nickName, 
       avatarUrl: result.avatarUrl, // fileID
       birthday: result.birthday,
-      bio: result.bio
+      bio: result.bio,
+      signatureUrl: result.signatureUrl,
     };
     let posts = result.posts || []; // 这里已经是分页后的 posts
     console.log('【profile云函数】聚合后 posts 数量:', posts.length);
@@ -125,11 +127,14 @@ exports.main = async (event, context) => {
         });
       }
       
-      if (userInfo.avatarUrl && userInfo.avatarUrl.startsWith('cloud://')) {
-        fileIDSet.add(userInfo.avatarUrl);
-      }
     });
     
+    if (userInfo.avatarUrl && userInfo.avatarUrl.startsWith('cloud://')) {
+      fileIDSet.add(userInfo.avatarUrl);
+    }
+    if (userInfo.signatureUrl && userInfo.signatureUrl.startsWith('cloud://')) {
+      fileIDSet.add(userInfo.signatureUrl);
+    }
     const fileIDs = Array.from(fileIDSet);
 
     if (fileIDs.length > 0) {
@@ -148,10 +153,15 @@ exports.main = async (event, context) => {
               return urlMap.has(url) ? urlMap.get(url) : url;
             });
           }
-          if (userInfo.avatarUrl && urlMap.has(userInfo.avatarUrl)) {
-            userInfo.avatarUrl = urlMap.get(userInfo.avatarUrl);
-          }
         });
+
+        if (userInfo.avatarUrl && urlMap.has(userInfo.avatarUrl)) {
+          userInfo.avatarUrl = urlMap.get(userInfo.avatarUrl);
+        }
+        if (userInfo.signatureUrl && urlMap.has(userInfo.signatureUrl)) {
+          userInfo.signatureUrl = urlMap.get(userInfo.signatureUrl);
+        }
+
       } catch (fileError) {
         console.error('文件URL转换失败:', fileError);
       }

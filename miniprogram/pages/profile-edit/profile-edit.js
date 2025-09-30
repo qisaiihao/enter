@@ -10,7 +10,11 @@ Page({
     bio: '',
     endDate: '',
     isSaving: false,
-    tempAvatarPath: null
+    tempAvatarPath: null,
+    signatureUrl: '',
+    signaturePreview: '',
+    signatureTempPath: null,
+    isProcessingSignature: false
   },
 
   onLoad: function (options) {
@@ -30,7 +34,10 @@ Page({
             avatarUrl: user.avatarUrl || '',
             nickName: user.nickName || '',
             birthday: user.birthday || '',
-            bio: user.bio || ''
+            bio: user.bio || '',
+            signatureUrl: user.signatureUrl || '',
+            signaturePreview: user.signatureUrl || '',
+            signatureTempPath: null
           });
         } else {
           wx.showToast({ title: '加载失败', icon: 'none' });
@@ -80,6 +87,145 @@ Page({
       });
   },
 
+  onChooseSignature() {
+    if (this.data.isProcessingSignature) return;
+
+    const handleResult = (filePath) => {
+      if (!filePath) {
+        wx.showToast({ title: '未选择图片', icon: 'none' });
+        return;
+      }
+      this.processSignatureImage(filePath);
+    };
+
+    const chooseMediaOptions = {
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      success: res => {
+        const file = res.tempFiles && res.tempFiles[0];
+        handleResult(file && (file.tempFilePath || file.filePath));
+      },
+      fail: err => {
+        if (err && err.errMsg && err.errMsg.includes('cancel')) {
+          return;
+        }
+        wx.showToast({ title: '选择图片失败', icon: 'none' });
+      }
+    };
+
+    if (wx.chooseMedia) {
+      wx.chooseMedia(chooseMediaOptions);
+    } else {
+      wx.chooseImage({
+        count: 1,
+        sizeType: ['original', 'compressed'],
+        sourceType: ['album', 'camera'],
+        success: res => handleResult(res.tempFilePaths && res.tempFilePaths[0]),
+        fail: err => {
+          if (err && err.errMsg && err.errMsg.includes('cancel')) {
+            return;
+          }
+          wx.showToast({ title: '选择图片失败', icon: 'none' });
+        }
+      });
+    }
+  },
+
+  processSignatureImage(filePath) {
+    wx.showLoading({ title: '处理中...', mask: true });
+    this.setData({ isProcessingSignature: true });
+
+    wx.createSelectorQuery().select('#signatureCanvas').node().exec(res => {
+      const canvasNode = res && res[0] && res[0].node;
+      if (!canvasNode) {
+        wx.hideLoading();
+        wx.showToast({ title: '获取画布失败', icon: 'none' });
+        this.setData({ isProcessingSignature: false });
+        return;
+      }
+
+      const canvas = canvasNode;
+      const ctx = canvas.getContext('2d');
+      const img = canvas.createImage();
+      img.src = filePath;
+
+      img.onload = () => {
+        const originalWidth = img.width;
+        const originalHeight = img.height;
+        const maxSide = 800;
+        const scale = Math.min(1, maxSide / Math.max(originalWidth, originalHeight));
+        const width = Math.max(1, Math.round(originalWidth * scale));
+        const height = Math.max(1, Math.round(originalHeight * scale));
+
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        try {
+          const imageData = ctx.getImageData(0, 0, width, height);
+          const data = imageData.data;
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const avg = (r + g + b) / 3;
+            const diff = Math.max(Math.abs(r - g), Math.abs(r - b), Math.abs(g - b));
+            if (avg > 235 && diff < 25) {
+              data[i + 3] = 0;
+            } else if (avg > 220 && diff < 30) {
+              data[i + 3] = Math.min(data[i + 3], 120);
+            }
+          }
+          ctx.putImageData(imageData, 0, 0);
+        } catch (error) {
+          console.error('签名像素处理失败:', error);
+          wx.hideLoading();
+          wx.showToast({ title: '处理失败', icon: 'none' });
+          this.setData({ isProcessingSignature: false });
+          return;
+        }
+
+        wx.canvasToTempFilePath({
+          canvas,
+          x: 0,
+          y: 0,
+          width,
+          height,
+          destWidth: width,
+          destHeight: height,
+          fileType: 'png',
+          success: result => {
+            wx.hideLoading();
+            wx.showToast({ title: '签名已优化', icon: 'success', duration: 1500 });
+            this.setData({
+              signaturePreview: result.tempFilePath,
+              signatureTempPath: result.tempFilePath,
+              signatureUrl: ''
+            });
+          },
+          fail: err => {
+            console.error('导出签名失败:', err);
+            wx.hideLoading();
+            wx.showToast({ title: '导出失败', icon: 'none' });
+          },
+          complete: () => {
+            this.setData({ isProcessingSignature: false });
+          }
+        });
+      };
+
+      img.onerror = error => {
+        console.error('签名图片加载失败:', error);
+        wx.hideLoading();
+        wx.showToast({ title: '图片加载失败', icon: 'none' });
+        this.setData({ isProcessingSignature: false });
+      };
+    });
+  },
+
   onNicknameInput(e) {
     this.setData({ nickName: e.detail.value });
   },
@@ -93,54 +239,62 @@ Page({
   },
 
   onSaveChanges: function() {
-    if (this.data.isSaving) return;
+    if (this.data.isSaving || this.data.isProcessingSignature) return;
     this.setData({ isSaving: true });
-    wx.showLoading({ title: '保存中...' });
+    wx.showLoading({ title: '保存中...', mask: true });
 
-    let uploadPromise = this.data.tempAvatarPath ? 
-      wx.cloud.uploadFile({
-        cloudPath: `user_avatars/${Date.now()}`,
-        filePath: this.data.tempAvatarPath
-      }) : 
-      Promise.resolve({ fileID: null });
+    const avatarUpload = this.data.tempAvatarPath
+      ? wx.cloud.uploadFile({
+          cloudPath: `user_avatars/${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+          filePath: this.data.tempAvatarPath
+        }).then(res => res.fileID)
+      : Promise.resolve(null);
 
-    uploadPromise.then(uploadRes => {
-      return wx.cloud.callFunction({
-        name: 'updateUserProfile',
-        data: {
-          avatarUrl: uploadRes.fileID,
-          nickName: this.data.nickName,
-          birthday: this.data.birthday,
-          bio: this.data.bio
+    const signatureUpload = this.data.signatureTempPath
+      ? wx.cloud.uploadFile({
+          cloudPath: `user_signatures/${Date.now()}_${Math.floor(Math.random() * 1000)}.png`,
+          filePath: this.data.signatureTempPath
+        }).then(res => res.fileID)
+      : Promise.resolve(null);
+
+    Promise.all([avatarUpload, signatureUpload])
+      .then(([avatarFileID, signatureFileID]) => {
+        return wx.cloud.callFunction({
+          name: 'updateUserProfile',
+          data: {
+            avatarUrl: avatarFileID,
+            nickName: this.data.nickName,
+            birthday: this.data.birthday,
+            bio: this.data.bio,
+            signatureUrl: signatureFileID
+          }
+        });
+      })
+      .then(res => {
+        if (res.result.success) {
+          wx.hideLoading();
+          wx.showToast({ title: '保存成功' });
+
+          const pages = getCurrentPages();
+          if (pages.length > 1) {
+            const prePage = pages[pages.length - 2];
+            if (prePage && typeof prePage.fetchUserProfile === 'function') {
+              prePage.fetchUserProfile();
+            }
+          }
+
+          setTimeout(() => wx.navigateBack(), 1000);
+        } else {
+          throw new Error(res.result.message || '云函数保存失败');
         }
-      });
-    })
-    .then(res => {
-      if (res.result.success) {
+      })
+      .catch(err => {
+        console.error('保存资料失败:', err);
         wx.hideLoading();
-        wx.showToast({ title: '保存成功' });
-        
-        // 获取页面栈
-        const pages = getCurrentPages();
-        if (pages.length > 1) {
-          // 获取上一个页面实例
-          const prePage = pages[pages.length - 2];
-          // 调用上一个页面的方法
-          prePage.fetchUserProfile();
-        }
-
-        // 保存成功后，直接返回
-        setTimeout(() => wx.navigateBack(), 1000);
-      } else {
-        throw new Error(res.result.message || '云函数保存失败');
-      }
-    })
-    .catch(err => {
-      wx.hideLoading();
-      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-    })
-    .finally(() => {
-      this.setData({ isSaving: false });
-    });
+        wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+      })
+      .finally(() => {
+        this.setData({ isSaving: false });
+      });
   }
 });

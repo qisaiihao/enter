@@ -24,11 +24,17 @@ Page({
       { url: '', visible: false },
       { url: '', visible: false }
     ],
-    activeLayerIndex: 0 // 当前激活的图层索引 (0 或 1)
+    activeLayerIndex: 0, // 当前激活的图层索引 (0 或 1)
+    
+    // --- 用户签名相关 ---
+    userSignature: '' // 当前用户的签名图片URL
   },
 
   onLoad: function () {
     console.log('Poem 页面 onLoad');
+    
+    // 获取用户签名信息
+    this.fetchUserSignature();
     
     const app = getApp();
     // 检查预加载数据
@@ -94,6 +100,30 @@ Page({
       activeLayerIndex: 0
     });
     this.getPostList();
+  },
+
+  // 获取用户签名信息
+  fetchUserSignature: function() {
+    console.log('【poem】获取用户签名信息');
+    wx.cloud.callFunction({
+      name: 'getMyProfileData',
+      success: res => {
+        if (res.result && res.result.success && res.result.userInfo) {
+          const user = res.result.userInfo;
+          if (user.signatureUrl) {
+            console.log('【poem】获取到用户签名:', user.signatureUrl);
+            this.setData({
+              userSignature: user.signatureUrl
+            });
+          } else {
+            console.log('【poem】用户未设置签名');
+          }
+        }
+      },
+      fail: err => {
+        console.error('【poem】获取用户签名失败:', err);
+      }
+    });
   },
 
   getPostList: function (cb) {

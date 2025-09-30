@@ -67,3 +67,43 @@
   background-color: #9ed7ee;
   color: white;
 }
+
+.signature-section {
+  width: 100%;
+}
+
+.signature-actions {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  width: 100%;
+}
+
+.signature-upload-btn {
+  background-color: #1c9bd6;
+  color: #fff;
+  border-radius: 8rpx;
+  padding: 0 30rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+}
+
+.signature-upload-btn::after {
+  border: none;
+}
+
+.signature-tip {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #888;
+}
+
+.signature-preview {
+  width: 100%;
+  max-height: 260rpx;
+  margin-top: 24rpx;
+  background: #f7f7f7;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  box-sizing: border-box;
+}

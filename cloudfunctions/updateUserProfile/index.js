@@ -11,7 +11,7 @@ exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext();
   const openid = wxContext.OPENID;
 
-  const { avatarUrl, nickName, birthday, bio } = event;
+  const { avatarUrl, nickName, birthday, bio, signatureUrl } = event;
 
   try {
     const updateData = {};
@@ -20,6 +20,7 @@ exports.main = async (event, context) => {
     if (nickName) updateData.nickName = nickName;
     if (birthday) updateData.birthday = birthday;
     if (bio) updateData.bio = bio;
+    if (signatureUrl) updateData.signatureUrl = signatureUrl;
 
     // Check if there is anything to update
     if (Object.keys(updateData).length === 0) {
