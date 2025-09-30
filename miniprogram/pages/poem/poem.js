@@ -108,6 +108,34 @@ Page({
     }
     
     console.log('【poem】获取作者签名信息，openid:', authorOpenid);
+    
+    // 临时调试：直接查询数据库
+    const db = wx.cloud.database();
+    db.collection('users').where({
+      _openid: authorOpenid
+    }).get().then(res => {
+      console.log('【poem】直接查询数据库结果:', res);
+      if (res.data && res.data.length > 0) {
+        const user = res.data[0];
+        console.log('【poem】数据库中的用户信息:', user);
+        if (user.signatureUrl) {
+          console.log('【poem】数据库中找到签名:', user.signatureUrl);
+          this.setData({
+            currentAuthorSignature: user.signatureUrl
+          });
+        } else {
+          console.log('【poem】数据库中用户没有设置签名');
+          this.setData({ currentAuthorSignature: '' });
+        }
+      } else {
+        console.log('【poem】数据库中未找到用户');
+        this.setData({ currentAuthorSignature: '' });
+      }
+    }).catch(err => {
+      console.error('【poem】直接查询数据库失败:', err);
+    });
+    
+    // 原来的云函数调用（保留作为备用）
     wx.cloud.callFunction({
       name: 'getUserProfile',
       data: { userId: authorOpenid },
