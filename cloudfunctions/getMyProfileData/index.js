@@ -71,6 +71,8 @@ exports.main = async (event, context) => {
         avatarUrl: 1, // This is a fileID
         birthday: 1, // 新增：获取生日
         bio: 1,      // 新增：获取个性签名
+        poemId: 1,
+        password: 1,
         signatureUrl: 1,
         posts: '$userPosts'
       })
@@ -86,6 +88,8 @@ exports.main = async (event, context) => {
       avatarUrl: result.avatarUrl, // fileID
       birthday: result.birthday,
       bio: result.bio,
+      poemId: result.poemId || '',
+      password: result.password || '',
       signatureUrl: result.signatureUrl,
     };
     let posts = result.posts || []; // 这里已经是分页后的 posts

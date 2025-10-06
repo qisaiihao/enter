@@ -22,6 +22,16 @@
   </view>
 
   <view class="form-group">
+    <label class="label" for="poemId">Poem ID</label>
+    <input id="poemId" class="input" type="text" placeholder="请输入Poem ID" value="{{poemId}}" bind:input="onPoemIdInput" maxlength="50"/>
+  </view>
+
+  <view class="form-group">
+    <label class="label" for="password">密码</label>
+    <input id="password" class="input" type="text" password="{{true}}" placeholder="请设置登录密码" value="{{password}}" bind:input="onPasswordInput" maxlength="50"/>
+  </view>
+
+  <view class="form-group">
     <label class="label">生日</label>
     <picker mode="date" value="{{birthday}}" start="1920-01-01" end="{{endDate}}" bindchange="onBirthdayChange">
       <view class="picker-display">

@@ -8,6 +8,8 @@ Page({
     nickName: '',
     birthday: '',
     bio: '',
+    poemId: '',
+    password: '',
     endDate: '',
     isSaving: false,
     tempAvatarPath: null,
@@ -18,6 +20,7 @@ Page({
   },
 
   onLoad: function (options) {
+    this.originalPoemId = '';
     this.fetchUserProfile();
     const today = new Date();
     const formattedDate = today.getFullYear() + '-' + (today.getMonth() + 1).toString().padStart(2, '0') + '-' + today.getDate().toString().padStart(2, '0');
@@ -35,10 +38,13 @@ Page({
             nickName: user.nickName || '',
             birthday: user.birthday || '',
             bio: user.bio || '',
+            poemId: user.poemId || '',
+            password: user.password || '',
             signatureUrl: user.signatureUrl || '',
             signaturePreview: user.signatureUrl || '',
             signatureTempPath: null
           });
+          this.originalPoemId = user.poemId || '';
         } else {
           wx.showToast({ title: '加载失败', icon: 'none' });
         }
@@ -238,10 +244,40 @@ Page({
     this.setData({ bio: e.detail.value });
   },
 
+  onPoemIdInput(e) {
+    this.setData({ poemId: e.detail.value });
+  },
+
+  onPasswordInput(e) {
+    this.setData({ password: e.detail.value });
+  },
+
   onSaveChanges: function() {
     if (this.data.isSaving || this.data.isProcessingSignature) return;
     this.setData({ isSaving: true });
     wx.showLoading({ title: '保存中...', mask: true });
+
+    const trimmedPoemId = (this.data.poemId || '').trim();
+    const trimmedPassword = (this.data.password || '').trim();
+
+    this.setData({
+      poemId: trimmedPoemId,
+      password: trimmedPassword
+    });
+
+    if (trimmedPassword && !trimmedPoemId) {
+      wx.hideLoading();
+      wx.showToast({ title: '请先设置Poem ID', icon: 'none' });
+      this.setData({ isSaving: false });
+      return;
+    }
+
+    if (trimmedPoemId && /\s/.test(trimmedPoemId)) {
+      wx.hideLoading();
+      wx.showToast({ title: 'Poem ID不能包含空格', icon: 'none' });
+      this.setData({ isSaving: false });
+      return;
+    }
 
     const avatarUpload = this.data.tempAvatarPath
       ? wx.cloud.uploadFile({
@@ -259,21 +295,35 @@ Page({
 
     Promise.all([avatarUpload, signatureUpload])
       .then(([avatarFileID, signatureFileID]) => {
+        const payload = {
+          avatarUrl: avatarFileID,
+          nickName: this.data.nickName,
+          birthday: this.data.birthday,
+          bio: this.data.bio,
+          signatureUrl: signatureFileID
+        };
+
+        if (trimmedPoemId) {
+          payload.poemId = trimmedPoemId;
+        }
+
+        if (trimmedPassword) {
+          payload.password = trimmedPassword;
+        }
+
         return wx.cloud.callFunction({
           name: 'updateUserProfile',
-          data: {
-            avatarUrl: avatarFileID,
-            nickName: this.data.nickName,
-            birthday: this.data.birthday,
-            bio: this.data.bio,
-            signatureUrl: signatureFileID
-          }
+          data: payload
         });
       })
       .then(res => {
         if (res.result.success) {
           wx.hideLoading();
           wx.showToast({ title: '保存成功' });
+
+          if (trimmedPoemId) {
+            this.originalPoemId = trimmedPoemId;
+          }
 
           const pages = getCurrentPages();
           if (pages.length > 1) {
