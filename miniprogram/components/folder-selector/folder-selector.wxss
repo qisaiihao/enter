@@ -109,7 +109,7 @@
 
 .selected-icon {
   font-size: 32rpx;
-  color: #07c160;
+  color: #9ed7ee;
   font-weight: bold;
 }
 
@@ -165,7 +165,7 @@
 }
 
 .primary-btn {
-  background: #07c160;
+  background: #9ed7ee;
   color: white;
 }
 
@@ -190,5 +190,5 @@
 }
 
 .folder-name-input:focus {
-  border-color: #07c160;
+  border-color: #9ed7ee;
 }

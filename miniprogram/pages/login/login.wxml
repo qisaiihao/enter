@@ -23,3 +23,6 @@
 
   <button class="save-button" bind:tap="onSaveProfile" disabled="{{!openidReady || isSaving}}">进入社区</button>
 </view>
+
+<!-- 隐藏的canvas用于头像压缩 -->
+<canvas canvas-id="avatarCompressCanvas" style="position: fixed; top: -9999px; left: -9999px; width: 200px; height: 200px;"></canvas>

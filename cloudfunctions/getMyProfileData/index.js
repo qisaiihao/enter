@@ -41,6 +41,12 @@ exports.main = async (event, context) => {
     return await removeFromFavorite(openid, event.favoriteId);
   } else if (action === 'getAllFavorites') {
     return await getAllFavorites(openid, event.skip || 0, event.limit || 10);
+  } else if (action === 'saveDraft') {
+    return await saveDraft(openid, event.draftData);
+  } else if (action === 'getDrafts') {
+    return await getDrafts(openid);
+  } else if (action === 'deleteDraft') {
+    return await deleteDraft(openid, event.draftId);
   }
 
   try {
@@ -65,6 +71,9 @@ exports.main = async (event, context) => {
         avatarUrl: 1, // This is a fileID
         birthday: 1, // 新增：获取生日
         bio: 1,      // 新增：获取个性签名
+        poemId: 1,
+        password: 1,
+        signatureUrl: 1,
         posts: '$userPosts'
       })
       .end();
@@ -78,7 +87,10 @@ exports.main = async (event, context) => {
       nickName: result.nickName, 
       avatarUrl: result.avatarUrl, // fileID
       birthday: result.birthday,
-      bio: result.bio
+      bio: result.bio,
+      poemId: result.poemId || '',
+      password: result.password || '',
+      signatureUrl: result.signatureUrl,
     };
     let posts = result.posts || []; // 这里已经是分页后的 posts
     console.log('【profile云函数】聚合后 posts 数量:', posts.length);
@@ -119,11 +131,14 @@ exports.main = async (event, context) => {
         });
       }
       
-      if (userInfo.avatarUrl && userInfo.avatarUrl.startsWith('cloud://')) {
-        fileIDSet.add(userInfo.avatarUrl);
-      }
     });
     
+    if (userInfo.avatarUrl && userInfo.avatarUrl.startsWith('cloud://')) {
+      fileIDSet.add(userInfo.avatarUrl);
+    }
+    if (userInfo.signatureUrl && userInfo.signatureUrl.startsWith('cloud://')) {
+      fileIDSet.add(userInfo.signatureUrl);
+    }
     const fileIDs = Array.from(fileIDSet);
 
     if (fileIDs.length > 0) {
@@ -142,10 +157,15 @@ exports.main = async (event, context) => {
               return urlMap.has(url) ? urlMap.get(url) : url;
             });
           }
-          if (userInfo.avatarUrl && urlMap.has(userInfo.avatarUrl)) {
-            userInfo.avatarUrl = urlMap.get(userInfo.avatarUrl);
-          }
         });
+
+        if (userInfo.avatarUrl && urlMap.has(userInfo.avatarUrl)) {
+          userInfo.avatarUrl = urlMap.get(userInfo.avatarUrl);
+        }
+        if (userInfo.signatureUrl && urlMap.has(userInfo.signatureUrl)) {
+          userInfo.signatureUrl = urlMap.get(userInfo.signatureUrl);
+        }
+
       } catch (fileError) {
         console.error('文件URL转换失败:', fileError);
       }
@@ -717,6 +737,104 @@ async function getAllFavorites(openid, skip, limit) {
     return {
       success: false,
       message: '获取收藏失败',
+      error: error.message
+    };
+  }
+}
+
+// 草稿管理相关函数
+
+// 保存草稿
+async function saveDraft(openid, draftData) {
+  try {
+    if (!draftData) {
+      return {
+        success: false,
+        message: '草稿数据不能为空'
+      };
+    }
+
+    const result = await db.collection('drafts').add({
+      data: {
+        _openid: openid,
+        ...draftData,
+        createTime: new Date(),
+        updateTime: new Date()
+      }
+    });
+
+    return {
+      success: true,
+      draftId: result._id,
+      message: '草稿保存成功'
+    };
+  } catch (error) {
+    console.error('保存草稿失败:', error);
+    return {
+      success: false,
+      message: '保存草稿失败',
+      error: error.message
+    };
+  }
+}
+
+// 获取草稿列表
+async function getDrafts(openid) {
+  try {
+    const result = await db.collection('drafts')
+      .where({
+        _openid: openid
+      })
+      .orderBy('updateTime', 'desc')
+      .get();
+
+    return {
+      success: true,
+      drafts: result.data
+    };
+  } catch (error) {
+    console.error('获取草稿列表失败:', error);
+    return {
+      success: false,
+      message: '获取草稿列表失败',
+      error: error.message
+    };
+  }
+}
+
+// 删除草稿
+async function deleteDraft(openid, draftId) {
+  try {
+    if (!draftId) {
+      return {
+        success: false,
+        message: '草稿ID不能为空'
+      };
+    }
+
+    const result = await db.collection('drafts')
+      .where({
+        _openid: openid,
+        _id: draftId
+      })
+      .remove();
+
+    if (result.stats.removed === 0) {
+      return {
+        success: false,
+        message: '草稿不存在或无权限删除'
+      };
+    }
+
+    return {
+      success: true,
+      message: '草稿删除成功'
+    };
+  } catch (error) {
+    console.error('删除草稿失败:', error);
+    return {
+      success: false,
+      message: '删除草稿失败',
       error: error.message
     };
   }

@@ -1,0 +1,117 @@
+.container {
+  padding: 32rpx;
+  background-color: #f7f8fa;
+  min-height: 100vh;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.fan-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  border-radius: 16rpx;
+  padding: 24rpx 28rpx;
+  box-shadow: 0 6rpx 18rpx rgba(0, 0, 0, 0.05);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 20rpx;
+  overflow: hidden;
+}
+
+.avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+}
+
+.info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  overflow: hidden;
+}
+
+.name {
+  font-size: 30rpx;
+  color: #333333;
+  font-weight: 600;
+}
+
+.bio {
+  font-size: 24rpx;
+  color: #888888;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 420rpx;
+}
+
+.follow-time {
+  font-size: 22rpx;
+  color: #b0b0b0;
+}
+
+.mutual-label {
+  display: inline-block;
+  margin-top: 4rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  background-color: #e6f4ff;
+  color: #1f6fd2;
+}
+
+.follow-btn {
+  margin-left: 24rpx;
+  border: none;
+  background-color: #9ed7ee;
+  color: #ffffff;
+  border-radius: 999rpx;
+  padding: 0 28rpx;
+  height: 64rpx !important;
+  line-height: 64rpx !important;
+}
+
+.follow-btn.following {
+  background-color: #f0f0f0;
+  color: #666666;
+}
+
+.follow-btn::after {
+  border: none;
+}
+
+.follow-btn[disabled] {
+  opacity: 0.6;
+}
+
+.loading,
+.loading-more {
+  margin-top: 32rpx;
+  text-align: center;
+  color: #999999;
+  font-size: 26rpx;
+}
+
+.empty {
+  margin-top: 120rpx;
+  text-align: center;
+  color: #999999;
+  font-size: 28rpx;
+}
+
+.footer-hint {
+  margin-top: 24rpx;
+}

@@ -1,0 +1,32 @@
+﻿<view class="container">
+  <view wx:if="{{isLoading && followings.length === 0}}" class="loading">
+    <text>加载中...</text>
+  </view>
+
+  <block wx:elif="{{followings.length > 0}}">
+    <view class="list">
+      <view wx:for="{{followings}}" wx:key="_openid" class="following-item">
+        <view class="user-info" data-openid="{{item._openid}}" bindtap="openUserProfile">
+          <image class="avatar" src="{{item.avatarUrl || defaultAvatar}}" mode="aspectFill" binderror="onAvatarError" data-index="{{index}}"></image>
+          <view class="info-text">
+            <text class="name">{{item.nickName || '微信用户'}}</text>
+            <text class="bio">{{item.bio || '这个用户还没有留下简介~'}}</text>
+          </view>
+        </view>
+        <button class="unfollow-btn" size="mini" catch:tap="onToggleFollow" data-openid="{{item._openid}}" data-index="{{index}}" loading="{{pendingOpenid === item._openid}}" disabled="{{pendingOpenid === item._openid}}">
+          取消关注
+        </button>
+      </view>
+    </view>
+  </block>
+
+  <view wx:else class="empty">
+    <text>还没有关注任何人，去广场看看吧～</text>
+  </view>
+
+  <view wx:if="{{followings.length > 0}}" class="footer-hint">
+    <view wx:if="{{isLoading}}" class="loading-more">加载中...</view>
+    <view wx:elif="{{!hasMore}}" class="loading-more">已经到底了</view>
+  </view>
+</view>
+

@@ -27,6 +27,10 @@
       <text>收藏</text>
       <view wx:if="{{activeTab === 'favorite'}}" class="tab-indicator"></view>
     </view>
+    <view class="tab-item {{activeTab === 'feedback' ? 'active' : ''}}" bindtap="switchTab" data-tab="feedback">
+      <text>反馈</text>
+      <view wx:if="{{activeTab === 'feedback'}}" class="tab-indicator"></view>
+    </view>
   </view>
 
   <!-- 消息列表 -->
@@ -47,8 +51,8 @@
           <!-- 消息类型图标和标题 -->
           <view class="message-header">
             <view class="message-type">
-              <text class="type-icon">{{item.type === 'like' ? '👍' : item.type === 'comment' ? '💬' : '⭐'}}</text>
-              <text class="type-text">{{item.type === 'like' ? '点赞' : item.type === 'comment' ? '评论' : '收藏'}}</text>
+              <text class="type-icon">{{item.type === 'like' ? '👍' : item.type === 'comment' ? '💬' : item.type === 'favorite' ? '⭐' : item.type === 'feedback' ? '📝' : item.type === 'feedback_processed' ? '✅' : '📢'}}</text>
+              <text class="type-text">{{item.type === 'like' ? '点赞' : item.type === 'comment' ? '评论' : item.type === 'favorite' ? '收藏' : item.type === 'feedback' ? '反馈' : item.type === 'feedback_processed' ? '反馈处理' : '通知'}}</text>
             </view>
           </view>
           

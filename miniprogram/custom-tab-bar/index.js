@@ -2,7 +2,7 @@ Component({
   data: {
     selected: 0,
     color: "#999999",
-    selectedColor: "#07c160",
+    selectedColor: "#9ed7ee",
     // 双击检测相关数据
     lastTapTime: 0,
     lastTapIndex: -1,

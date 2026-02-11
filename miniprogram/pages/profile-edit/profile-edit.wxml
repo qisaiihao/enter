@@ -7,9 +7,28 @@
     </button>
   </view>
 
+  <view class="form-group-column signature-section">
+    <label class="label">手写签名</label>
+    <view class="signature-actions">
+      <button class="signature-upload-btn" bindtap="onChooseSignature" loading="{{isProcessingSignature}}" disabled="{{isProcessingSignature}}">上传签名图片</button>
+    </view>
+    <view class="signature-tip">请上传白底黑字签名，系统会自动去除白色背景并生成透明PNG。</view>
+    <image wx:if="{{signaturePreview}}" class="signature-preview" src="{{signaturePreview}}" mode="aspectFit"></image>
+  </view>
+
   <view class="form-group">
     <label class="label" for="nickname">昵称</label>
     <input id="nickname" class="input" type="nickname" placeholder="请输入昵称" value="{{nickName}}" bind:input="onNicknameInput"/>
+  </view>
+
+  <view class="form-group">
+    <label class="label" for="poemId">Poem ID</label>
+    <input id="poemId" class="input" type="text" placeholder="请输入Poem ID" value="{{poemId}}" bind:input="onPoemIdInput" maxlength="50"/>
+  </view>
+
+  <view class="form-group">
+    <label class="label" for="password">密码</label>
+    <input id="password" class="input" type="text" password="{{true}}" placeholder="请设置登录密码" value="{{password}}" bind:input="onPasswordInput" maxlength="50"/>
   </view>
 
   <view class="form-group">
@@ -28,3 +47,8 @@
 
   <button class="save-button" bindtap="onSaveChanges" loading="{{isSaving}}">保存</button>
 </view>
+
+<!-- 隐藏的canvas用于头像压缩 -->
+<canvas type="2d" id="signatureCanvas" style="position: fixed; top: -9999px; left: -9999px; width: 400px; height: 200px;"></canvas>
+
+<canvas canvas-id="avatarCompressCanvas" style="position: fixed; top: -9999px; left: -9999px; width: 200px; height: 200px;"></canvas>

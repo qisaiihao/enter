@@ -1,0 +1,82 @@
+<!--用户反馈页面-->
+<view class="container" style="padding-top: {{statusBarHeight}}px;">
+  <!-- 头部 -->
+  <view class="header" style="top: {{statusBarHeight}}px;">
+    <view class="header-left" bindtap="goBack">
+      <text class="back-icon">←</text>
+    </view>
+    <text class="header-title">意见反馈</text>
+    <view class="header-right"></view>
+  </view>
+
+  <!-- 反馈内容输入 -->
+  <view class="content-section">
+    <view class="section-title">反馈内容</view>
+    <textarea 
+      class="content-input"
+      placeholder="请详细描述您遇到的问题或建议..."
+      value="{{content}}"
+      bindinput="onContentInput"
+      maxlength="500"
+      show-confirm-bar="{{false}}"
+    ></textarea>
+    <view class="char-count">{{content.length}}/500</view>
+  </view>
+
+  <!-- 图片上传 -->
+  <view class="image-section">
+    <view class="section-title">相关图片（可选）</view>
+    <view class="image-upload-area">
+      <!-- 已选择的图片 -->
+      <view class="image-list">
+        <view 
+          wx:for="{{images}}" 
+          wx:key="index" 
+          class="image-item"
+        >
+          <image 
+            class="preview-image" 
+            src="{{item.path}}" 
+            mode="aspectFill"
+            bindtap="previewImage"
+            data-index="{{index}}"
+          ></image>
+          <view 
+            class="delete-btn" 
+            bindtap="removeImage" 
+            data-index="{{index}}"
+          >
+            <text class="delete-icon">×</text>
+          </view>
+        </view>
+        
+        <!-- 添加图片按钮 -->
+        <view 
+          wx:if="{{images.length < maxImages}}" 
+          class="add-image-btn" 
+          bindtap="chooseImages"
+        >
+          <text class="add-icon">+</text>
+          <text class="add-text">添加图片</text>
+        </view>
+      </view>
+    </view>
+    <view class="image-tip">最多可上传{{maxImages}}张图片</view>
+  </view>
+
+  <!-- 提交按钮 -->
+  <view class="submit-section">
+    <button 
+      class="submit-btn {{submitting ? 'submitting' : ''}}"
+      bindtap="submitFeedback"
+      disabled="{{submitting}}"
+    >
+      {{submitting ? '提交中...' : '提交反馈'}}
+    </button>
+  </view>
+
+  <!-- 底部提示 -->
+  <view class="footer-tip">
+    <text class="tip-text">我们会认真对待每一条反馈，感谢您的支持！</text>
+  </view>
+</view>

@@ -1,5 +1,6 @@
 // pages/login/login.js
 const app = getApp();
+const { compressAvatar } = require('../../utils/avatarCompress');
 
 Page({
   data: {
@@ -26,13 +27,45 @@ Page({
   },
 
   onChooseAvatar(e) {
-    const { avatarUrl } = e.detail; // This is the local temp path from the component
-    this.setData({
-      localAvatarTempPath: avatarUrl, // Store the local temp path for display
-      avatarFileID: '', // Clear the old fileID to indicate a new upload is needed
-    });
-    // Immediately trigger the upload
-    this.uploadAvatar(avatarUrl);
+    const originalPath = e.detail.avatarUrl; // This is the local temp path from the component
+    console.log('选择头像，原始路径:', originalPath);
+    
+    // 显示压缩提示
+    wx.showLoading({ title: '压缩头像中...' });
+    
+    // 压缩头像
+    compressAvatar(originalPath)
+      .then(compressedPath => {
+        console.log('头像压缩完成，压缩后路径:', compressedPath);
+        this.setData({
+          localAvatarTempPath: compressedPath, // Store the compressed temp path for display
+          avatarFileID: '', // Clear the old fileID to indicate a new upload is needed
+        });
+        wx.hideLoading();
+        wx.showToast({ 
+          title: '头像压缩完成', 
+          icon: 'success',
+          duration: 1500
+        });
+        // 使用压缩后的图片进行上传
+        this.uploadAvatar(compressedPath);
+      })
+      .catch(err => {
+        console.error('头像压缩失败:', err);
+        // 压缩失败，使用原始图片
+        this.setData({
+          localAvatarTempPath: originalPath,
+          avatarFileID: '',
+        });
+        wx.hideLoading();
+        wx.showToast({ 
+          title: '压缩失败，使用原图', 
+          icon: 'none',
+          duration: 2000
+        });
+        // 使用原始图片进行上传
+        this.uploadAvatar(originalPath);
+      });
   },
 
   onNicknameInput(e) {

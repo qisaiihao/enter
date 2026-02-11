@@ -118,7 +118,7 @@
     <view class="empty-icon">📖</view>
     <view class="empty-text">收藏夹是空的</view>
     <view class="empty-subtext">去发现一些好诗收藏起来吧</view>
-    <button bindtap="manualLoad" style="margin-top: 20rpx; padding: 15rpx 30rpx; background: #07c160; color: white; border-radius: 8rpx; font-size: 26rpx;">刷新</button>
+    <button bindtap="manualLoad" style="margin-top: 20rpx; padding: 15rpx 30rpx; background: #9ed7ee; color: white; border-radius: 8rpx; font-size: 26rpx;">刷新</button>
   </view>
 
   <!-- 加载更多 -->

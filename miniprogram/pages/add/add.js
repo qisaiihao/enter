@@ -1,4 +1,4 @@
-// pages/add/add.js
+﻿// pages/add/add.js
 const db = wx.cloud.database();
 
 Page({
@@ -21,7 +21,7 @@ Page({
     isPublished: false, // 是否已发布成功，用于避免发布后再次询问保存草稿
     isTemporaryHide: false, // 是否临时隐藏（如选择图片），用于避免触发草稿保存
     author: '', // 作者信息
-    textareaMinHeight: 400, // 动态计算的textarea最小高度
+    keyboardHeight: 0, // 键盘高度
     
     // 标签分类数据
     tagCategories: [
@@ -58,13 +58,37 @@ Page({
     ]
   },
 
-  onLoad: function () {
+  onLoad: function (options) {
     // 页面加载时获取所有已有标签
     this.loadAllExistingTags();
-    // 加载草稿
-    this.loadDraft();
-    // 计算并设置textarea高度
-    this.calculateTextareaHeight();
+    
+    // 检查是否是编辑草稿模式
+    if (options.mode === 'edit') {
+      this.loadEditingDraft();
+    } else {
+      // 加载草稿
+      this.loadDraft();
+    }
+    
+    // 确保页面不会滚动
+    this.preventPageScroll();
+  },
+
+  onShow: function() {
+    // 每次显示页面时都确保页面不会滚动
+    this.preventPageScroll();
+  },
+
+  preventPageScroll: function() {
+    // 尝试禁用页面滚动
+    try {
+      wx.pageScrollTo({
+        scrollTop: 0,
+        duration: 0
+      });
+    } catch (e) {
+      console.log('preventPageScroll error:', e);
+    }
   },
 
   onUnload: function () {
@@ -88,10 +112,54 @@ Page({
     this.checkCanPublish();
   },
   
-  onContentInput: function(event) { 
-    this.setData({ content: event.detail.value }); 
+  onContentInput: function(event) {
+    const { value, cursor } = event.detail;
+    this.setData({ content: value });
     this.checkCanPublish();
   },
+
+  onContainerTap: function(event) {
+    // 点击空白区域退出输入法，但不要立即隐藏，给textarea一点时间
+    console.log('容器被点击，准备隐藏键盘');
+    setTimeout(() => {
+      wx.hideKeyboard();
+    }, 100);
+  },
+
+  onTextareaTap: function(event) {
+    // 确保输入框能正常获取焦点
+    console.log('textarea被点击，应该获取焦点');
+  },
+
+  // 输入框获得焦点时触发，获取键盘高度
+  onTextareaFocus: function(e) {
+    console.log('textarea获得焦点，键盘高度:', e.detail.height);
+    // 在开发者工具中，键盘高度可能为0，我们需要设置一个默认值
+    let keyboardHeight = e.detail.height;
+    
+    // 如果键盘高度为0，可能是开发者工具的问题，设置一个合理的默认值
+    if (!keyboardHeight || keyboardHeight === 0) {
+      // 获取系统信息来设置合适的键盘高度
+      const systemInfo = wx.getSystemInfoSync();
+      console.log('系统信息:', systemInfo);
+      // 根据屏幕高度设置键盘高度，通常是屏幕高度的1/3到1/2
+      keyboardHeight = Math.min(systemInfo.windowHeight * 0.4, 300);
+      console.log('使用默认键盘高度:', keyboardHeight);
+    }
+    
+    this.setData({
+      keyboardHeight: keyboardHeight
+    });
+  },
+
+  // 输入框失去焦点时触发，重置键盘高度
+  onTextareaBlur: function() {
+    console.log('textarea失去焦点');
+    this.setData({
+      keyboardHeight: 0
+    });
+  },
+
 
   onAuthorInput: function(event) {
     this.setData({ author: event.detail.value });
@@ -140,8 +208,6 @@ Page({
         maxImageCount: 9
       });
       this.checkCanPublish();
-      // 重新计算textarea高度
-      this.calculateTextareaHeight();
     }
   },
 
@@ -157,8 +223,6 @@ Page({
       maxImageCount: 1
     });
     this.checkCanPublish();
-    // 重新计算textarea高度
-    this.calculateTextareaHeight();
   },
 
 
@@ -783,16 +847,37 @@ Page({
       selectedTags: this.data.selectedTags,
       customTag: this.data.customTag,
       author: this.data.author,
-      saveTime: new Date().getTime()
+      saveTime: new Date()
     };
     
-    try {
-      wx.setStorageSync('publish_draft', draftData);
-      wx.showToast({ title: '草稿已保存', icon: 'success' });
-    } catch (e) {
-      console.error('保存草稿失败:', e);
-      wx.showToast({ title: '保存草稿失败', icon: 'none' });
-    }
+    wx.showLoading({ title: '保存中...' });
+    
+    wx.cloud.callFunction({
+      name: 'getMyProfileData',
+      data: {
+        action: 'saveDraft',
+        draftData: draftData
+      },
+      success: res => {
+        wx.hideLoading();
+        if (res.result && res.result.success) {
+          wx.showToast({ title: '草稿已保存', icon: 'success' });
+          // 清除本地草稿
+          this.clearDraft();
+        } else {
+          console.error('保存草稿失败:', res.result);
+          wx.showToast({ 
+            title: res.result?.message || '保存草稿失败', 
+            icon: 'none' 
+          });
+        }
+      },
+      fail: err => {
+        wx.hideLoading();
+        console.error('保存草稿失败:', err);
+        wx.showToast({ title: '网络错误，保存失败', icon: 'none' });
+      }
+    });
   },
 
   // 加载草稿
@@ -841,6 +926,39 @@ Page({
     }
   },
 
+  // 加载编辑中的草稿
+  loadEditingDraft: function() {
+    try {
+      const draftData = wx.getStorageSync('editing_draft');
+      if (draftData) {
+        this.setData({
+          title: draftData.title || '',
+          content: draftData.content || '',
+          imageList: draftData.imageList || [],
+          publishMode: draftData.publishMode || 'normal',
+          isOriginal: draftData.isOriginal || false,
+          selectedTags: draftData.selectedTags || [],
+          customTag: draftData.customTag || '',
+          author: draftData.author || '',
+          maxImageCount: draftData.publishMode === 'poem' ? 1 : 9
+        });
+        this.checkCanPublish();
+        wx.showToast({
+          title: '草稿已加载',
+          icon: 'success'
+        });
+        // 清除编辑草稿数据
+        wx.removeStorageSync('editing_draft');
+      }
+    } catch (e) {
+      console.error('加载编辑草稿失败:', e);
+      wx.showToast({
+        title: '加载草稿失败',
+        icon: 'none'
+      });
+    }
+  },
+
   // 清除草稿
   clearDraft: function() {
     try {
@@ -850,37 +968,4 @@ Page({
     }
   },
 
-  // 计算并设置textarea高度
-  calculateTextareaHeight: function() {
-    const that = this;
-    // 获取系统信息
-    wx.getSystemInfo({
-      success: function(res) {
-        const windowHeight = res.windowHeight;
-        const statusBarHeight = res.statusBarHeight || 0;
-        const navigationBarHeight = 44; // 导航栏高度
-        const toolbarHeight = 120; // 底部工具栏高度（rpx转px约60px）
-        const padding = 60; // 上下padding（rpx转px约30px）
-        const titleHeight = 80; // 标题输入框高度（rpx转px约40px）
-        const authorHeight = that.data.publishMode === 'poem' ? 80 : 0; // 作者输入框高度
-        const margin = 60; // 各种margin（rpx转px约30px）
-        
-        // 计算可用高度
-        const availableHeight = windowHeight - statusBarHeight - navigationBarHeight - toolbarHeight - padding - titleHeight - authorHeight - margin;
-        
-        console.log('计算textarea高度:', {
-          windowHeight,
-          statusBarHeight,
-          availableHeight
-        });
-        
-        // 设置最小高度为可用高度的80%，确保有足够空间
-        const minHeight = Math.max(availableHeight * 0.8, 300);
-        
-        that.setData({
-          textareaMinHeight: minHeight
-        });
-      }
-    });
-  }
 })

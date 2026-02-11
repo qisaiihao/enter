@@ -1,0 +1,95 @@
+<!--管理员反馈查看页面-->
+<view class="container" style="padding-top: {{statusBarHeight}}px;">
+  <!-- 头部 -->
+  <view class="header" style="top: {{statusBarHeight}}px;">
+    <view class="header-left" bindtap="goBack">
+      <text class="back-icon">←</text>
+    </view>
+    <text class="header-title">反馈管理</text>
+    <view class="header-right" bindtap="refreshFeedbackList">
+      <text class="refresh-icon">🔄</text>
+    </view>
+  </view>
+
+  <!-- 反馈列表 -->
+  <view class="feedback-list">
+    <block wx:if="{{feedbackList.length > 0}}">
+      <view 
+        wx:for="{{feedbackList}}" 
+        wx:key="_id" 
+        class="feedback-item {{item.isProcessed ? 'processed' : ''}}"
+      >
+        <!-- 反馈头部信息 -->
+        <view class="feedback-header">
+          <view class="user-info">
+            <text class="user-name">{{item.userName || '匿名用户'}}</text>
+            <text class="feedback-time">{{item.formattedCreateTime}}</text>
+          </view>
+          <view class="status-badge {{item.isProcessed ? 'processed' : 'pending'}}">
+            {{item.isProcessed ? '已处理' : '待处理'}}
+          </view>
+        </view>
+
+        <!-- 反馈内容 -->
+        <view class="feedback-content">
+          <text class="content-text">{{item.content}}</text>
+        </view>
+
+        <!-- 反馈图片 -->
+        <view wx:if="{{item.imageUrls && item.imageUrls.length > 0}}" class="feedback-images">
+          <view class="image-grid">
+            <image 
+              wx:for="{{item.imageUrls}}" 
+              wx:key="index"
+              wx:for-item="imageUrl"
+              class="feedback-image"
+              src="{{imageUrl}}"
+              mode="aspectFill"
+              bindtap="previewImage"
+              data-src="{{imageUrl}}"
+              data-urls="{{item.imageUrls}}"
+            ></image>
+          </view>
+        </view>
+
+        <!-- 操作按钮 -->
+        <view class="feedback-actions">
+          <button 
+            wx:if="{{!item.isProcessed}}"
+            class="action-btn process-btn"
+            size="mini"
+            bindtap="markAsProcessed"
+            data-id="{{item._id}}"
+            data-index="{{index}}"
+          >
+            标记已处理
+          </button>
+          <button 
+            class="action-btn delete-btn"
+            size="mini"
+            bindtap="deleteFeedback"
+            data-id="{{item._id}}"
+            data-index="{{index}}"
+          >
+            删除
+          </button>
+        </view>
+      </view>
+    </block>
+
+    <!-- 空状态 -->
+    <view wx:else class="empty-state">
+      <text class="empty-icon">📝</text>
+      <text class="empty-text">暂无反馈</text>
+    </view>
+
+    <!-- 加载更多 -->
+    <view wx:if="{{loading}}" class="loading-more">
+      <text>加载中...</text>
+    </view>
+    
+    <view wx:elif="{{!hasMore && feedbackList.length > 0}}" class="no-more">
+      <text>--- 没有更多了 ---</text>
+    </view>
+  </view>
+</view>

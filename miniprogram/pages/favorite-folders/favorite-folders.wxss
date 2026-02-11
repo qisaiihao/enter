@@ -94,7 +94,7 @@
   right: 40rpx;
   display: flex;
   align-items: center;
-  background: #07c160;
+  background: #9ed7ee;
   color: white;
   padding: 20rpx 30rpx;
   border-radius: 50rpx;
@@ -152,7 +152,7 @@
 }
 
 .modal-input:focus {
-  border-color: #07c160;
+  border-color: #9ed7ee;
 }
 
 .modal-buttons {
@@ -176,6 +176,6 @@
 }
 
 .confirm-btn {
-  background: #07c160;
+  background: #9ed7ee;
   color: white;
 }

@@ -1,4 +1,4 @@
-<!-- pages/post-detail/post-detail.wxml -->
+﻿<!-- pages/post-detail/post-detail.wxml -->
 <view class="container">
   <block wx:if="{{isLoading}}">
     <view class="loading-container">
@@ -9,16 +9,20 @@
     <!-- Post Card -->
     <view class="post-detail-card {{post.isOriginal ? 'original-post' : ''}}">
       <view class="author-info">
-        <image wx:if="{{post.authorAvatar}}" class="author-avatar" src="{{post.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindtap="navigateToUserProfile" data-user-id="{{post._openid}}"></image>
-        <text class="author-name">{{post.authorName}}</text>
+        <view class="author-basic">
+          <image wx:if="{{post.authorAvatar}}" class="author-avatar" src="{{post.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindtap="navigateToUserProfile" data-user-id="{{post._openid}}"></image>
+          <text class="author-name">{{post.authorName}}</text>
+          <view wx:if="{{isMutualFollow}}" class="mutual-tag">互相关注</view>
+          <view wx:elif="{{isFollowedByAuthor}}" class="followed-tag">TA关注了你</view>
+        </view>
+        <button wx:if="{{showFollowButton}}" class="follow-btn {{isFollowing ? 'following' : ''}}" bindtap="onFollowTap" loading="{{followPending}}" disabled="{{followPending}}">
+          {{ isFollowing ? '已关注' : '关注' }}
+        </button>
       </view>
-      <view wx:if="{{post.isOriginal}}" class="original-badge">原创</view>
       <view class="post-title">{{post.title}}</view>
-      <!-- 诗歌作者信息 -->
       <view wx:if="{{post.isPoem && post.author}}" class="poem-author">{{post.author}}</view>
       <view class="post-content" wx:if="{{post.content}}">{{post.content}}</view>
       
-      <!-- 标签显示 -->
       <view wx:if="{{post.tags && post.tags.length > 0}}" class="post-tags">
         <text wx:for="{{post.tags}}" wx:key="index" 
               class="post-tag" 
@@ -26,9 +30,7 @@
               data-tag="{{item}}">#{{item}}</text>
       </view>
       
-      <!-- 图片显示逻辑 (已修正) -->
       <view wx:if="{{(post.imageUrl || (post.imageUrls && post.imageUrls.length > 0))}}" class="image-container" id="detail-image-container">
-        <!-- 单张图片 -->
         <block wx:if="{{post.imageUrls && post.imageUrls.length === 1}}">
           <image
             id="single-image-{{post._id}}"
@@ -46,7 +48,6 @@
           />
         </block>
         
-         <!-- 多张图片 (★ 此处为核心修改) -->
          <block wx:elif="{{post.imageUrls && post.imageUrls.length > 1}}">
           <swiper id="swiper-{{post._id}}" class="image-swiper" indicator-dots="true" circular="true" style="width: 100%; height: {{swiperHeights[0] ? swiperHeights[0] + 'px' : '220px'}};">
             <block wx:for="{{post.imageUrls}}" wx:for-item="img" wx:for-index="imgindex">
@@ -69,7 +70,6 @@
               </swiper-item>
             </block>
           </swiper>
-          <!-- ★ 注意：之前在这里的自定义指示器 <view> 已经被删除了！ -->
         </block>
       </view>
       
@@ -78,8 +78,8 @@
       </view>
       <view class="vote-section" catch:tap="preventBubble">
         <view class="actions-left">
-          <button class="favorite-button" size="mini" catch:tap="onFavorite">
-            收藏
+          <button class="{{favoriteButtonClass}}" size="mini" catch:tap="onFavorite">
+            {{favoriteButtonText}}
           </button>
         </view>
         <view class="button-group">
@@ -97,22 +97,40 @@
       </view>
     </view>
 
-    <!-- Comment Section (已恢复完整内容) -->
+    <!-- Comment Section -->
     <view class="comment-section">
-      <view class="section-title">共 {{commentCount}} 条评论</view>
+      <view class="section-title">共{{commentCount}} 条评论</view>
       <view class="comment-list">
         <block wx:if="{{comments.length > 0}}">
-          <view wx:for="{{comments}}" wx:key="_id" class="comment-item">
+          <view wx:for="{{comments}}" wx:key="_id" wx:for-index="commentIndex" class="comment-item">
             <image class="comment-avatar" src="{{item.authorAvatar}}" mode="aspectFill" binderror="onAvatarError" bindtap="navigateToUserProfile" data-user-id="{{item._openid}}"></image>
             <view class="comment-main">
               <view class="comment-author">{{item.authorName}}</view>
               <view class="comment-content">{{item.content}}</view>
+              <view wx:if="{{item.imageUrls && item.imageUrls.length}}" class="comment-image-grid">
+                  <image
+                    wx:for="{{item.imageUrls}}"
+                    wx:key="*this"
+                    wx:for-item="commentImage"
+                    wx:for-index="imageIndex"
+                    class="comment-image"
+                    src="{{commentImage}}"
+                    mode="aspectFill"
+                    bindtap="previewCommentImageFromList"
+                    data-comment-index="{{commentIndex}}"
+                    data-image-index="{{imageIndex}}"
+                    data-is-reply="false"
+                  />
+                </view>
               <view class="comment-footer">
                 <view class="comment-time">{{item.formattedCreateTime}}</view>
                 <view class="comment-actions">
                   <view class="like-section" bindtap="toggleLikeComment" data-comment-id="{{item._id}}" data-liked="{{item.liked}}">
                     <image class="like-icon" src="{{item.likeIcon}}"></image>
                     <text class="like-count">{{item.likes || 0}}</text>
+                  </view>
+                  <view wx:if="{{item.canDelete}}" class="delete-btn" bindtap="onDeleteComment" data-comment-id="{{item._id}}">
+                    <text class="delete-text">删除</text>
                   </view>
                   <view class="reply-btn" bindtap="showReplyInput" data-comment-id="{{item._id}}" data-author-name="{{item.authorName}}">
                     <text class="reply-text">回复</text>
@@ -127,15 +145,34 @@
                   <view class="reply-main">
                     <view class="reply-author">{{reply.authorName}}</view>
                     <view class="reply-content">
-                      <text class="reply-to">回复@{{item.authorName}}：</text>
-                      <text>{{reply.content}}</text>
-                    </view>
+                        <text class="reply-to">回复@{{item.authorName}}：</text>
+                        <text>{{reply.content}}</text>
+                      </view>
+                    <view wx:if="{{reply.imageUrls && reply.imageUrls.length}}" class="comment-image-grid reply-image-grid">
+                        <image
+                          wx:for="{{reply.imageUrls}}"
+                          wx:key="*this"
+                          wx:for-item="replyImage"
+                          wx:for-index="replyImageIndex"
+                          class="comment-image"
+                          src="{{replyImage}}"
+                          mode="aspectFill"
+                          bindtap="previewCommentImageFromList"
+                          data-comment-index="{{commentIndex}}"
+                          data-reply-index="{{replyIndex}}"
+                          data-image-index="{{replyImageIndex}}"
+                          data-is-reply="true"
+                        />
+                      </view>
                     <view class="reply-footer">
                       <view class="reply-time">{{reply.formattedCreateTime}}</view>
                       <view class="reply-actions">
                         <view class="like-section" bindtap="toggleLikeComment" data-comment-id="{{reply._id}}" data-liked="{{reply.liked}}">
                           <image class="like-icon" src="{{reply.likeIcon}}"></image>
                           <text class="like-count">{{reply.likes || 0}}</text>
+                        </view>
+                        <view wx:if="{{reply.canDelete}}" class="delete-btn" bindtap="onDeleteComment" data-comment-id="{{reply._id}}" data-parent-id="{{item._id}}">
+                          <text class="delete-text">删除</text>
                         </view>
                         <view class="reply-btn" bindtap="showReplyInput" data-comment-id="{{item._id}}" data-author-name="{{reply.authorName}}">
                           <text class="reply-text">回复</text>
@@ -173,8 +210,6 @@
     </view>
   </block>
 </view>
-
-<!-- ★★★ 核心修改：重构评论输入区域 ★★★ -->
 
 <!-- 遮罩层：当输入框展开时显示 -->
 <view 
@@ -216,9 +251,23 @@
       show-confirm-bar="{{false}}"
       adjust-position="{{false}}"
     ></textarea>
-    
+    <view wx:if="{{commentImages.length}}" class="selected-comment-images">
+      <view class="selected-image-item" wx:for="{{commentImages}}" wx:key="id" data-index="{{index}}">
+        <image class="selected-image-thumb" src="{{item.previewUrl}}" mode="aspectFill" bindtap="previewSelectedCommentImage" data-index="{{index}}"></image>
+        <view class="remove-image-btn" bindtap="removeCommentImage" data-index="{{index}}">✕</view>
+      </view>
+    </view>
+
     <!-- 底部操作栏，包含发送按钮 -->
     <view class="expanded-actions">
+      <view class="action-icons">
+        <view class="action-icon" bindtap="chooseCommentImages">
+          <text class="action-icon-text">🖼️</text>
+        </view>
+        <view class="action-icon" bindtap="toggleEmojiPanel">
+          <text class="action-icon-text">😊</text>
+        </view>
+      </view>
       <button 
         class="submit-button" 
         bindtap="onSubmitComment" 
@@ -226,6 +275,9 @@
       >
         发送
       </button>
+    </view>
+    <view wx:if="{{showEmojiPanel}}" class="emoji-panel">
+      <text class="emoji-item" wx:for="{{emojiList}}" wx:key="emoji" data-emoji="{{item}}" bindtap="insertEmoji">{{item}}</text>
     </view>
   </view>
 </view>
@@ -239,3 +291,10 @@
   post-id="{{post._id}}"
   bind:hide="hideFavoriteModal"
   bind:favoriteSuccess="onFavoriteSuccess" />
+
+
+
+
+
+
+

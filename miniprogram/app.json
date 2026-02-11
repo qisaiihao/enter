@@ -7,6 +7,8 @@
     "pages/poem/poem",
     "pages/mountain/mountain",
     "pages/profile/profile",
+    "pages/following/following",
+    "pages/fans/fans",
     "pages/user-profile/user-profile",
     "pages/profile-edit/profile-edit",
     "pages/post-detail/post-detail",
@@ -16,7 +18,10 @@
     "pages/messages/messages",
     "pages/image-manager/image-manager",
     "pages/tag-filter/tag-filter",
-    "pages/search/search"
+    "pages/search/search",
+    "pages/draft-box/draft-box",
+    "pages/feedback/feedback",
+    "pages/feedback-admin/feedback-admin"
   ],
   "window": {
     "backgroundColor": "#F6F6F6",
@@ -28,7 +33,7 @@
   "tabBar": {
     "custom": true,
     "color": "#999999",
-    "selectedColor": "#07c160",
+    "selectedColor": "#9ed7ee",
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
     "list": [

@@ -1,4 +1,4 @@
-const app = getApp();
+﻿const app = getApp();
 
 const PAGE_SIZE = 5;
 
@@ -12,7 +12,7 @@ Page({
     hasMore: true,
     PAGE_SIZE: PAGE_SIZE,
     swiperHeights: {}, // 多图swiper高度
-    imageClampHeights: {}, // 单图瘦高图钳制高度
+    imageClampHeights: {}, // 单图限制高度
     _hasFirstShow: false, // 新增：标记是否首次进入
     unreadCount: 0, // 未读消息数量
     
@@ -30,7 +30,7 @@ Page({
   },
 
   onLoad: function (options) {
-    // 计算3:4比例高度（宽3高4，竖图）
+    // 计算3:4比例高度（宽3高4，竖屏）
     const windowWidth = wx.getSystemInfoSync().windowWidth;
     const fixedHeight = Math.round(windowWidth * 4 / 3);
     this.setData({ swiperFixedHeight: fixedHeight });
@@ -47,10 +47,10 @@ Page({
     
     // 每次进入页面时主动刷新数据（但避免首次加载时重复调用）
     if (this.data._hasFirstShow) {
-      console.log('【profile】onShow触发，开始刷新数据');
+      console.log('【profile】onShow触发,开始刷新数据');
       this.refreshProfileData();
     } else {
-      console.log('【profile】首次显示，标记已显示');
+      console.log('【profile】首次显示,标记已显示');
       this.setData({ _hasFirstShow: true });
     }
   },
@@ -135,13 +135,13 @@ Page({
   },
 
   onReachBottom: function () {
-    console.log('【profile】触底加载触发', 'currentTab:', this.data.currentTab);
+    console.log('【profile】触底加载触发, currentTab:', this.data.currentTab);
     if (this.data.currentTab === 'posts') {
-      console.log('【profile】触底加载我的帖子', 'hasMore:', this.data.hasMore, 'isLoading:', this.data.isLoading, '当前页:', this.data.page);
+      console.log('【profile】触底加载我的帖子, hasMore:', this.data.hasMore, 'isLoading:', this.data.isLoading, '当前页:', this.data.page);
       if (!this.data.hasMore || this.data.isLoading) return;
       this.loadMyPosts();
     } else if (this.data.currentTab === 'favorites') {
-      console.log('【profile】触底加载收藏', 'favoriteHasMore:', this.data.favoriteHasMore, 'favoriteLoading:', this.data.favoriteLoading);
+      console.log('【profile】触底加载收藏, favoriteHasMore:', this.data.favoriteHasMore, 'favoriteLoading:', this.data.favoriteLoading);
       if (!this.data.favoriteHasMore || this.data.favoriteLoading) return;
       this.loadFavorites();
     }
@@ -187,7 +187,8 @@ Page({
       success: openIdRes => {
         if (openIdRes.result && openIdRes.result.openid) {
           const currentOpenid = openIdRes.result.openid;
-          const isAdmin = currentOpenid === 'ojYBd1_A3uCbQ1LGcHxWxOAeA5SE'; // 你的openid
+          const adminOpenids = ['ojYBd1_A3uCbQ1LGcHxWxOAeA5SE', 'ojYBd14JG3-ghYuGCI2WHmkMc9nE']; // 管理员openid列表
+          const isAdmin = adminOpenids.includes(currentOpenid);
           
           console.log('当前用户openid:', currentOpenid);
           console.log('是否为管理员:', isAdmin);
@@ -202,7 +203,7 @@ Page({
         wx.cloud.callFunction({
           name: 'getMyProfileData',
           success: res => {
-            console.log('getMyProfileData 返回：', res);
+            console.log('getMyProfileData 返回:', res);
             if (res.result && res.result.success && res.result.userInfo) {
               const user = res.result.userInfo;
               if (user.birthday) {
@@ -252,7 +253,7 @@ Page({
         wx.cloud.callFunction({
           name: 'getMyProfileData',
           success: res => {
-            console.log('getMyProfileData 返回：', res);
+            console.log('getMyProfileData 返回:', res);
             if (res.result && res.result.success && res.result.userInfo) {
               const user = res.result.userInfo;
               if (user.birthday) {
@@ -298,11 +299,13 @@ Page({
   },
 
   loadMyPosts: function (cb) {
-    // 移除阻止重复调用的条件判断，允许在onShow时刷新数据
-    // if (this.data.isLoading) return;
     const { page, PAGE_SIZE } = this.data;
-    console.log('【profile】请求分页参数', { page, PAGE_SIZE, skip: page * PAGE_SIZE, limit: PAGE_SIZE });
-    this.setData({ isLoading: true });
+    console.log('【profile】请求分页参数:', { page, PAGE_SIZE, skip: page * PAGE_SIZE, limit: PAGE_SIZE });
+    
+    // 只有在首次加载时才显示骨架屏
+    if (page === 0) {
+      this.setData({ isLoading: true });
+    }
     
     wx.cloud.callFunction({
       name: 'getMyProfileData',
@@ -317,6 +320,10 @@ Page({
           posts.forEach(post => {
             if (post.createTime) {
               post.formattedCreateTime = this.formatTime(post.createTime);
+            }
+            // 为每个帖子设置默认的图片样式
+            if (post.imageUrls && post.imageUrls.length > 0) {
+              post.imageStyle = `height: 0; padding-bottom: 75%;`; // 4:3 宽高比占位
             }
           });
           const newMyPosts = page === 0 ? posts : this.data.myPosts.concat(posts);
@@ -383,34 +390,115 @@ Page({
     const that = this;
 
     wx.showModal({
-      title: '确认删除',
-      content: '您确定要删除这条帖子吗？此操作不可恢复。',
+      title: '删除帖子',
+      content: '您确定要删除这条帖子吗？',
+      confirmText: '删除',
+      cancelText: '保存草稿',
+      confirmColor: '#ff4d4f',
       success: function(res) {
         if (res.confirm) {
-          wx.showLoading({ title: '删除中...' });
+          // 直接删除
+          that.deletePost(postId, index);
+        } else {
+          // 保存草稿
+          that.saveToDraftBox(postId, index);
+        }
+      }
+    });
+  },
+
+  // 直接删除帖子
+  deletePost: function(postId, index) {
+    const that = this;
+    wx.showLoading({ title: '删除中...' });
+    wx.cloud.callFunction({
+      name: 'deletePost',
+      data: { postId: postId },
+      success: function(res) {
+        wx.hideLoading();
+        if (res.result && res.result.success) {
+          wx.showToast({ title: '删除成功' });
+          const newList = that.data.myPosts.filter(post => post._id !== postId);
+          that.setData({ myPosts: newList });
+          // 新增：删除成功后设置首页需要刷新标记
+          try {
+            wx.setStorageSync('shouldRefreshIndex', true);
+          } catch (e) {}
+        } else {
+          wx.showToast({ title: '删除失败', icon: 'none' });
+        }
+      },
+      fail: function(err) {
+        wx.hideLoading();
+        wx.showToast({ title: '调用失败', icon: 'none' });
+      }
+    });
+  },
+
+  // 保存到草稿箱
+  saveToDraftBox: function(postId, index) {
+    const that = this;
+    wx.showLoading({ title: '保存中...' });
+    
+    // 先获取帖子详情
+    wx.cloud.callFunction({
+      name: 'getPostDetail',
+      data: { postId: postId },
+      success: function(res) {
+        if (res.result && res.result.post) {
+          const post = res.result.post;
+          const draftData = {
+            title: post.title || '',
+            content: post.content || '',
+            imageList: post.imageUrls ? post.imageUrls.map(url => ({
+              previewUrl: url,
+              compressedPath: url,
+              originalPath: url,
+              needCompression: false
+            })) : [],
+            publishMode: post.isPoem ? 'poem' : 'normal',
+            isOriginal: post.isOriginal || false,
+            selectedTags: post.tags || [],
+            customTag: '',
+            author: post.author || '',
+            saveTime: new Date()
+          };
+
+          // 保存到草稿箱
           wx.cloud.callFunction({
-            name: 'deletePost',
-            data: { postId: postId },
-            success: function(res) {
+            name: 'getMyProfileData',
+            data: {
+              action: 'saveDraft',
+              draftData: draftData
+            },
+            success: function(draftRes) {
               wx.hideLoading();
-              if (res.result && res.result.success) {
-                wx.showToast({ title: '删除成功' });
-                const newList = that.data.myPosts.filter(post => post._id !== postId);
-                that.setData({ myPosts: newList });
-                // 新增：删除成功后设置首页需要刷新标记
-                try {
-                  wx.setStorageSync('shouldRefreshIndex', true);
-                } catch (e) {}
+              if (draftRes.result && draftRes.result.success) {
+                wx.showToast({ title: '已保存到草稿箱', icon: 'success' });
+                // 删除原帖子
+                that.deletePost(postId, index);
               } else {
-                wx.showToast({ title: '删除失败', icon: 'none' });
+                wx.showToast({ 
+                  title: draftRes.result?.message || '保存草稿失败', 
+                  icon: 'none' 
+                });
               }
             },
             fail: function(err) {
               wx.hideLoading();
-              wx.showToast({ title: '调用失败', icon: 'none' });
+              console.error('保存草稿失败:', err);
+              wx.showToast({ title: '保存草稿失败', icon: 'none' });
             }
           });
+        } else {
+          wx.hideLoading();
+          wx.showToast({ title: '获取帖子信息失败', icon: 'none' });
         }
+      },
+      fail: function(err) {
+        wx.hideLoading();
+        console.error('获取帖子详情失败:', err);
+        wx.showToast({ title: '获取帖子信息失败', icon: 'none' });
       }
     });
   },
@@ -470,19 +558,19 @@ Page({
     });
   },
 
-  // 统一图片自适应/钳制逻辑
+  // 统一图片自适应/限制逻辑
   onImageLoad: function(e) {
-    const { postindex, imgindex = 0, type } = e.currentTarget.dataset;
-    const { width, height } = e.detail;
-    if (!width || !height) return;
+    const { postid, postindex = 0, imgindex = 0, type } = e.currentTarget.dataset;
+    const { width: originalWidth, height: originalHeight } = e.detail;
+    if (!originalWidth || !originalHeight) return;
 
-    // 多图
+    // 多图 Swiper 逻辑
     if (type === 'multi' && imgindex === 0) {
       const query = wx.createSelectorQuery().in(this);
-      query.select(`#profile-swiper-img-${postindex}-0`).boundingClientRect(rect => {
+      query.select(`#swiper-${postid}`).boundingClientRect(rect => {
         if (rect && rect.width) {
           const containerWidth = rect.width;
-          const actualRatio = width / height;
+          const actualRatio = originalWidth / originalHeight;
           const maxRatio = 16 / 9;
           const minRatio = 9 / 16;
           let targetRatio = actualRatio;
@@ -497,16 +585,16 @@ Page({
     }
     // 单图
     if (type === 'single') {
-      const actualRatio = width / height;
+      const actualRatio = originalWidth / originalHeight;
       const minRatio = 9 / 16;
       if (actualRatio < minRatio) {
         const query = wx.createSelectorQuery().in(this);
-        query.select(`#profile-single-img-${postindex}`).boundingClientRect(rect => {
+        query.select(`#single-image-${postid}`).boundingClientRect(rect => {
           if (rect && rect.width) {
             const containerWidth = rect.width;
             const displayHeight = containerWidth / minRatio;
-            if (this.data.imageClampHeights[postindex] !== displayHeight) {
-              this.setData({ [`imageClampHeights.${postindex}`]: displayHeight });
+            if (this.data.imageClampHeights[postid] !== displayHeight) {
+              this.setData({ [`imageClampHeights.${postid}`]: displayHeight });
             }
           }
         }).exec();
@@ -529,11 +617,11 @@ Page({
           console.log(`  - 图片${imgIndex + 1}:`, url);
           // 检查URL格式
           if (url && url.startsWith('http')) {
-            console.log(`    ✓ 格式正确 (HTTP URL)`);
+            console.log(`    ✅ 格式正确 (HTTP URL)`);
           } else if (url && url.startsWith('cloud://')) {
-            console.log(`    ⚠ 格式为cloud:// (需要转换)`);
+            console.log(`    ⚠️ 格式为cloud:// (需要转换)`);
           } else if (!url) {
-            console.log(`    ✗ URL为空`);
+            console.log(`    ❌ URL为空`);
           } else {
             console.log(`    ? 未知格式: ${url}`);
           }
@@ -558,6 +646,18 @@ Page({
     });
   },
 
+  navigateToFollowing: function() {
+    wx.navigateTo({
+      url: '/pages/following/following',
+    });
+  },
+
+  navigateToFans: function() {
+    wx.navigateTo({
+      url: '/pages/fans/fans',
+    });
+  },
+
   // 跳转到编辑资料页面
   navigateToEditProfile: function() {
     wx.navigateTo({
@@ -569,6 +669,13 @@ Page({
   navigateToFavoriteFolders: function() {
     wx.navigateTo({
       url: '/pages/favorite-folders/favorite-folders',
+    });
+  },
+
+  // 跳转到草稿箱页面
+  navigateToDraftBox: function() {
+    wx.navigateTo({
+      url: '/pages/draft-box/draft-box',
     });
   },
 
@@ -591,7 +698,24 @@ Page({
         }
       },
       fail: err => {
-        console.error('检查未读消息失败:', err);
+        console.error('获取未读消息失败:', err);
+      }
+    });
+
+    wx.cloud.callFunction({
+      name: 'follow',
+      data: {
+        action: 'getNewFollowerCount'
+      },
+      success: res => {
+        if (res.result && res.result.success) {
+          this.setData({
+            newFollowerCount: res.result.count || 0
+          });
+        }
+      },
+      fail: err => {
+        console.error('获取新粉丝数量失败:', err);
       }
     });
   },
@@ -599,7 +723,7 @@ Page({
   // 新增：标签切换方法
   switchTab: function(e) {
     const tab = e.currentTarget.dataset.tab;
-    console.log('【profile】切换标签到:', tab);
+    console.log('【profile】切换到标签:', tab);
     
     if (tab === this.data.currentTab) return; // 如果是当前标签，不做任何操作
     
@@ -617,7 +741,7 @@ Page({
     // if (this.data.favoriteLoading) return;
     
     const { favoritePage, PAGE_SIZE } = this.data;
-    console.log('【profile】请求收藏分页参数', { favoritePage, PAGE_SIZE, skip: favoritePage * PAGE_SIZE, limit: PAGE_SIZE });
+    console.log('【profile】请求收藏分页参数:', { favoritePage, PAGE_SIZE, skip: favoritePage * PAGE_SIZE, limit: PAGE_SIZE });
     
     this.setData({ favoriteLoading: true });
     
@@ -634,10 +758,14 @@ Page({
           const favorites = res.result.favorites || [];
           console.log('【profile】本次返回收藏数量:', favorites.length);
           
-          // 格式化时间
+          // 格式化时间和设置图片样式
           favorites.forEach(favorite => {
             if (favorite.favoriteTime) {
               favorite.formattedFavoriteTime = this.formatTime(favorite.favoriteTime);
+            }
+            // 为每个收藏的帖子设置默认的图片样式
+            if (favorite.imageUrls && favorite.imageUrls.length > 0) {
+              favorite.imageStyle = `height: 0; padding-bottom: 75%;`; // 4:3 宽高比占位
             }
           });
           
@@ -722,5 +850,44 @@ Page({
     wx.navigateTo({
       url: '/pages/image-manager/image-manager'
     });
+  },
+
+  // 跳转到意见反馈页面
+  navigateToFeedback: function() {
+    wx.navigateTo({
+      url: '/pages/feedback/feedback'
+    });
+  },
+
+  // 跳转到反馈管理页面（管理员）
+  navigateToFeedbackAdmin: function() {
+    wx.navigateTo({
+      url: '/pages/feedback-admin/feedback-admin'
+    });
+  },
+
+  // 滚动到底部触发加载更多
+  onScrollToLower: function() {
+    console.log('【profile】滚动到底部，当前标签:', this.data.currentTab);
+    
+    if (this.data.currentTab === 'posts') {
+      // 我的帖子标签页
+      if (this.data.hasMore && !this.data.isLoadingMore && !this.data.isLoading) {
+        console.log('【profile】开始加载更多帖子');
+        this.setData({ isLoadingMore: true });
+        this.loadMyPosts(() => {
+          this.setData({ isLoadingMore: false });
+          console.log('【profile】加载更多帖子完成');
+        });
+      }
+    } else if (this.data.currentTab === 'favorites') {
+      // 收藏标签页
+      if (this.data.favoriteHasMore && !this.data.favoriteLoading) {
+        console.log('【profile】开始加载更多收藏');
+        this.loadFavorites(() => {
+          console.log('【profile】加载更多收藏完成');
+        });
+      }
+    }
   }
 });

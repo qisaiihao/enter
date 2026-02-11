@@ -24,7 +24,8 @@ Page({
       
       if (openIdResult.result && openIdResult.result.openid) {
         const currentOpenid = openIdResult.result.openid
-        const isAdmin = currentOpenid === 'ojYBd1_A3uCbQ1LGcHxWxOAeA5SE' // 你的openid
+        const adminOpenids = ['ojYBd1_A3uCbQ1LGcHxWxOAeA5SE', 'ojYBd14JG3-ghYuGCI2WHmkMc9nE'] // 管理员openid列表
+        const isAdmin = adminOpenids.includes(currentOpenid)
         
         console.log('图片管理页面 - 当前用户:', currentOpenid)
         console.log('图片管理页面 - 是否为管理员:', isAdmin)

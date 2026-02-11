@@ -1,0 +1,43 @@
+﻿<view class="container">
+  <view wx:if="{{isLoading && fans.length === 0}}" class="loading">
+    <text>加载中...</text>
+  </view>
+
+  <block wx:elif="{{fans.length > 0}}">
+    <view class="list">
+      <view wx:for="{{fans}}" wx:key="_openid" class="fan-item">
+        <view class="user-info" data-openid="{{item._openid}}" bindtap="openUserProfile">
+          <image class="avatar" src="{{item.avatarUrl || defaultAvatar}}" mode="aspectFill" binderror="onAvatarError" data-index="{{index}}"></image>
+          <view class="info-text">
+            <text class="name">{{item.nickName || '微信用户'}}</text>
+            <text class="bio">{{item.bio || '这个人很懒，什么都没留下~'}}</text>
+            <text wx:if="{{item.followedAtText}}" class="follow-time">关注于 {{item.followedAtText}}</text>
+            <view wx:if="{{item.isMutual}}" class="mutual-label">互相关注</view>
+          </view>
+        </view>
+        <button
+          class="follow-btn"
+          size="mini"
+          catch:tap="onToggleFollow"
+          data-openid="{{item._openid}}"
+          data-index="{{index}}"
+          loading="{{pendingOpenid === item._openid}}"
+          disabled="{{pendingOpenid === item._openid}}">
+          {{ item.isMutual ? '取消关注' : '关注' }}
+        </button>
+      </view>
+    </view>
+  </block>
+
+  <view wx:else class="empty">
+    <text>还没有粉丝，快去多发点内容吧~</text>
+  </view>
+
+  <view wx:if="{{fans.length > 0}}" class="footer-hint">
+    <view wx:if="{{isLoading}}" class="loading-more">加载中...</view>
+    <view wx:elif="{{!hasMore}}" class="loading-more">已经到底啦</view>
+  </view>
+</view>
+
+
+

@@ -53,6 +53,11 @@
       <!-- 内容 -->
       <view class="single-post-content-text" wx:if="{{currentPost.content}}" style="white-space: pre-wrap;">{{currentPost.content}}</view>
       
+      <!-- 作者签名 -->
+      <view wx:if="{{currentAuthorSignature}}" class="user-signature">
+        <image class="signature-image" src="{{currentAuthorSignature}}" mode="aspectFit" binderror="onSignatureError" bindload="onSignatureLoad"></image>
+      </view>
+      
     </view>
     
     <view wx:if="{{postList.length === 0 && !isLoading}}" class="empty-state">

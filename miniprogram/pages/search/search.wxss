@@ -45,7 +45,7 @@
 
 .cancel-btn {
   font-size: 28rpx;
-  color: #07c160;
+  color: #9ed7ee;
   padding: 20rpx;
 }
 
@@ -317,7 +317,7 @@
 
 .hot-text {
   font-size: 26rpx;
-  color: #07c160;
+  color: #9ed7ee;
 }
 
 /* 加载状态 */

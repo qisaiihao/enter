@@ -6,6 +6,8 @@ const dataCache = require('../../utils/dataCache');
 const imageOptimizer = require('../../utils/imageOptimizer');
 const performanceMonitor = require('../../utils/performanceMonitor');
 const likeIcon = require('../../utils/likeIcon');
+const avatarCache = require('../../utils/avatarCache');
+const followCache = require('../../utils/followCache');
 
 Page({
   data: {
@@ -225,10 +227,31 @@ Page({
 
   // catch:tap 用于图片预览，并阻止跳转
   handlePreview: function(event) {
+    console.log('【图片预览】handlePreview事件触发');
+    console.log('【图片预览】event.currentTarget.dataset:', event.currentTarget.dataset);
+    
     const current = event.currentTarget.dataset.src || event.currentTarget.dataset.imageUrl;
     const urls = event.currentTarget.dataset.originalImageUrls;
+    
+    console.log('【图片预览】current:', current);
+    console.log('【图片预览】urls:', urls);
+    console.log('【图片预览】urls类型:', typeof urls);
+    console.log('【图片预览】urls长度:', urls ? urls.length : 'undefined');
+    
     if (current && urls && urls.length > 0) {
-      wx.previewImage({ current, urls });
+      console.log('【图片预览】调用wx.previewImage，current:', current, 'urls:', urls);
+      wx.previewImage({ 
+        current, 
+        urls,
+        success: (res) => {
+          console.log('【图片预览】预览成功:', res);
+        },
+        fail: (err) => {
+          console.error('【图片预览】预览失败:', err);
+        }
+      });
+    } else {
+      console.error('【图片预览】预览条件不满足 - current:', current, 'urls:', urls);
     }
   },
 
@@ -287,6 +310,12 @@ Page({
         } else {
           console.log('【点赞】云函数调用成功，数据已同步');
         }
+        
+        // === 新增：更新缓存中的帖子数据 ===
+        if (res.result.success) {
+          console.log('【点赞】更新缓存中的帖子数据');
+          dataCache.updatePostLikeInCache(postId, postList[index].votes, postList[index].isVoted, postList[index].likeIcon);
+        }
       },
       fail: (err) => {
         console.error('【点赞】云函数调用失败:', err);
@@ -338,6 +367,26 @@ Page({
         }
       });
     }
+  },
+
+  // 预加载用户数据（头像和关注状态）
+  preloadUserData: function(posts) {
+    if (!posts || posts.length === 0) return;
+
+    const currentUserId = this.getCurrentUserId();
+    if (!currentUserId) return;
+
+    // 预加载头像
+    avatarCache.preloadAvatarsFromPosts(posts);
+    
+    // 预加载关注状态
+    followCache.preloadFollowStatusFromPosts(posts, currentUserId);
+  },
+
+  // 获取当前用户ID
+  getCurrentUserId: function() {
+    const app = getApp();
+    return app.globalData.openid || wx.getStorageSync('openid') || wx.getStorageSync('userOpenId');
   },
 
   // 新增：跳转到用户个人主页
@@ -420,6 +469,11 @@ Page({
               post.imageUrls = post.imageUrl ? [post.imageUrl] : [];
             }
 
+            // 处理原图URL数组
+            if (!post.originalImageUrls || post.originalImageUrls.length === 0) {
+              post.originalImageUrls = post.originalImageUrl ? [post.originalImageUrl] : post.imageUrls;
+            }
+
             // 假设图片URL中包含了尺寸信息，或者你有固定的宽高比
             // 如果没有，则需要在onImageLoad中动态计算并更新，但最好有预设值
             // 这里我们假设一个默认的 4:3 比例用于占位
@@ -432,6 +486,11 @@ Page({
             
             return post;
           });
+
+          // 预加载头像和关注状态
+          setTimeout(() => {
+            this.preloadUserData(posts);
+          }, 500);
 
           const newPostsCount = posts.length;
           const currentPostList = this.data.postList;
@@ -694,6 +753,11 @@ Page({
           posts.forEach(post => {
             if (!post.imageUrls || post.imageUrls.length === 0) {
               post.imageUrls = post.imageUrl ? [post.imageUrl] : [];
+            }
+
+            // 处理原图URL数组
+            if (!post.originalImageUrls || post.originalImageUrls.length === 0) {
+              post.originalImageUrls = post.originalImageUrl ? [post.originalImageUrl] : post.imageUrls;
             }
 
             // 设置图片占位样式
